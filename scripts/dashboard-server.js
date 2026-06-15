@@ -319,8 +319,8 @@ const server = http.createServer(async (req, res) => {
   send404(res);
 });
 
-server.listen(PORT, () => {
-  console.log(`[dashboard-server] 啟動於 http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`[dashboard-server] 啟動於 http://0.0.0.0:${PORT}（同網路/Cloudflare Tunnel 可訪問）`);
   console.log(`[dashboard-server] Tenant: ${getTenantId()}`);
   if (PASSWORD) {
     console.log(`[dashboard-server] HTTP Basic Auth: ${USERNAME} / ********`);
