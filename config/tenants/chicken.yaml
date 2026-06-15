@@ -1,0 +1,168 @@
+tenant:
+  id: chicken
+  display_name: 雞味研究所
+  agent_path: ~/.openclaw/agents/external-user
+  environment: production
+storage:
+  phase1:
+    enabled: true
+    type: csv
+    base_path: data/orders
+    filename_pattern: '{date}.csv'
+    backup_path: data/orders/archive
+  phase2:
+    enabled: false
+    type: google_sheets
+    spreadsheet_id: ''
+    credentials_path: ''
+official:
+  brand_name: 雞味研究所｜牧草放山雞
+  line_community: '@620boqol'
+  line_community_url: https://line.me/ti/g2/4Qsf5GqgDlR2Liiy1asPTj8IFGHddyQKcD4yQA
+  bank_account: 銀行代碼：007（第一銀行）|| 帳號：23257030422
+  jko_qr_code_url: >-
+    https://pub-ce7f744c6a2145a4a3277e8ed2c3f8fd.r2.dev/Payment/%E9%9B%9E%E5%91%B3%E7%A0%94%E7%A9%B6%E6%89%80_%E8%A1%97%E5%8F%A3%E6%94%AF%E4%BB%98_QRcode.jpg
+  line_pay:
+    enabled: true
+    line_id: Willy0221
+delivery:
+  hours:
+    am: 10:00~12:00
+    pm: 16:00~18:00
+  minimum_order:
+    chicken: 半隻 NT$380 起（包含 1 盒以上雞肉即可外送）
+    side_dish_ntd: 350
+  areas:
+    allowed:
+      - 三鶯生活圈
+    denied:
+      - 非三鶯生活圈
+open_dates:
+  - '2026-06-16'
+  - '2026-06-18'
+  - '2026-06-23'
+  - '2026-06-26'
+ignored_keywords:
+  - 我要訂購
+  - 菜單
+  - 常見問題
+  - 黑羽放山雞介紹
+  - 蔥鹽醬介紹
+  - 吃法介紹
+order:
+  field_sequence:
+    - date
+    - items
+    - name
+    - phone
+    - address
+    - community
+    - time_slot
+    - payment_method
+    - paid
+    - note
+handoff:
+  customer_reply: |
+    感謝您的提問！您的問題已轉交給老闆處理，將儘快回覆您，請留意 LINE 通知，謝謝！ 🐔
+  L1_triggers:
+    - type: refund_request
+      label: 【退貨/退款】
+      description: 客戶要求退款
+    - type: cancel_request
+      label: 【取消訂單】
+      description: 客戶要取消已成立訂單
+    - type: reschedule_request
+      label: 【改天需求】
+      description: 客戶收單後想改天
+    - type: complaint
+      label: 【售後/客訴】
+      description: 客戶抱怨品質、配送或服務
+    - type: escalation
+      label: 【客訴/爭議】
+      description: 客戶態度激動或有爭議
+    - type: explicit_request
+      label: 【明確要求真人】
+      description: 客戶明確說要跟真人說
+  L2_triggers:
+    - type: discount_request
+      label: 【折扣請求】
+      description: 客戶要求特殊折扣
+    - type: delivery_confirm_needed
+      label: 【配送範圍確認】
+      description: 地址不確定是否在配送範圍
+    - type: bulk_order
+      label: 【大批訂單/公司合作】
+      description: 大量訂購或公司合作
+    - type: high_value_order
+      label: 【金額異常】
+      description: 訂單金額超過 NT$3,000
+  L3_triggers:
+    - type: payment_mismatch
+      label: 【付款異常】
+      description: 付款截圖金額不符
+    - type: linepay_failed
+      label: 【LINE Pay 付款失敗】
+      description: LINE Pay code 過期或付款失敗
+    - type: open_date_inquiry
+      label: 【開團日期確認】
+      description: 開團日期不確定
+    - type: late_modify
+      label: 【截單後變更】
+      description: 14:00 後追加雞肉或 18:00 後變更小菜/時段
+  notify_owner:
+    enabled: true
+    line_user_id: Uf56650056d35626deb64165926a26182
+payment:
+  cash:
+    enabled: true
+    new_customer_max: 1000
+    returning_customer: true
+  transfer:
+    enabled: true
+    bank_code: '007'
+    account: '23257030422'
+  jko:
+    enabled: true
+    qr_code_url: ${JKO_QR_CODE_URL}
+  linepay:
+    enabled: true
+    line_id: Willy0221
+cutoff:
+  reminder_time: 前一日 11:00~12:00
+  order_close_time: '13:00'
+  final_confirm_time: '14:00'
+  chicken_modify_cutoff: '14:00'
+  side_dish_cutoff: '18:00'
+knowledge:
+  base_path: knowledge/base
+  learned_path: knowledge/learned
+  triggers_path: src/knowledge/triggers.js
+security:
+  status_flow:
+    payment_status:
+      - pending
+      - paid
+      - confirmed
+    order_status:
+      - new
+      - confirmed
+      - preparing
+      - delivered
+      - completed
+      - cancelled
+  forbidden_info:
+    - Hubert 個人電話
+    - 老闆私人 LINE
+    - 成本結構
+    - 內部系統細節
+  input_sanitization: true
+  allowed_line_users:
+    - Uf56650056d35626deb64165926a26182
+  block_others: false
+line:
+  bot_token: ${LINE_BOT_TOKEN}
+  channel_secret: ${LINE_CHANNEL_SECRET}
+notes: |
+  Phase 1：CSV 儲存 → data/orders/{date}.csv（實際檔名以 csvWriter.js 為準）
+  Phase 2：升級 Google Sheets（需設定 spreadsheet_id + credentials）
+  所有 secret 使用環境變數，不寫死在檔案中

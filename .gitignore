@@ -1,1 +1,9 @@
-chicken-group-buying-customer-service_Hubert-info/
+# 不在這裡建立 .git
+# 此目錄是檔案鏡像，git 倉庫在：
+# /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service/
+
+node_modules/
+.env
+*.log
+.DS_Store
+dashboard.tmp.html

@@ -1,0 +1,92 @@
+[
+  {
+    "description": "基本訂購：北大特區地址、鹽水雞2盒、下午時段、轉帳",
+    "orderData": {
+      "user_line_name": "王小明",
+      "user_phone": "0912345678",
+      "address": "三峽北大特區學成路100號",
+      "community": "",
+      "delivery_date": "2026-06-19",
+      "time_slot": "afternoon",
+      "chicken_items": { "鹽水雞": 2 },
+      "side_items": {},
+      "extra_items": {},
+      "subtotal": 760,
+      "delivery_fee": 0,
+      "total_amount": 760,
+      "payment_method": "transfer"
+    }
+  },
+  {
+    "description": "完整訂單：雞肉+小菜、上午時段、街口支付",
+    "orderData": {
+      "user_line_name": "陳小姐",
+      "user_phone": "0987654321",
+      "address": "三峽老街48號",
+      "community": "",
+      "delivery_date": "2026-06-20",
+      "time_slot": "morning",
+      "chicken_items": { "甘蔗煙燻雞": 1, "鹽水公雞": 1 },
+      "side_items": { "秘製黑胡椒蒜味毛豆": 2 },
+      "extra_items": {},
+      "subtotal": 1210,
+      "delivery_fee": 0,
+      "total_amount": 1210,
+      "payment_method": "jko"
+    }
+  },
+  {
+    "description": "加購品訂單：雞肉+加購品、下午時段、現金",
+    "orderData": {
+      "user_line_name": "李小華",
+      "user_phone": "0977123456",
+      "address": "鶯歌區陶瓷路88號",
+      "community": "",
+      "delivery_date": "2026-06-21",
+      "time_slot": "afternoon",
+      "chicken_items": { "玉米雞": 1 },
+      "side_items": {},
+      "extra_items": { "雞脖子": 5 },
+      "subtotal": 870,
+      "delivery_fee": 0,
+      "total_amount": 870,
+      "payment_method": "cash"
+    }
+  },
+  {
+    "description": "多品項訂單：3種雞肉、2種小菜、上午時段、轉帳",
+    "orderData": {
+      "user_line_name": "張大胖",
+      "user_phone": "0966888888",
+      "address": "三峽安溪國中附近",
+      "community": "",
+      "delivery_date": "2026-06-22",
+      "time_slot": "morning",
+      "chicken_items": { "鹽水雞": 1, "甘蔗煙燻雞": 2, "玉米公雞": 1 },
+      "side_items": { "秘製麻辣雞胗": 1, "秘製麻油粉肝": 1 },
+      "extra_items": {},
+      "subtotal": 2040,
+      "delivery_fee": 0,
+      "total_amount": 2040,
+      "payment_method": "transfer"
+    }
+  },
+  {
+    "description": "老客戶現金訂單：訂單>1000但為老客戶、可選現金",
+    "orderData": {
+      "user_line_name": "林先生",
+      "user_phone": "0933222111",
+      "address": "北大特區大德路",
+      "community": "華悅社區",
+      "delivery_date": "2026-06-23",
+      "time_slot": "afternoon",
+      "chicken_items": { "土雞": 1 },
+      "side_items": { "秘製煙燻無骨鳳爪": 2, "秘製黑胡椒蒜味毛豆": 1 },
+      "extra_items": { "手工特製蔥鹽醬": 1 },
+      "subtotal": 1045,
+      "delivery_fee": 0,
+      "total_amount": 1045,
+      "payment_method": "cash"
+    }
+  }
+]

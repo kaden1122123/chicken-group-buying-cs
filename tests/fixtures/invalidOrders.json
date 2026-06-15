@@ -1,0 +1,78 @@
+[
+  {
+    "description": "電話格式錯誤：非09開頭",
+    "field": "phone",
+    "input": "0881234567",
+    "expectedError": "電話格式有誤，請重新填寫（09開頭10位數）"
+  },
+  {
+    "description": "電話格式錯誤：不足10位",
+    "field": "phone",
+    "input": "091234567",
+    "expectedError": "電話格式有誤，請重新填寫（09開頭10位數）"
+  },
+  {
+    "description": "電話格式錯誤：超過10位",
+    "field": "phone",
+    "input": "09123456789",
+    "expectedError": "電話格式有誤，請重新填寫（09開頭10位數）"
+  },
+  {
+    "description": "地址超範圍：大溪方向",
+    "field": "address",
+    "input": "大溪區三元街123號",
+    "expectedError": "不好意思，您的地址超出配送範圍，已轉交人工處理。"
+  },
+  {
+    "description": "地址超範圍：新店方向",
+    "field": "address",
+    "input": "新店區北新路200號",
+    "expectedError": "不好意思，您的地址超出配送範圍，已轉交人工處理。"
+  },
+  {
+    "description": "品項不存在：客戶亂輸入",
+    "field": "menu",
+    "input": "珍珠奶茶5杯",
+    "expectedError": "不好意思，請確認品項名稱，我們沒有這個品項喔。"
+  },
+  {
+    "description": "品項不存在：拼錯字",
+    "field": "menu",
+    "input": "鹽水雞肉2",
+    "expectedError": "不好意思，請確認品項名稱，我們沒有這個品項喔。"
+  },
+  {
+    "description": "時段無效：非上午/下午",
+    "field": "timeSlot",
+    "input": "晚上8點",
+    "expectedError": "不好意思，目前僅提供上午（10-12點）和下午（16-18點）兩個時段。"
+  },
+  {
+    "description": "新客戶>1000元選現金",
+    "field": "paymentMethod",
+    "input": "現金",
+    "totalAmount": 1500,
+    "isReturningCustomer": false,
+    "expectedError": "首次訂購超過 NT$1,000，需要使用轉帳、街口支付或LINE Pay喔。"
+  },
+  {
+    "description": "新客戶<=1000元選現金（有效）",
+    "field": "paymentMethod",
+    "input": "現金",
+    "totalAmount": 800,
+    "isReturningCustomer": false,
+    "expectedValid": true
+  },
+  {
+    "description": "時段在允許範圍內但格式特殊：上午",
+    "field": "timeSlot",
+    "input": "上午",
+    "expectedValid": true
+  },
+  {
+    "description": "時段在允許範圍內但格式特殊：下午",
+    "field": "timeSlot",
+    "input": "下午",
+    "expectedValid": true
+  }
+]

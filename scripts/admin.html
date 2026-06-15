@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>雞味研究所 — 管理員後台</title>
+  <style>
+    body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; margin: 20px; background: #f5f5f5; }
+    h1 { color: #333; }
+    h2 { color: #555; margin-top: 30px; border-bottom: 2px solid #4caf50; padding-bottom: 8px; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 20px 0; }
+    label { display: block; margin: 10px 0 5px; font-weight: 600; color: #333; }
+    textarea { width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 14px; box-sizing: border-box; }
+    input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+    button { background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px; }
+    button:hover { background: #45a049; }
+    button.danger { background: #f44336; }
+    .meta { color: #999; font-size: 12px; }
+    .alert { padding: 12px; border-radius: 4px; margin: 10px 0; }
+    .alert.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .alert.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+  </style>
+</head>
+<body>
+  <h1>🐔 雞味研究所 — 管理員後台</h1>
+  <p class="meta">
+    Tenant: <span id="tenant">載入中...</span> |
+    <a href="/">← 回儀表板</a>
+  </p>
+
+  <div id="alert"></div>
+
+  <div class="card">
+    <h2>📅 開團日期（open_dates）</h2>
+    <p class="meta">每行一個日期（YYYY-MM-DD 格式）</p>
+    <label>目前清單：</label>
+    <textarea id="open-dates" placeholder="2026-06-16\n2026-06-18\n2026-06-23"></textarea>
+    <br>
+    <button onclick="saveOpenDates()">💾 儲存開團日期</button>
+    <button class="danger" onclick="if(confirm('確定重置為空？')){ document.getElementById('open-dates').value=''; saveOpenDates(); }">🗑️ 清空</button>
+  </div>
+
+  <div class="card">
+    <h2>🚫 忽略關鍵字（ignored_keywords）</h2>
+    <p class="meta">每行一個關鍵字（LINE Bot 收到這些關鍵字時不轉發給 LLM）</p>
+    <label>目前清單：</label>
+    <textarea id="ignored-keywords" placeholder="菜單\n常見問題\n我要訂購"></textarea>
+    <br>
+    <button onclick="saveIgnoredKeywords()">💾 儲存忽略關鍵字</button>
+  </div>
+
+  <div class="card">
+    <h2>💳 付款方式（唯讀）</h2>
+    <p class="meta">付款方式的 KV 已由 Worker 管理（wrangler kv key put）。如需變更，請在終端機執行 wrangler 指令。</p>
+    <pre id="payment-info" style="background: #f9f9f9; padding: 10px; border-radius: 4px;">載入中...</pre>
+  </div>
+
+  <div class="card">
+    <h2>📖 完整 Config（唯讀）</h2>
+    <pre id="full-config" style="background: #f9f9f9; padding: 10px; border-radius: 4px; max-height: 400px; overflow: auto;">載入中...</pre>
+  </div>
+
+<script>
+const alertEl = document.getElementById('alert');
+const tenantEl = document.getElementById('tenant');
+const openDatesEl = document.getElementById('open-dates');
+const ignoredKeywordsEl = document.getElementById('ignored-keywords');
+const fullConfigEl = document.getElementById('full-config');
+
+function showAlert(message, type) {
+  alertEl.innerHTML = `<div class="alert ${type}">${message}</div>`;
+  setTimeout(() => { alertEl.innerHTML = ''; }, 5000);
+}
+
+async function loadConfig() {
+  const res = await fetch('/api/config', { credentials: 'include' });
+  if (!res.ok) {
+    showAlert(`載入失敗: ${res.status}`, 'error');
+    return;
+  }
+  const data = await res.json();
+  tenantEl.textContent = data.tenant;
+
+  // 開團日期
+  if (Array.isArray(data.config.open_dates)) {
+    openDatesEl.value = data.config.open_dates.join('\n');
+  }
+
+  // 忽略關鍵字
+  if (Array.isArray(data.config.ignored_keywords)) {
+    ignoredKeywordsEl.value = data.config.ignored_keywords.join('\n');
+  }
+
+  // 完整 config
+  fullConfigEl.textContent = JSON.stringify(data.config, null, 2);
+
+  // 付款資訊
+  const payment = data.config.official?.bank_account || '（未設定）';
+  document.getElementById('payment-info').textContent = `銀行帳戶：${payment}`;
+}
+
+async function saveOpenDates() {
+  const dates = openDatesEl.value.split('\n').map(s => s.trim()).filter(s => s);
+  // 驗證格式
+  for (const d of dates) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+      showAlert(`格式錯誤: ${d}（必須是 YYYY-MM-DD）`, 'error');
+      return;
+    }
+  }
+  const res = await fetch('/api/config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ open_dates: dates }),
+  });
+  const data = await res.json();
+  if (data.success) {
+    showAlert('✅ 開團日期已更新', 'success');
+    loadConfig();
+  } else {
+    showAlert('❌ 更新失敗: ' + (data.error || '未知錯誤'), 'error');
+  }
+}
+
+async function saveIgnoredKeywords() {
+  const keywords = ignoredKeywordsEl.value.split('\n').map(s => s.trim()).filter(s => s);
+  const res = await fetch('/api/config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ ignored_keywords: keywords }),
+  });
+  const data = await res.json();
+  if (data.success) {
+    showAlert('✅ 忽略關鍵字已更新', 'success');
+    loadConfig();
+  } else {
+    showAlert('❌ 更新失敗: ' + (data.error || '未知錯誤'), 'error');
+  }
+}
+
+loadConfig();
+</script>
+</body>
+</html>

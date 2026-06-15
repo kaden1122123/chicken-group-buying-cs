@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>chicken 儀表板</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; margin: 20px; background: #f5f5f5; }
+    h1 { color: #333; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 20px 0; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .card h3 { margin: 0 0 8px 0; color: #666; font-size: 14px; }
+    .card .value { font-size: 32px; font-weight: bold; color: #333; }
+    .card .unit { font-size: 14px; color: #999; }
+    .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 16px; margin: 20px 0; }
+    .chart-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; background: white; margin-top: 16px; }
+    th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: #f9f9f9; font-weight: 600; }
+    .meta { color: #999; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>🐔 chicken 儀表板</h1>
+  <p class="meta">最後更新：2026/6/14 下午2:18:48</p>
+
+  <div class="cards">
+    <div class="card">
+      <h3>總訂單數</h3>
+      <div class="value">21</div>
+    </div>
+    <div class="card">
+      <h3>總營收</h3>
+      <div class="value">NT$0</div>
+    </div>
+    <div class="card">
+      <h3>平均客單價</h3>
+      <div class="value">NT$0</div>
+    </div>
+    <div class="card">
+      <h3>唯一客戶數</h3>
+      <div class="value">0</div>
+    </div>
+    <div class="card">
+      <h3>新客</h3>
+      <div class="value">0</div>
+      <div class="unit">（訂單數 = 1）</div>
+    </div>
+    <div class="card">
+      <h3>老客</h3>
+      <div class="value">0</div>
+      <div class="unit">（訂單數 > 1）</div>
+    </div>
+  </div>
+
+  <div class="charts">
+    <div class="chart-box">
+      <h3>每日訂單數趨勢</h3>
+      <canvas id="dateChart"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>訂單狀態分佈</h3>
+      <canvas id="statusChart"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>熱門品項（Top 10）</h3>
+      <canvas id="itemChart"></canvas>
+    </div>
+  </div>
+
+  <h2>最近 20 筆訂單</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>訂單 ID</th>
+        <th>配送日</th>
+        <th>客戶</th>
+        <th>品項</th>
+        <th>金額</th>
+        <th>狀態</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+        <tr>
+          <td>PENDING-1781333917366</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333896341</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333875038</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333829248</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333818233</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333804443</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333788648</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333765420</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333748793</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333741132</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333731754</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333680976</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333664008</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333615162</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333593294</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333573651</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333518357</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333447624</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333414875</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+        <tr>
+          <td>PENDING-1781333379344</td>
+          <td>-</td>
+          <td>Unknown</td>
+          <td>{}</td>
+          <td>NT$0</td>
+          <td>pending_handoff</td>
+        </tr>
+      
+    </tbody>
+  </table>
+
+  <script>
+    new Chart(document.getElementById('dateChart'), {
+      type: 'line',
+      data: {
+        labels: ["2026-06-13"],
+        datasets: [{
+          label: '訂單數',
+          data: [21],
+          borderColor: '#4caf50',
+          tension: 0.1,
+        }],
+      },
+    });
+
+    new Chart(document.getElementById('statusChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ["pending_handoff"],
+        datasets: [{
+          data: [21],
+          backgroundColor: ['#4caf50', '#2196f3', '#ff9800', '#f44336', '#9c27b0'],
+        }],
+      },
+    });
+
+    new Chart(document.getElementById('itemChart'), {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [{
+          label: '數量',
+          data: [],
+          backgroundColor: '#2196f3',
+        }],
+      },
+      options: { indexAxis: 'y' },
+    });
+  </script>
+</body>
+</html>

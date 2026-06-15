@@ -1,0 +1,19 @@
+{
+  "name": "chicken-group-buying-customer-service",
+  "version": "1.0.0",
+  "description": "雞肉團購智能客服 — Phase 1 核心功能",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node tests/rules.test.js && node tests/states.test.js && node tests/handoff.test.js && node tests/security.test.js",
+    "test:rules": "node tests/rules.test.js",
+    "test:states": "node tests/states.test.js",
+    "test:handoff": "node tests/handoff.test.js",
+    "test:security": "node tests/security.test.js"
+  },
+  "keywords": ["line-bot", "customer-service", "chicken"],
+  "author": "Hermes + brtclaw",
+  "license": "MIT",
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}
