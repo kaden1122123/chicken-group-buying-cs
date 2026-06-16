@@ -119,9 +119,11 @@ function updateOrder(orderId, updates) {
     const headers = lines[headerIndex].split(',');
     const dataLines = lines.slice(headerIndex + 1);
 
+    let found = false;
     const updatedLines = dataLines.map((line) => {
       const cols = parseCSVLine(line);
       if (cols[0] === orderId) {
+        found = true;
         // 更新欄位
         for (const [key, value] of Object.entries(updates)) {
           const idx = headers.indexOf(key);
@@ -133,6 +135,10 @@ function updateOrder(orderId, updates) {
       }
       return cols.join(',');
     });
+
+    if (!found) {
+      return false;  // 找不到對應的 orderId
+    }
 
     const output = [CSV_HEADER_LINE, ...updatedLines].join('\n') + '\n';
     fs.writeFileSync(csvPath, output, 'utf8');
