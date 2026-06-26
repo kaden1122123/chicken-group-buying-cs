@@ -313,6 +313,16 @@ function getHandoffConfig() {
 }
 
 /**
+ * 取得轉真人時的客戶回覆訊息
+ * 從 config.handoff.customer_reply 讀取
+ * @returns {string} - 回覆文字（可能為空字串）
+ */
+function getHandoffCustomerReply() {
+  const handoff = configYaml.handoff || {};
+  return typeof handoff.customer_reply === 'string' ? handoff.customer_reply : '';
+}
+
+/**
  * 取得白名單（allowed_line_users）
  * 從 config.security.allowed_line_users 讀取
  * @returns {string[]} - LINE user ID 陣列
@@ -342,6 +352,7 @@ module.exports = {
   getOfficialInfo,
   getDeliveryRules,
   getHandoffConfig,
+  getHandoffCustomerReply,
   getAllowedLineUsers,
   getBlockOthers,
   // 載入狀態

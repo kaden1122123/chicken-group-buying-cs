@@ -7,6 +7,10 @@ const { generatePendingOrderId } = require('../order/orderIdGenerator');
 const { shouldTransfer } = require('../handoff/transferRules');
 const { formatLINENotification } = require('../handoff/notificationFormat');
 const { notifyHubert } = require('../handoff/notifier');
+const { getHandoffCustomerReply } = require('../config');
+
+// 預設轉真人回覆（若 config 沒設定時使用）
+const DEFAULT_HANDOFF_CUSTOMER_REPLY = '目前老闆再忙，後續會再回覆您，請留意 LINE 通知，謝謝！';
 
 /**
  * HUMAN_HANDOFF 狀態處理
@@ -62,8 +66,9 @@ async function handleHandoff(userId, userMessage, orderData = {}, userProfile = 
     handoffOrderData.staff_notes = 'CSV寫入失敗，請人工確認';
   }
 
-  // Step 2: 回覆制式話術
-  const customerReply = textReply('目前老闆再忙，後續會再回覆您，請留意 LINE 通知，謝謝！');
+  // Step 2: 回覆制式話術（從 config 讀取；若 config 未設定則用預設）
+  const replyText = getHandoffCustomerReply() || DEFAULT_HANDOFF_CUSTOMER_REPLY;
+  const customerReply = textReply(replyText);
 
   // Step 3: LINE Push 通知 Hubert（非同步）
   const notification = formatLINENotification(handoffOrderData, userMessage);
