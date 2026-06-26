@@ -27,14 +27,17 @@
 ### 規劃與決策
 - [SOP.md](./SOP.md) — 完整標準作業流程
 - [MULTI_TENANT_DESIGN.md](./MULTI_TENANT_DESIGN.md) — 多租戶設計
+- [TODO_2026-06-26.md](./TODO_2026-06-26.md) — 2026-06-26 評估與修整 TODO（14 個問題、利弊分析、決策表）|
 
 ### 進度與日誌
 - [../PHASE1_PROGRESS.md](../PHASE1_PROGRESS.md) — Phase 1 進度
 - [DAILY_SUMMARY_2026-06-12.md](./DAILY_SUMMARY_2026-06-12.md) — 2026-06-12 日報
+- [DAILY_SUMMARY_2026-06-26.md](./DAILY_SUMMARY_2026-06-26.md) — 2026-06-26 大規模修整日（audit + P0~P2 修整 + prompt 改動）|
 
 ### 規格與審查
 - [../SPEC.md](../SPEC.md) — 完整規格
 - [../REVIEW_GUIDE.md](../REVIEW_GUIDE.md) — 審查指南
+- [production-prompt/](./production-prompt/) — Production prompt 版本控制（雞肉客服 SOUL.md + main_idea.md）|
 
 ### 歷史 Review（archive）
 - [archive/REVIEW_2026-06-14.md](./archive/REVIEW_2026-06-14.md) — 初次 Review
