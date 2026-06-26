@@ -2,145 +2,457 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>雞味研究所 — 管理員後台</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>雞味客服 — 管理後台</title>
   <style>
-    body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; margin: 20px; background: #f5f5f5; }
-    h1 { color: #333; }
-    h2 { color: #555; margin-top: 30px; border-bottom: 2px solid #4caf50; padding-bottom: 8px; }
-    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 20px 0; }
-    label { display: block; margin: 10px 0 5px; font-weight: 600; color: #333; }
-    textarea { width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 14px; box-sizing: border-box; }
-    input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-    button { background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px; }
-    button:hover { background: #45a049; }
-    button.danger { background: #f44336; }
-    .meta { color: #999; font-size: 12px; }
-    .alert { padding: 12px; border-radius: 4px; margin: 10px 0; }
-    .alert.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    .alert.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    .alert.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    :root {
+      --primary: #f59e0b;
+      --primary-dark: #d97706;
+      --bg: #f9fafb;
+      --card-bg: #ffffff;
+      --text: #1f2937;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --success: #10b981;
+      --danger: #ef4444;
+      --readonly-bg: #f3f4f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, "Microsoft JhengHei", "PingFang TC", sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 24px 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    header .meta {
+      margin-top: 4px;
+      opacity: 0.9;
+      font-size: 14px;
+    }
+    .breadcrumb {
+      margin: 12px 0 0 0;
+      font-size: 14px;
+    }
+    .breadcrumb a {
+      color: rgba(255,255,255,0.9);
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(255,255,255,0.5);
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .card.readonly {
+      background: var(--readonly-bg);
+    }
+    .card h2 {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+      color: var(--text);
+      border-left: 4px solid var(--primary);
+      padding-left: 12px;
+    }
+    .card.readonly h2 {
+      border-left-color: var(--text-muted);
+    }
+    .card .desc {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin: 0 0 16px 0;
+    }
+    .form-row {
+      margin-bottom: 16px;
+    }
+    .form-row:last-child {
+      margin-bottom: 0;
+    }
+    .form-row label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    .form-row .hint {
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    textarea, input[type=text] {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+      background: white;
+    }
+    textarea[readonly], input[readonly] {
+      background: var(--readonly-bg);
+      cursor: not-allowed;
+    }
+    textarea:focus, input[type=text]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button.primary {
+      background: var(--primary);
+      color: white;
+    }
+    button.primary:hover { background: var(--primary-dark); }
+    button.primary:disabled {
+      background: var(--text-muted);
+      cursor: not-allowed;
+    }
+    button.secondary {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    button.secondary:hover { background: var(--bg); }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 6px;
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 1000;
+      max-width: 90%;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+    .toast.info { background: var(--text); }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 600px) {
+      .grid-2, .grid-4 { grid-template-columns: 1fr; }
+      header { padding: 16px 12px; }
+      .container { padding: 12px; }
+      .card { padding: 16px; }
+    }
+    .status-bar {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      background: rgba(245, 158, 11, 0.08);
+      border-left: 3px solid var(--primary);
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .status-bar .label {
+      color: var(--text-muted);
+    }
+    .status-bar .value {
+      font-weight: 600;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+    .badge.readonly {
+      background: var(--text-muted);
+      color: white;
+    }
   </style>
 </head>
 <body>
-  <h1>🐔 雞味研究所 — 管理員後台</h1>
-  <p class="meta">
-    Tenant: <span id="tenant">載入中...</span> |
-    <a href="/">← 回儀表板</a>
-  </p>
+  <header>
+    <div class="container">
+      <h1>🐔 雞味客服管理後台</h1>
+      <div class="meta">Tenant: <span id="tenant-name">載入中...</span></div>
+      <div class="breadcrumb"><a href="/">← 返回儀表板</a></div>
+    </div>
+  </header>
 
-  <div id="alert"></div>
+  <main class="container">
+    <div class="status-bar" id="status-bar">
+      <span class="label">狀態：</span>
+      <span class="value" id="status-text">讀取中...</span>
+    </div>
 
-  <div class="card">
-    <h2>📅 開團日期（open_dates）</h2>
-    <p class="meta">每行一個日期（YYYY-MM-DD 格式）</p>
-    <label>目前清單：</label>
-    <textarea id="open-dates" placeholder="2026-06-16\n2026-06-18\n2026-06-23"></textarea>
-    <br>
-    <button onclick="saveOpenDates()">💾 儲存開團日期</button>
-    <button class="danger" onclick="if(confirm('確定重置為空？')){ document.getElementById('open-dates').value=''; saveOpenDates(); }">🗑️ 清空</button>
-  </div>
+    <!-- 開團日期 -->
+    <div class="card">
+      <h2>📅 開團日期</h2>
+      <p class="desc">每行一個日期（YYYY-MM-DD）。客戶訂單只接受清單內日期。</p>
+      <div class="form-row">
+        <label for="open-dates">Open Dates</label>
+        <div class="hint">範例：2026-07-01</div>
+        <textarea id="open-dates" rows="6" placeholder="2026-07-01&#10;2026-07-03"></textarea>
+      </div>
+    </div>
 
-  <div class="card">
-    <h2>🚫 忽略關鍵字（ignored_keywords）</h2>
-    <p class="meta">每行一個關鍵字（LINE Bot 收到這些關鍵字時不轉發給 LLM）</p>
-    <label>目前清單：</label>
-    <textarea id="ignored-keywords" placeholder="菜單\n常見問題\n我要訂購"></textarea>
-    <br>
-    <button onclick="saveIgnoredKeywords()">💾 儲存忽略關鍵字</button>
-  </div>
+    <!-- 忽略關鍵字 -->
+    <div class="card">
+      <h2>🚫 忽略關鍵字</h2>
+      <p class="desc">客戶輸入完全等於這些字串時，系統不會回覆（LINE 圖文選單已回覆）。</p>
+      <div class="form-row">
+        <label for="ignored-keywords">Ignored Keywords</label>
+        <div class="hint">範例：菜單、常見問題、我要訂購</div>
+        <textarea id="ignored-keywords" rows="6" placeholder="菜單&#10;常見問題&#10;我要訂購"></textarea>
+      </div>
+    </div>
 
-  <div class="card">
-    <h2>💳 付款方式（唯讀）</h2>
-    <p class="meta">付款方式的 KV 已由 Worker 管理（wrangler kv key put）。如需變更，請在終端機執行 wrangler 指令。</p>
-    <pre id="payment-info" style="background: #f9f9f9; padding: 10px; border-radius: 4px;">載入中...</pre>
-  </div>
+    <!-- 配送範圍 -->
+    <div class="card">
+      <h2>🚚 配送範圍（areas）</h2>
+      <p class="desc">客戶地址包含這些關鍵字視為可配送；包含拒絕清單則轉人工。</p>
+      <div class="form-row">
+        <label for="delivery-allowed">允許區域（每行一個關鍵字）</label>
+        <textarea id="delivery-allowed" rows="4" placeholder="三鶯生活圈"></textarea>
+      </div>
+      <div class="form-row">
+        <label for="delivery-denied">拒絕區域（每行一個關鍵字）</label>
+        <textarea id="delivery-denied" rows="3" placeholder="非三鶯生活圈"></textarea>
+      </div>
+      <div class="form-row">
+        <span class="hint">⚠️ 注意：<code>delivery.hours</code>、<code>delivery.minimum_order</code>、<code>delivery.areas</code> 一起管理。目前僅 areas 可在後台編輯，其他欄位請直接編輯 <code>config/tenants/{tenant}.yaml</code>。</span>
+      </div>
+    </div>
 
-  <div class="card">
-    <h2>📖 完整 Config（唯讀）</h2>
-    <pre id="full-config" style="background: #f9f9f9; padding: 10px; border-radius: 4px; max-height: 400px; overflow: auto;">載入中...</pre>
-  </div>
+    <!-- 收單時間（唯讀） -->
+    <div class="card readonly">
+      <h2>⏰ 收單時間 <span class="badge readonly">唯讀</span></h2>
+      <p class="desc">配送前一日 13:00 收單；14:00 後雞肉不可追加；18:00 後小菜不可追加。</p>
+      <div class="form-row">
+        <div class="grid-4">
+          <div>
+            <label for="cutoff-order">對外收單</label>
+            <input type="text" id="cutoff-order" readonly placeholder="13:00">
+          </div>
+          <div>
+            <label for="cutoff-final">最終確認</label>
+            <input type="text" id="cutoff-final" readonly placeholder="14:00">
+          </div>
+          <div>
+            <label for="cutoff-chicken">雞肉追加</label>
+            <input type="text" id="cutoff-chicken" readonly placeholder="14:00">
+          </div>
+          <div>
+            <label for="cutoff-side">小菜追加</label>
+            <input type="text" id="cutoff-side" readonly placeholder="18:00">
+          </div>
+        </div>
+        <div class="hint">📝 後台暫不支援編輯，請手動修改 <code>config/tenants/{tenant}.yaml</code> 的 <code>cutoff</code> 區塊。</div>
+      </div>
+    </div>
 
-<script>
-const alertEl = document.getElementById('alert');
-const tenantEl = document.getElementById('tenant');
-const openDatesEl = document.getElementById('open-dates');
-const ignoredKeywordsEl = document.getElementById('ignored-keywords');
-const fullConfigEl = document.getElementById('full-config');
+    <!-- 轉真人訊息（唯讀） -->
+    <div class="card readonly">
+      <h2>🤝 轉真人訊息 <span class="badge readonly">唯讀</span></h2>
+      <p class="desc">客戶被轉接給 Hubert 時看到的制式回覆文字。</p>
+      <div class="form-row">
+        <label for="handoff-reply">Customer Reply</label>
+        <textarea id="handoff-reply" rows="3" readonly placeholder="感謝您的提問！..."></textarea>
+        <div class="hint">📝 後台暫不支援編輯，請手動修改 <code>config/tenants/{tenant}.yaml</code> 的 <code>handoff.customer_reply</code> 欄位。</div>
+      </div>
+    </div>
 
-function showAlert(message, type) {
-  alertEl.innerHTML = `<div class="alert ${type}">${message}</div>`;
-  setTimeout(() => { alertEl.innerHTML = ''; }, 5000);
-}
+    <!-- 儲存 -->
+    <div class="card">
+      <h2>💾 儲存</h2>
+      <div class="actions">
+        <button class="primary" id="save-btn" onclick="saveConfig()">💾 儲存所有變更</button>
+        <button class="secondary" onclick="reloadConfig()">🔄 重新載入</button>
+      </div>
+      <div class="hint" style="margin-top: 12px;">
+        目前可編輯：<code>open_dates</code>、<code>ignored_keywords</code>、<code>delivery.areas</code>
+      </div>
+    </div>
+  </main>
 
-async function loadConfig() {
-  const res = await fetch('/api/config', { credentials: 'include' });
-  if (!res.ok) {
-    showAlert(`載入失敗: ${res.status}`, 'error');
-    return;
-  }
-  const data = await res.json();
-  tenantEl.textContent = data.tenant;
+  <div class="toast" id="toast"></div>
 
-  // 開團日期
-  if (Array.isArray(data.config.open_dates)) {
-    openDatesEl.value = data.config.open_dates.join('\n');
-  }
-
-  // 忽略關鍵字
-  if (Array.isArray(data.config.ignored_keywords)) {
-    ignoredKeywordsEl.value = data.config.ignored_keywords.join('\n');
-  }
-
-  // 完整 config
-  fullConfigEl.textContent = JSON.stringify(data.config, null, 2);
-
-  // 付款資訊
-  const payment = data.config.official?.bank_account || '（未設定）';
-  document.getElementById('payment-info').textContent = `銀行帳戶：${payment}`;
-}
-
-async function saveOpenDates() {
-  const dates = openDatesEl.value.split('\n').map(s => s.trim()).filter(s => s);
-  // 驗證格式
-  for (const d of dates) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) {
-      showAlert(`格式錯誤: ${d}（必須是 YYYY-MM-DD）`, 'error');
-      return;
+  <script>
+    // ─── 工具函數 ───
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => {
+        toast.className = `toast ${type}`;
+      }, 3000);
     }
-  }
-  const res = await fetch('/api/config', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ open_dates: dates }),
-  });
-  const data = await res.json();
-  if (data.success) {
-    showAlert('✅ 開團日期已更新', 'success');
-    loadConfig();
-  } else {
-    showAlert('❌ 更新失敗: ' + (data.error || '未知錯誤'), 'error');
-  }
-}
 
-async function saveIgnoredKeywords() {
-  const keywords = ignoredKeywordsEl.value.split('\n').map(s => s.trim()).filter(s => s);
-  const res = await fetch('/api/config', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ ignored_keywords: keywords }),
-  });
-  const data = await res.json();
-  if (data.success) {
-    showAlert('✅ 忽略關鍵字已更新', 'success');
-    loadConfig();
-  } else {
-    showAlert('❌ 更新失敗: ' + (data.error || '未知錯誤'), 'error');
-  }
-}
+    function setStatus(text, isError = false) {
+      const el = document.getElementById('status-text');
+      el.textContent = text;
+      el.style.color = isError ? 'var(--danger)' : 'var(--success)';
+    }
 
-loadConfig();
-</script>
+    // ─── API 呼叫 ───
+    async function loadConfig() {
+      setStatus('讀取中...');
+      try {
+        const res = await fetch('/api/config', { credentials: 'include' });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        const data = await res.json();
+        renderConfig(data);
+        setStatus(`已載入（${new Date().toLocaleTimeString('zh-TW')}）`);
+        document.getElementById('tenant-name').textContent = data.tenant || 'chicken';
+        return data;
+      } catch (e) {
+        setStatus(`讀取失敗：${e.message}`, true);
+        showToast(`讀取失敗：${e.message}`, 'error');
+        return null;
+      }
+    }
+
+    function renderConfig(data) {
+      const cfg = data.config || {};
+
+      // 開團日期
+      document.getElementById('open-dates').value = (cfg.open_dates || []).join('\n');
+
+      // 忽略關鍵字
+      document.getElementById('ignored-keywords').value = (cfg.ignored_keywords || []).join('\n');
+
+      // 配送範圍
+      const delivery = cfg.delivery || {};
+      const areas = delivery.areas || {};
+      document.getElementById('delivery-allowed').value = (areas.allowed || []).join('\n');
+      document.getElementById('delivery-denied').value = (areas.denied || []).join('\n');
+
+      // 收單時間（唯讀）
+      const cutoff = cfg.cutoff || {};
+      document.getElementById('cutoff-order').value = cutoff.order_close_time || '13:00';
+      document.getElementById('cutoff-final').value = cutoff.final_confirm_time || '14:00';
+      document.getElementById('cutoff-chicken').value = cutoff.chicken_modify_cutoff || '14:00';
+      document.getElementById('cutoff-side').value = cutoff.side_dish_cutoff || '18:00';
+
+      // 轉真人訊息（唯讀）
+      const handoff = cfg.handoff || {};
+      document.getElementById('handoff-reply').value = handoff.customer_reply || '';
+    }
+
+    function parseMultiline(text) {
+      return text
+        .split('\n')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+    }
+
+    async function saveConfig() {
+      const btn = document.getElementById('save-btn');
+      btn.disabled = true;
+      btn.textContent = '⏳ 儲存中...';
+
+      try {
+        // 驗證日期格式
+        const openDates = parseMultiline(document.getElementById('open-dates').value);
+        const invalidDates = openDates.filter((d) => !/^\d{4}-\d{2}-\d{2}$/.test(d));
+        if (invalidDates.length > 0) {
+          throw new Error(`日期格式錯誤：${invalidDates.join(', ')}（應為 YYYY-MM-DD）`);
+        }
+
+        // 組裝 payload（只送 dashboard-server 已支援的 3 個欄位）
+        const payload = {
+          open_dates: openDates,
+          ignored_keywords: parseMultiline(document.getElementById('ignored-keywords').value),
+          delivery: {
+            areas: {
+              allowed: parseMultiline(document.getElementById('delivery-allowed').value),
+              denied: parseMultiline(document.getElementById('delivery-denied').value),
+            },
+          },
+        };
+
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`HTTP ${res.status}: ${errText}`);
+        }
+
+        const data = await res.json();
+        showToast('✅ 儲存成功', 'success');
+        setStatus(`已儲存（${new Date().toLocaleTimeString('zh-TW')}）`);
+        renderConfig(data);
+      } catch (e) {
+        showToast(`❌ 儲存失敗：${e.message}`, 'error');
+        setStatus(`儲存失敗：${e.message}`, true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 儲存所有變更';
+      }
+    }
+
+    async function reloadConfig() {
+      showToast('重新載入中...', 'info');
+      await loadConfig();
+      showToast('✅ 已重新載入', 'success');
+    }
+
+    // ─── 啟動 ───
+    document.addEventListener('DOMContentLoaded', () => {
+      loadConfig();
+    });
+  </script>
 </body>
 </html>
