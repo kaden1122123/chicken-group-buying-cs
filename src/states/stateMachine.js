@@ -90,14 +90,6 @@ function transition(userId, event, data = {}) {
           newState = STATES.REASK_INFO;
           updatedContext = { ...updatedContext, awaitingField: fieldName, lastError: data.errorMessage };
         }
-      } else if (event === 'customer_reply') {
-        // 客戶回覆確認意圖
-        if (data.isConfirm) {
-          newState = STATES.CONFIRMING;
-        } else if (data.isCancel) {
-          newState = STATES.IDLE;
-          updatedOrderData = {};
-        }
       }
       break;
 

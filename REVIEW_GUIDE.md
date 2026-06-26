@@ -78,13 +78,23 @@ IDLE → AWAITING_INFO → CONFIRMING → AWAITING_PAYMENT → COMPLETED
 
 ---
 
-### ✅ 4. 訂單 CSV Schema
+### ✅ 4. 訂單 CSV Schema（以 `csvWriter.js` 為 single source of truth）
 
-**欄位：** `order_id, order_date, customer_name, phone, address, community, items, quantities, total_amount, time_slot, payment_method, payment_status, order_status, customer_note, created_at, handoff_type, handoff_log`
+**27 欄位（2026-06-26 更新）：**
+```
+order_id, created_at, user_line_name, user_phone, address, community,
+delivery_date, time_slot, chicken_items, side_items, extra_items,
+chicken_count, side_count, total_boxes, subtotal, delivery_fee, total_amount,
+payment_method, payment_status, order_status, staff_notes, customer_notes,
+customer_tags, handoff_type, handoff_logged_at, handoff_resolved_at,
+source, intent_confirmed
+```
+
+> ⚠️ 本檔舊版寫 16 欄（`order_date, customer_name, items, quantities, customer_note, handoff_log` 等簡化版），已過時。以 `csvWriter.js` 為準。
 
 **驗證方式：**
 ```bash
-head -2 data/orders/orders_2026-06-12.csv
+head -1 data/orders/chicken/2026-06-13.csv
 ```
 
 ---

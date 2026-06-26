@@ -1,9 +1,42 @@
 # Phase 1 進度報告
 
-> 最後更新：2026-06-14 14:50
+> 最後更新：2026-06-26 15:00
 > 負責人：brtclaw（規劃 + 實作）
 > 最新文檔：[`docs/INDEX.md`](./docs/INDEX.md)
 > 完整規劃：[`docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md`](./docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md)
+> **2026-06-26 評估與修整**：見 [docs/TODO_2026-06-26.md](./docs/TODO_2026-06-26.md)
+
+---
+
+## 2026-06-26 評估與 P0 修整
+
+### 評估發現（14 個問題）
+- 🔴 **P0-1**：addressRule 對「超出配送範圍」說謊（訊息說轉人工但實際沒有）
+- 🔴 **P0-2**：handoff 訊息寫死，沒讀 config.handoff.customer_reply
+- 🔴 **P0-3**：stateMachine transition 覆蓋已驗證的 trimmed 值
+- 🔴 **P0-4**：scripts/admin.html 不存在（/admin 路由 500）
+- 🔴 **P0-5**：`cognee_import.py` 是 placeholder（待業務決策）
+- 🟡 **P1-1~P1-9**：中等問題（文件對齊、hardcode、test script 等）
+- 🟢 **P2-1~P2-10**：輕微問題（dead code、redundant、文件矛盾）
+
+### P0 修整（全部完成 ✅）
+- ✅ **P0-1**：addressRule 加 `action: 'handoff_needed'` + index.js 真的呼叫 handleHandoff
+- ✅ **P0-2**：config.js 加 `getHandoffCustomerReply()` + handoff.js 改用
+- ✅ **P0-3**：index.js 傳 `fieldValue`（trimmed 值）給 transition
+- ✅ **P0-4**：建立 scripts/admin.html（vanilla JS + HTTP Basic Auth）
+
+### P1/P2 清理（進行中）
+- ✅ P1-5：package.json test script 分離 unit / integration
+- ✅ P1-7：INDEX.md / SOP.md / SESSION_BACKGROUND.md 測試套數統一為 11 套
+- ✅ P2-1：刪除 src/states/reaskInfo.js（dead code）
+- ✅ P2-3：刪除 stateMachine `customer_reply` event（dead code）
+- ✅ P2-7：刪除 data/orders/2026-12-31.csv（測試遺留）
+- ⏸ P1-1, P1-2, P1-3, P1-4, P1-6, P1-8, P1-9, P2-2, P2-4, P2-5, P2-8, P2-9, P2-10 留待下輪
+
+### 測試驗證（2026-06-26 15:00）
+- 11 套單元測試全綠（`npm test`）
+- 部署驗證：dashboard-server 啟動成功，5 個端點 HTTP 狀態正確
+- 新增 3 套測試：address-handoff.test.js, handoff-customer-reply.test.js, state-trimmed-value.test.js
 
 ---
 

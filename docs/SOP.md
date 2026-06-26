@@ -368,7 +368,7 @@ openclaw gateway restart
 1. **本系統是 OpenClaw 框架 + 雞肉客服 logic 的組合**
 2. **設計文件在 `docs/` 目錄**（MULTI_TENANT_DESIGN.md, SOP.md, REVIEW_*.md）
 3. **程式碼結構在 `src/`**（rules/states/handoff/order/utils/knowledge）
-4. **測試在 `tests/`**（8 套測試，70+ 案例）
+4. **測試在 `tests/`**（11 套單元測試 + 2 套整合測試，200+ 案例；2026-06-26 更新）
 
 ### 7.2 接手步驟
 
@@ -385,7 +385,8 @@ openclaw gateway restart
 
 完成這些任務證明你已準備好接手：
 
-- [ ] 跑全部 8 套測試，確認 0 failure
+- [ ] 跑 `npm test`，確認 11 套單元測試全綠（含 P0-1/P0-2/P0-3 新增 3 套）
+- [ ] 跑 `npm run test:api-server` 跟 `npm run test:dashboard-server`，確認整合測試全綠
 - [ ] 修改 `config/tenants/chicken.yaml` 的某個設定（例如品牌名稱），重啟後生效
 - [ ] 修改 `knowledge/tenants/chicken/01_product.md` 的某個品項價格，測試驗證邏輯生效
 - [ ] 模擬晚上 8 點客戶想訂今天配送，確認 validateDate 正確擋下

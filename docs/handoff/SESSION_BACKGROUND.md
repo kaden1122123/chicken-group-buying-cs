@@ -39,7 +39,7 @@ AI 客服「小雞」**不要主動提及 AI / 機器人 / 程式身份**。被�
 
 ### 目前部署狀態
 - Cloudflare Worker Version：190c15e1（含 postback 處理）
-- 9 套雞肉專案測試全綠（rules/handoff/security/states/date/config/whitelist/integration/dashboard-server）
+- 13 套雞肉專案測試全綠（11 套 tests/*.test.js + 1 套 scripts/dashboard-server-test.js + 1 套 scripts/api-server；含 P0 新增 3 套：address-handoff / handoff-customer-reply / state-trimmed-value）
 - 13 個 API Server 整合測試全綠
 - 雞肉 LINE webhook PID 1543 仍正常
 - GitHub 最新 commit：7e7b81f（問題筆記）
@@ -66,7 +66,7 @@ AI 客服「小雞」**不要主動提及 AI / 機器人 / 程式身份**。被�
   - `src/order/csvWriter.js`（含 updateOrder 404 fix）
   - `src/rules/dateRule.js`（含 getNextOpenDate / getNextOrderableOpenDate）
   - `src/rules/timeSlotRule.js`（含 validateTimeSlotWithDate）
-  - `tests/`（9 套）
+  - `tests/`（13 套：含 3 套 P0 新增）
   - `scripts/dashboard-server.js`（HTTP Basic Auth）
   - `scripts/api-server.js`（新訂單 API）
   - `scripts/admin.html`（管理後台 UI）

@@ -105,6 +105,11 @@ module.exports = {
   isConfirmReply,
   isCancelReply,
   isModifyIntent,
-  handleConfirming,
+  // P2-2: handleConfirming 是 dead code，未被 require。CONFIRMING 狀態處理在
+  // src/index.js 內 inline 實作（因 index.js 需整合 shouldTransfer → handleHandoff
+  // 路徑，跟 handleConfirming 的 buildCancelResult 走 IDLE 不一致）。
+  // 此處保留 handleConfirming 作為 alternative implementation reference，
+  // 供未來需要抽離時參考。
+  // buildConfirmationMessage 同上保留（供未來 confirming state 使用）。
   buildConfirmationMessage,
 };

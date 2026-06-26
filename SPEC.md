@@ -134,11 +134,13 @@ IF (訊息包含「取消」意圖) THEN
 **修正：** 移除 `userProfile.lineDisplayName` 的 `'Unknown'` fallback，改由 `lineProfileCache.js` 處理。
 
 ### CSV Schema（`csvWriter.js`）
+**27 欄位（2026-06-26 更新，與 csvWriter.js 完全對齊）：**
 ```
-user_line_name, user_phone, address, community, delivery_date, time_slot,
-chicken_items, side_items, extra_items, chicken_count, side_count, total_boxes,
-subtotal, delivery_fee, total_amount, payment_method, payment_status, order_status,
-staff_notes, customer_notes, customer_tags, handoff_type, handoff_logged_at, handoff_resolved_at,
+order_id, created_at, user_line_name, user_phone, address, community,
+delivery_date, time_slot, chicken_items, side_items, extra_items,
+chicken_count, side_count, total_boxes, subtotal, delivery_fee, total_amount,
+payment_method, payment_status, order_status, staff_notes, customer_notes,
+customer_tags, handoff_type, handoff_logged_at, handoff_resolved_at,
 source, intent_confirmed
 ```
 

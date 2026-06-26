@@ -47,7 +47,7 @@
 
 ```
 chicken-group-buying-customer-service/
-├── README.md                     # 專案入口
+├── MIGRATION_HISTORY.md          # 移轉記錄（原 README.md，記錄原位置與主位置鏡像關係）
 ├── SPEC.md                       # 完整規格
 ├── PHASE1_PROGRESS.md            # Phase 1 進度
 ├── REVIEW_GUIDE.md               # 審查指南
@@ -55,6 +55,7 @@ chicken-group-buying-customer-service/
 │   ├── INDEX.md                  # ← 你在這裡
 │   ├── SOP.md                    # 完整 SOP
 │   ├── MULTI_TENANT_DESIGN.md    # 多租戶設計
+│   ├── TODO_2026-06-26.md        # 2026-06-26 評估與修整 TODO
 │   ├── DAILY_SUMMARY_2026-06-12.md
 │   └── archive/                  # 歷史文檔
 ├── config/                       # 多租戶設定
@@ -62,12 +63,13 @@ chicken-group-buying-customer-service/
 │       └── chicken.yaml
 ├── knowledge/                    # 多租戶知識庫
 │   ├── base/                     # 向後相容
+│   ├── learned/                  # 學習記錄（空）
 │   └── tenants/
 │       └── chicken/
 ├── data/                         # 多租戶訂單
 │   └── orders/
 │       └── chicken/
-├── src/                          # 邏輯（共用）
+├── src/                          # 邏輯（設計驗證 + 測試對象，**不是 production runtime**）
 │   ├── config.js
 │   ├── knowledge/
 │   ├── order/
@@ -75,17 +77,24 @@ chicken-group-buying-customer-service/
 │   ├── states/
 │   ├── handoff/
 │   └── utils/
-├── tests/                        # 8 套測試
-│   ├── rules.test.js
-│   ├── handoff.test.js
-│   ├── security.test.js
-│   ├── states.test.js
-│   ├── date.test.js
-│   ├── config.test.js
-│   ├── whitelist.test.js
-│   └── integration.test.js
+├── tests/                        # 11 套單元測試 + 2 套整合測試
+│   ├── rules.test.js                  # 34+ 案例
+│   ├── states.test.js                  # 狀態機轉換
+│   ├── handoff.test.js                 # 14 種觸發條件
+│   ├── security.test.js                # SQL/Prompt injection 防禦
+│   ├── date.test.js                    # 12+ 時間邊界
+│   ├── config.test.js                  # YAML 載入 + ignored_keywords
+│   ├── whitelist.test.js               # 白名單機制
+│   ├── integration.test.js             # Worker 攔截 mirror
+│   ├── address-handoff.test.js         # P0-1：配送範圍觸發 handoff
+│   ├── handoff-customer-reply.test.js  # P0-2：customer_reply 讀 config
+│   └── state-trimmed-value.test.js     # P0-3：trimmed 值不被覆蓋
 ├── scripts/
-│   └── dashboard.js              # 儀表板生成器
+│   ├── api-server.js               # HTTP API
+│   ├── dashboard.js                # 儀表板生成器
+│   ├── dashboard-server.js         # 儀表板 + admin 伺服器
+│   ├── admin.html                  # 管理後台 UI（P0-4）
+│   └── dashboard-server-test.js    # 整合測試
 └── dashboard.html                # 儀表板輸出
 ```
 
@@ -99,4 +108,5 @@ chicken-group-buying-customer-service/
 
 ---
 
-_最後更新：2026-06-14_
+_最後更新：2026-06-26_
+_最近評估：見 [TODO_2026-06-26.md](./TODO_2026-06-26.md)_

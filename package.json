@@ -4,11 +4,18 @@
   "description": "雞肉團購智能客服 — Phase 1 核心功能",
   "main": "src/index.js",
   "scripts": {
-    "test": "node tests/rules.test.js && node tests/states.test.js && node tests/handoff.test.js && node tests/security.test.js",
+    "test": "for f in tests/rules.test.js tests/states.test.js tests/handoff.test.js tests/security.test.js tests/date.test.js tests/config.test.js tests/whitelist.test.js tests/integration.test.js tests/address-handoff.test.js tests/handoff-customer-reply.test.js tests/state-trimmed-value.test.js tests/parse-items-dedup.test.js; do echo \"▶▶▶ $f ◀◀◀\"; node \"$f\" || exit 1; done && echo \"✅ All unit tests passed\"",
+    "test:all": "for f in tests/*.test.js; do echo \"▶▶▶ $f ◀◀◀\"; node \"$f\" || exit 1; done && node scripts/dashboard-server-test.js && echo \"✅ All tests (including server integration) passed\"",
     "test:rules": "node tests/rules.test.js",
     "test:states": "node tests/states.test.js",
     "test:handoff": "node tests/handoff.test.js",
-    "test:security": "node tests/security.test.js"
+    "test:security": "node tests/security.test.js",
+    "test:date": "node tests/date.test.js",
+    "test:config": "node tests/config.test.js",
+    "test:whitelist": "node tests/whitelist.test.js",
+    "test:integration": "node tests/integration.test.js",
+    "test:api-server": "node tests/api-server.test.js",
+    "test:dashboard-server": "node scripts/dashboard-server-test.js"
   },
   "keywords": ["line-bot", "customer-service", "chicken"],
   "author": "Hermes + brtclaw",

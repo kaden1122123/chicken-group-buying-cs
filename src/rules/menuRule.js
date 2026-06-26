@@ -97,6 +97,12 @@ function parseItems(text) {
   if (!text) return items;
   const validItems = getValidItems();
 
+  // P1-3 修整：兩個 pattern 都會對「鹽水雞x2、甘蔗煙燻雞1」抓出重複
+  // （第一個 pattern 抓甘蔗煙燻雞 qty 1，第二個 pattern 也抓到甘蔗煙燻雞 qty 1）
+  // 解法：加入 items 前檢查去重（相同 name + quantity 不重複加入）
+  const isDuplicate = (name, qty) =>
+    items.some((it) => it.name === name && it.quantity === qty);
+
   // 嘗試解析 "鹽水雞x2" 或 "鹽水雞 2盒" 或 "鹽水雞 2" 等格式
   const patterns = [
     /([^\s\d,，xX×]+)\s*[xX×]\s*(\d+)/g,
@@ -110,7 +116,9 @@ function parseItems(text) {
       const qty = parseInt(match[2]) || 1;
       if (validItems.some((v) => v.includes(name) || name.includes(v))) {
         const found = validItems.find((v) => v.includes(name) || name.includes(v));
-        items.push({ name: found, quantity: qty });
+        if (!isDuplicate(found, qty)) {
+          items.push({ name: found, quantity: qty });
+        }
       }
     }
   }
