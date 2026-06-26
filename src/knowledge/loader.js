@@ -223,21 +223,45 @@ function loadDeliveryAreas() {
   const allowed = [];
   const denied = [];
 
+  // P1-2 修整：用 markdown section 劃分而非關鍵字匹配。
+  // - 任何在「## 配送範圍」或「### 服務區域」到「### 不配送區域」之間的「- xxx」列進 allowed
+  // - 任何在「### 不配送區域」後的「- xxx」列進 denied
+  // 避免之前的脆弱關鍵字匹配（「北大特區」「三峽」等）。
   const lines = content.split('\n');
+  let inDenialSection = false;
+  let inAllowedSection = false;
   for (const line of lines) {
-    if (line.includes('允許') || line.includes('北大特區') || line.includes('三峽') || line.includes('鶯歌')) {
-      const match = line.match(/[-*]?\s*(.+)/);
-      if (match) {
-        const area = match[1].trim().replace(/^[-*]\s*/, '');
-        if (area && area.length > 1) allowed.push(area);
-      }
+    // 進入「不配送區域」section
+    if (/^###\s*不配送/.test(line) || /不配送區域/.test(line)) {
+      inDenialSection = true;
+      inAllowedSection = false;
+      continue;
     }
-    if (line.includes('不配送') || line.includes('大溪') || line.includes('新店')) {
-      const match = line.match(/[-*]?\s*(.+)/);
-      if (match) {
-        const area = match[1].trim().replace(/^[-*]\s*/, '');
-        if (area && area.length > 1) denied.push(area);
-      }
+    // 進入「服務區域 / 配送範圍」section
+    if (/^###\s*服務區域/.test(line) || /^##\s*配送範圍/.test(line)) {
+      inAllowedSection = true;
+      inDenialSection = false;
+      continue;
+    }
+    // 進入新一級 section 重置
+    if (/^##\s/.test(line) && !/配送範圍/.test(line)) {
+      inAllowedSection = false;
+      inDenialSection = false;
+      continue;
+    }
+
+    // 抓「- xxx」list item
+    const listMatch = line.match(/^\s*[-*]\s*(.+)/);
+    if (!listMatch) continue;
+    const area = listMatch[1].trim();
+    if (!area || area.length < 2) continue;
+    // 跳過「##」或「###」標題（雖然 regex 不會匹配，但要保險）
+    if (area.startsWith('#')) continue;
+
+    if (inDenialSection) {
+      denied.push(area);
+    } else if (inAllowedSection) {
+      allowed.push(area);
     }
   }
 
