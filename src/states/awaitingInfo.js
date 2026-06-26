@@ -21,7 +21,10 @@ const { formatDate } = require('../utils/timeUtils');
  */
 
 // 欄位收集順序
-const FIELD_ORDER = ['address', 'name', 'phone', 'menu', 'date', 'timeSlot', 'paymentMethod'];
+// P1-6：加 community 欄位（社區或公司名稱）於 address 之後、name 之前
+//   - 如果客戶回「無」「略」「-」則跳過（不存 community）
+//   - 其他輸入存到 orderData.community
+const FIELD_ORDER = ['address', 'community', 'name', 'phone', 'menu', 'date', 'timeSlot', 'paymentMethod'];
 
 // 欄位解析正規表達式
 const FIELD_PATTERNS = {
@@ -76,6 +79,20 @@ function handleAwaitingInfo(userId, message, orderData, context) {
       validationResult = validateAddress(value);
       if (validationResult.valid) {
         updatedOrderData.address = value;
+        updatedContext.awaitingField = 'community';
+      }
+      break;
+
+    case 'community':
+      // P1-6：社區或公司名稱為 optional。客戶回「無」「略」「-」則跳過。
+      const skipKeywords = ['無', '略', '沒', 'no', 'n', '-', 'skip', '不填', '不用', 'no community'];
+      const trimmedValue = (value || '').trim();
+      if (!trimmedValue || skipKeywords.includes(trimmedValue.toLowerCase())) {
+        // 跳過 community
+        updatedContext.awaitingField = 'name';
+        // 不寫入 orderData.community
+      } else {
+        updatedOrderData.community = trimmedValue;
         updatedContext.awaitingField = 'name';
       }
       break;
@@ -241,6 +258,8 @@ function handleAwaitingInfo(userId, message, orderData, context) {
  */
 function buildFieldPrompt(fieldName) {
   const prompts = {
+    address: '請提供配送地址（含社區或公司名稱）：',
+    community: '請問是否有社區/公司名稱？（沒有請回「無」）',
     name: '請填寫姓名：',
     phone: '請填寫電話（09開頭10位數）：',
     menu: '請填寫品項與數量（例如：鹽水雞2、甘蔗煙燻雞1、秘製黑胡椒毛豆2）：',

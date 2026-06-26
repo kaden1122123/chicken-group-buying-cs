@@ -1,1 +1,0 @@
-order_id,created_at,user_line_name,user_phone,address,community,delivery_date,time_slot,chicken_items,side_items,extra_items,chicken_count,side_count,total_boxes,subtotal,delivery_fee,total_amount,payment_method,payment_status,order_status,staff_notes,customer_notes,customer_tags,handoff_type,handoff_logged_at,handoff_resolved_at,source,intent_confirmed

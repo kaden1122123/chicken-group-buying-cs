@@ -133,17 +133,22 @@ const transitionA = transition('test-user-5', 'field_received', {
 assert.strictEqual(transitionA.orderData.address, '三峽');
 console.log(`  ✓ Step A: 已寫入 trimmed address = "三峽"`);
 
-// Step B: 假設下一個欄位 name 驗證失敗
+// Step B: P1-6 加 community 後，address → community → name 順序。跳過 community 然後
+// 模擬下一個欄位 name 驗證失敗。先跳過 community（回「無」）→ name 驗證失敗。
 const contextB = getState('test-user-5').context;
 const orderDataB = getState('test-user-5').orderData;
 
-const stepB = handleAwaitingInfo('test-user-5', '', orderDataB, contextB);
+// 先跳過 community
+const stepBCommunity = handleAwaitingInfo('test-user-5', '無', orderDataB, contextB);
+assert.strictEqual(stepBCommunity.context.awaitingField, 'name', '跳過 community 後 nextField 應為 name');
+
+const stepB = handleAwaitingInfo('test-user-5', '', stepBCommunity.orderData, stepBCommunity.context);
 assert.strictEqual(stepB.action, 'validation_failed', '空 name 應驗證失敗');
 
 // 模擬 index.js 的 transition 呼叫
 const transitionB = transition('test-user-5', 'field_received', {
-  fieldName: contextB.awaitingField, // 'name'
-  fieldValue: stepB.orderData ? stepB.orderData[contextB.awaitingField] : undefined,
+  fieldName: stepBCommunity.context.awaitingField, // 'name'
+  fieldValue: stepB.orderData ? stepB.orderData[stepBCommunity.context.awaitingField] : undefined,
   value: '',
   nextField: stepB.context.awaitingField,
   validationFailed: true,
