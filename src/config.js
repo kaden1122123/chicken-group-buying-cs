@@ -323,6 +323,18 @@ function getHandoffCustomerReply() {
 }
 
 /**
+ * 取得轉真人通知對象的 LINE user ID
+ * 從 config.handoff.notify_owner.line_user_id 讀取
+ * @returns {string} - LINE user ID（可能為空字串）
+ */
+function getNotifyOwnerUserId() {
+  const handoff = configYaml.handoff || {};
+  return handoff.notify_owner && typeof handoff.notify_owner.line_user_id === 'string'
+    ? handoff.notify_owner.line_user_id
+    : '';
+}
+
+/**
  * 取得白名單（allowed_line_users）
  * 從 config.security.allowed_line_users 讀取
  * @returns {string[]} - LINE user ID 陣列
@@ -353,6 +365,7 @@ module.exports = {
   getDeliveryRules,
   getHandoffConfig,
   getHandoffCustomerReply,
+  getNotifyOwnerUserId,
   getAllowedLineUsers,
   getBlockOthers,
   // 載入狀態

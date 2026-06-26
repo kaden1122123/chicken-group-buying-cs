@@ -1,37 +1,20 @@
 'use strict';
 
 const https = require('https');
-const fs = require('fs');
-const path = require('path');
+// P2-5：改用 src/config.js 介面，不自己 regex 解析 config.yaml
+// 支援多租戶、js-yaml 缺失 fallback、與 src/ 其他模組一致
+const { getLineBotToken, getNotifyOwnerUserId } = require('../config');
 
-// 嘗試載入 config.yaml
-let HUBERT_LINE_USER_ID = 'Uf56650056d35626deb64165926a26182';
-let LINE_BOT_TOKEN = '';
+// 預設值（若 config 沒設定時使用，僅在開發環境有意義）
+const DEFAULT_HUBERT_LINE_USER_ID = 'Uf56650056d35626deb64165926a26182';
 
-function loadConfig() {
-  try {
-    const configPath = path.join(__dirname, '../../config.yaml');
-    if (fs.existsSync(configPath)) {
-      const content = fs.readFileSync(configPath, 'utf8');
-      // 簡單解析 YAML（不依賴額外庫）
-      const lines = content.split('\n');
-      for (const line of lines) {
-        if (line.includes('line_user_id')) {
-          const match = line.match(/line_user_id:\s*"?([^"\n]+)"?/);
-          if (match) HUBERT_LINE_USER_ID = match[1].trim();
-        }
-        if (line.includes('line_bot_token')) {
-          const match = line.match(/line_bot_token:\s*"?([^"\n]+)"?/);
-          if (match) LINE_BOT_TOKEN = match[1].trim();
-        }
-      }
-    }
-  } catch (e) {
-    // ignore
-  }
+function getHubertLineUserId() {
+  return getNotifyOwnerUserId() || DEFAULT_HUBERT_LINE_USER_ID;
 }
 
-loadConfig();
+function getLineToken() {
+  return getLineBotToken();
+}
 
 /**
  * 發送 LINE Push 通知到 Hubert
@@ -39,7 +22,8 @@ loadConfig();
  * @returns {Promise<boolean>}
  */
 async function notifyHubert(message) {
-  if (!LINE_BOT_TOKEN) {
+  const lineToken = getLineToken();
+  if (!lineToken) {
     console.warn('LINE Bot Token not configured, skipping notification');
     return false;
   }
@@ -47,7 +31,7 @@ async function notifyHubert(message) {
   const messageText = typeof message === 'string' ? message : message.text || JSON.stringify(message);
 
   const payload = {
-    to: HUBERT_LINE_USER_ID,
+    to: getHubertLineUserId(),
     messages: [
       {
         type: 'text',
@@ -65,7 +49,7 @@ async function notifyHubert(message) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${LINE_BOT_TOKEN}`,
+        'Authorization': `Bearer ${lineToken}`,
         'Content-Length': Buffer.byteLength(payloadStr),
       },
     };
@@ -104,6 +88,4 @@ async function testNotification() {
 module.exports = {
   notifyHubert,
   testNotification,
-  HUBERT_LINE_USER_ID,
-  LINE_BOT_TOKEN,
 };

@@ -8,33 +8,15 @@
  */
 
 const https = require('https');
-
-// ---------------------------------------------------------------------------
-// 讀取 LINE Bot Token（從 config.yaml）
-// ---------------------------------------------------------------------------
-let LINE_BOT_TOKEN = '';
+// P2-5：改用 src/config.js 介面，不自己 regex 解析 config.yaml
+// 支援多租戶、js-yaml 缺失 fallback、與 src/ 其他模組一致
+const { getLineBotToken } = require('../config');
 
 function loadBotToken() {
-  try {
-    const fs = require('fs');
-    const path = require('path');
-    const configPath = path.join(__dirname, '../../config.yaml');
-    if (fs.existsSync(configPath)) {
-      const content = fs.readFileSync(configPath, 'utf8');
-      const lines = content.split('\n');
-      for (const line of lines) {
-        if (line.includes('line_bot_token')) {
-          const match = line.match(/line_bot_token:\s*"?([^"\n]+)"?/);
-          if (match) LINE_BOT_TOKEN = match[1].trim();
-        }
-      }
-    }
-  } catch (e) {
-    // ignore
-  }
+  return getLineBotToken();
 }
 
-loadBotToken();
+const LINE_BOT_TOKEN = loadBotToken();
 
 // ---------------------------------------------------------------------------
 // 快取結構
