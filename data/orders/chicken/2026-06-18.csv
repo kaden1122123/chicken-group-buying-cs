@@ -1,2 +1,0 @@
-order_id,created_at,user_line_name,user_phone,address,community,delivery_date,time_slot,chicken_items,side_items,extra_items,chicken_count,side_count,total_boxes,subtotal,delivery_fee,total_amount,payment_method,payment_status,order_status,staff_notes,customer_notes,customer_tags,handoff_type,handoff_logged_at,handoff_resolved_at,source,intent_confirmed
-PENDING-1781488800000,2026-06-15T02:00:00.000Z,測試用戶,0912345678,新北市三峽區,,2026-06-18,上午,{},{},{},,,,380,,380,transfer,paid,confirmed,,,,,,,integration-test,true

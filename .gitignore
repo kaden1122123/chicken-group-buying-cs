@@ -7,3 +7,7 @@ node_modules/
 *.log
 .DS_Store
 dashboard.tmp.html
+# CSV 訂單資料（透過 OpenClaw / API server 寫入，不進 git）
+data/orders/**/*.csv
+# 保留 .gitkeep
+!data/orders/**/.gitkeep
