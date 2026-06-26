@@ -1,0 +1,7 @@
+order_id,created_at,user_line_name,user_phone,address,community,delivery_date,time_slot,chicken_items,side_items,extra_items,chicken_count,side_count,total_boxes,subtotal,delivery_fee,total_amount,payment_method,payment_status,order_status,staff_notes,customer_notes,customer_tags,handoff_type,handoff_logged_at,handoff_resolved_at,source,intent_confirmed
+PENDING-1782460773147,2026-06-26T07:59:33.147Z,測試用戶,,大溪區三元街123號,,,,{},{},{},,,,,,,,pending,pending_handoff,原因：地址超出配送範圍,大溪區三元街123號,,general_inquiry,2026-06-26T07:59:33.147Z,,line,
+PENDING-1782460773164,2026-06-26T07:59:33.164Z,測試用戶2,,台北市信義區,,,,{},{},{},,,,,,,,pending,pending_handoff,原因：配送範圍需人工確認,台北市信義區,,general_inquiry,2026-06-26T07:59:33.164Z,,line,
+PENDING-1782460773165,2026-06-26T07:59:33.165Z,測試用戶4,,大溪區三元街123號,,,,{},{},{},,,,,,,,pending,pending_handoff,原因：地址超出配送範圍,大溪區三元街123號,,general_inquiry,2026-06-26T07:59:33.165Z,,line,
+PENDING-1782460773165,2026-06-26T07:59:33.165Z,測試用戶5,,台北市信義區,,,,{},{},{},,,,,,,,pending,pending_handoff,原因：配送範圍需人工確認,台北市信義區,,general_inquiry,2026-06-26T07:59:33.165Z,,line,
+PENDING-1782460773166,2026-06-26T07:59:33.166Z,測試用戶6,,,,,,{},{},{},,,,,,,,pending,pending_handoff,,我要退款,,refund_request,2026-06-26T07:59:33.166Z,,line,
+PENDING-1782460773220,2026-06-26T07:59:33.220Z,測試用戶,,,,,,{},{},{},,,,,,,,pending,pending_handoff,,要退款,,refund_request,2026-06-26T07:59:33.220Z,,line,

@@ -23,6 +23,25 @@ const path = require('path');
 const { getTenantId } = require('../src/config');
 const { writeOrder, updateOrder } = require('../src/order/csvWriter');
 const { getOrdersByDate } = require('../src/order/csvReader');
+
+// 決策 4：MOCK_TODAY 環境變數支援，讓測試可以控制「今天」是哪一天
+// 用途：api-server.test.js 用 delivery_date: '2026-06-18'，但今天是 2026-06-26
+// 過期，設 MOCK_TODAY=2026-06-15T10:00:00+08:00 可讓 validateDate 認為是配送前一日 10 點
+// 重要：production 環境絕對不要設 MOCK_TODAY
+if (process.env.MOCK_TODAY) {
+  const RealDate = Date;
+  const mockNow = new RealDate(process.env.MOCK_TODAY).getTime();
+  function MockDate(...args) {
+    if (args.length === 0) return new RealDate(mockNow);
+    return new RealDate(...args);
+  }
+  MockDate.UTC = RealDate.UTC;
+  MockDate.parse = RealDate.parse;
+  MockDate.now = () => mockNow;
+  MockDate.prototype = RealDate.prototype;
+  global.Date = MockDate;
+  console.log('[api-server] MOCK_TODAY=' + process.env.MOCK_TODAY + ' (測試模式)');
+}
 const { validateDate } = require('../src/rules/dateRule');
 const { validateTimeSlotWithDate } = require('../src/rules/timeSlotRule');
 const { validateMenu } = require('../src/rules/menuRule');

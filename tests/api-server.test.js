@@ -17,6 +17,9 @@ const serverProcess = spawn('node', [SERVER_PATH], {
     PORT: String(PORT),
     API_USERNAME: USERNAME,
     API_PASSWORD: PASSWORD,
+    // 決策 4：MOCK_TODAY 讓測試用 delivery_date: '2026-06-18' 過驗證
+    // （原本 6/14 寫的測試，用當下時間是 6/14，所以 6/18 還算明天 + 上午）
+    MOCK_TODAY: '2026-06-15T10:00:00+08:00',
   }),
   stdio: ['ignore', 'pipe', 'pipe'],
 });
@@ -167,9 +170,12 @@ async function waitForServer() {
   } catch (e) {
     console.error('Test failed:', e.message);
     console.error('Server output:', serverOutput);
+    // 確保 server process 被殺掉
+    try { serverProcess.kill('SIGKILL'); } catch (e2) {}
     process.exit(1);
   } finally {
-    serverProcess.kill();
+    // 確保 server process 被殺掉
+    try { serverProcess.kill('SIGKILL'); } catch (e2) {}
     setTimeout(function() { process.exit(0); }, 100);
   }
 })();
