@@ -178,6 +178,64 @@ console.log('\n--- handleMessage triggers handleHandoff ---');
     );
     console.log(`  ✓ 合法地址不觸發 handoff，新狀態 = ${r3.newState}`);
 
+    // ─── 4. 決策 6：reason 寫入 staff_notes ───
+    console.log('\n--- 決策 6：handoff reason 寫入 staff_notes ---');
+
+    clearState('reason-user-1');
+    setStateDirectly('reason-user-1', STATES.AWAITING_INFO, {}, { awaitingField: 'address' });
+
+    const r4 = await handleMessage(
+      'reason-user-1',
+      '大溪區三元街123號',
+      { lineDisplayName: '測試用戶4' }
+    );
+    assert.strictEqual(r4.newState, STATES.HUMAN_HANDOFF);
+    // 從 state machine 讀回 handoffOrderData
+    const state4 = getState('reason-user-1');
+    assert.ok(state4.orderData, '應有 orderData');
+    assert.ok(
+      state4.orderData.staff_notes && state4.orderData.staff_notes.includes('地址超出配送範圍'),
+      `staff_notes 應包含「地址超出配送範圍」，實際：${state4.orderData.staff_notes}`
+    );
+    console.log(`  ✓ out_of_range reason 寫入 staff_notes: "${state4.orderData.staff_notes}"`);
+
+    // 需人工確認
+    clearState('reason-user-2');
+    setStateDirectly('reason-user-2', STATES.AWAITING_INFO, {}, { awaitingField: 'address' });
+
+    const r5 = await handleMessage(
+      'reason-user-2',
+      '台北市信義區',
+      { lineDisplayName: '測試用戶5' }
+    );
+    assert.strictEqual(r5.newState, STATES.HUMAN_HANDOFF);
+    const state5 = getState('reason-user-2');
+    assert.ok(
+      state5.orderData.staff_notes && state5.orderData.staff_notes.includes('配送範圍需人工確認'),
+      `staff_notes 應包含「配送範圍需人工確認」，實際：${state5.orderData.staff_notes}`
+    );
+    console.log(`  ✓ needs_confirmation reason 寫入 staff_notes: "${state5.orderData.staff_notes}"`);
+
+    // 反例：一般 handoff（不是 address 觸發）不應有 reason
+    clearState('reason-user-3');
+    setStateDirectly('reason-user-3', STATES.IDLE, {}, {});
+
+    const r6 = await handleMessage(
+      'reason-user-3',
+      '我要退款',
+      { lineDisplayName: '測試用戶6' }
+    );
+    assert.strictEqual(r6.newState, STATES.HUMAN_HANDOFF);
+    // 「我要退款」不來自 address handoff，staff_notes 要不是空字串、undefined、要不就是
+    // 不含「地址超出 / 配送範圍」字樣。
+    const state6 = getState('reason-user-3');
+    const note6 = state6.orderData && state6.orderData.staff_notes;
+    assert.ok(
+      !note6 || (!note6.includes('地址超出') && !note6.includes('配送範圍需人工確認')),
+      `一般 handoff 不應有 address reason，實際 staff_notes: ${JSON.stringify(note6)}`
+    );
+    console.log(`  ✓ 一般 handoff（退款）staff_notes 不含 address reason（"${note6 || '(無)'}"）`);
+
     console.log('\n========================================');
     console.log('ALL ADDRESS HANDOFF TESTS PASSED ✓');
     console.log('========================================\n');

@@ -24,11 +24,22 @@ const DEFAULT_HANDOFF_CUSTOMER_REPLY = '目前老闆再忙，後續會再回覆�
  * @param {string} userMessage
  * @param {object} orderData - 當前訂單資料（可為空）
  * @param {object} userProfile - { lineDisplayName, ... }
+ * @param {object} [options] - 額外選項
+ * @param {string} [options.reason] - 轉真人原因（例：'address_out_of_range'、'address_needs_confirmation'）
+ *   會寫入 staff_notes，讓 Hubert 看到通知知道為什麼轉真人
  * @returns {{ action: string, reply: object|null, newState: string, orderData: object }}
  */
-async function handleHandoff(userId, userMessage, orderData = {}, userProfile = {}) {
+async function handleHandoff(userId, userMessage, orderData = {}, userProfile = {}, options = {}) {
   const handoffType = (await shouldTransfer(userMessage)).type || 'general_inquiry';
   const orderId = generatePendingOrderId();
+
+  // 決策 6：reason 寫入 staff_notes，Hubert 看通知知道為什麼轉真人
+  // 與 src/rules/addressRule.js 的 reason 命名對齊（out_of_range / needs_confirmation）
+  const reasonLabel = {
+    out_of_range: '地址超出配送範圍',
+    needs_confirmation: '配送範圍需人工確認',
+  }[options.reason] || null;
+  const initialStaffNotes = reasonLabel ? `原因：${reasonLabel}` : '';
 
   // 構建轉真人訂單資料
   const handoffOrderData = {
@@ -48,7 +59,7 @@ async function handleHandoff(userId, userMessage, orderData = {}, userProfile = 
     payment_method: orderData.payment_method || '',
     payment_status: 'pending',
     order_status: 'pending_handoff',
-    staff_notes: '',
+    staff_notes: initialStaffNotes,
     customer_notes: userMessage,
     customer_tags: '',
     handoff_type: handoffType,

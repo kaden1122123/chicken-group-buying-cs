@@ -104,10 +104,13 @@ async function handleMessage(userId, message, userProfile = {}) {
         // P0-1: 地址超出配送範圍 / 需人工確認 → 走 handleHandoff 轉真人
         // 之前訊息說「已轉交人工處理」但實際只停在 REASK_INFO，
         // 客戶被卡住、Hubert 也沒收到通知。本修整把 action 真實串接。
+        // 決策 6：傳遞 reason 給 handleHandoff 寫入 staff_notes
         const handoffResult = await handleHandoff(userId, cleanMessage, {
           ...orderData,
           address: cleanMessage, // 把用戶輸入的地址帶進去（即使不在配送範圍）
-        }, userProfile);
+        }, userProfile, { reason: result.reason });
+        // 同步到 state machine（讓後續讀 state.orderData 看得到 staff_notes 等）
+        setStateDirectly(userId, handoffResult.newState, handoffResult.orderData, current.context);
         return { reply: handoffResult.reply, newState: handoffResult.newState };
       } else if (result.action === 'field_received' || result.action === 'validation_failed') {
         const event = result.action === 'validation_failed' ? 'field_received' : result.action;
