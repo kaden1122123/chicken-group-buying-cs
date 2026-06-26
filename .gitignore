@@ -7,7 +7,10 @@ node_modules/
 *.log
 .DS_Store
 dashboard.tmp.html
-# CSV 訂單資料（透過 OpenClaw / API server 寫入，不進 git）
+# CSV 訂單資料：預設排除，避免測試訂單污染 git
+# 但保留 2026-06-13.csv 跟 2026-06-16.csv（真實訂單，PHASE1 第一筆）
 data/orders/**/*.csv
+!data/orders/chicken/2026-06-13.csv
+!data/orders/chicken/2026-06-16.csv
 # 保留 .gitkeep
 !data/orders/**/.gitkeep
