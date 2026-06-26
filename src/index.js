@@ -102,8 +102,12 @@ async function handleMessage(userId, message, userProfile = {}) {
       const result = handleAwaitingInfo(userId, cleanMessage, orderData, context);
       if (result.action === 'field_received' || result.action === 'validation_failed') {
         const event = result.action === 'validation_failed' ? 'field_received' : result.action;
+        // P0-3: 用 awaitingInfo 已 trimmed/驗證後的值（fieldValue），避免 transition 用未 trim 的
+        // cleanMessage 覆蓋。fallback 到 cleanMessage 保持向後相容（既有測試只用 value）。
+        const fieldValue = result.orderData ? result.orderData[context.awaitingField] : undefined;
         transition(userId, event, {
           fieldName: context.awaitingField,
+          fieldValue: fieldValue,
           value: cleanMessage,
           nextField: result.context.awaitingField,
           validationFailed: result.action === 'validation_failed',

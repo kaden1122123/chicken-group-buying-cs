@@ -76,10 +76,12 @@ function transition(userId, event, data = {}) {
     case STATES.AWAITING_INFO:
     case STATES.REASK_INFO:
       if (event === 'field_received') {
-        // 更新對應欄位
+        // P0-3: 優先用 data.fieldValue（已 trimmed + 驗證的值），fallback 到 data.value（向後相容）
         const fieldName = data.fieldName;
-        const fieldValue = data.value;
-        updatedOrderData = { ...updatedOrderData, [fieldName]: fieldValue };
+        const fieldValue = data.fieldValue !== undefined ? data.fieldValue : data.value;
+        if (fieldName && fieldValue !== undefined) {
+          updatedOrderData = { ...updatedOrderData, [fieldName]: fieldValue };
+        }
         updatedContext = { ...updatedContext, awaitingField: data.nextField || null };
 
         if (data.allFieldsReceived) {
