@@ -187,6 +187,19 @@ function handleAwaitingInfo(userId, message, orderData, context) {
   }
 
   if (!validationResult.valid) {
+    // P0-1: 配送範圍類錯誤（超出/不確定）應走 handoff 路徑，
+    // 而不是停在 REASK_INFO。index.js 會呼叫 handleHandoff 觸發轉真人。
+    if (validationResult.action === 'handoff_needed') {
+      updatedContext.awaitingField = targetField;
+      return {
+        action: 'handoff_needed',
+        reason: validationResult.reason || 'unknown',
+        reply: textReply(validationResult.errorMessage),
+        newState: STATES.AWAITING_INFO, // index.js 會接手走 handleHandoff
+        orderData: updatedOrderData,
+        context: updatedContext,
+      };
+    }
     updatedContext.awaitingField = targetField;
     updatedContext.lastError = validationResult.errorMessage;
     return {

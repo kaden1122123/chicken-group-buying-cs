@@ -100,7 +100,16 @@ async function handleMessage(userId, message, userProfile = {}) {
 
 
       const result = handleAwaitingInfo(userId, cleanMessage, orderData, context);
-      if (result.action === 'field_received' || result.action === 'validation_failed') {
+      if (result.action === 'handoff_needed') {
+        // P0-1: 地址超出配送範圍 / 需人工確認 → 走 handleHandoff 轉真人
+        // 之前訊息說「已轉交人工處理」但實際只停在 REASK_INFO，
+        // 客戶被卡住、Hubert 也沒收到通知。本修整把 action 真實串接。
+        const handoffResult = await handleHandoff(userId, cleanMessage, {
+          ...orderData,
+          address: cleanMessage, // 把用戶輸入的地址帶進去（即使不在配送範圍）
+        }, userProfile);
+        return { reply: handoffResult.reply, newState: handoffResult.newState };
+      } else if (result.action === 'field_received' || result.action === 'validation_failed') {
         const event = result.action === 'validation_failed' ? 'field_received' : result.action;
         // P0-3: 用 awaitingInfo 已 trimmed/驗證後的值（fieldValue），避免 transition 用未 trim 的
         // cleanMessage 覆蓋。fallback 到 cleanMessage 保持向後相容（既有測試只用 value）。

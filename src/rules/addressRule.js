@@ -19,13 +19,28 @@ const DENIED_KEYWORDS = [
 
 /**
  * 驗證地址是否在配送範圍內
+ *
+ * P0-1 修整：對「超出配送範圍」與「需人工確認」兩種情境，新增 action 標記
+ *   - action: 'handoff_needed'  表示應由 index.js 呼叫 handleHandoff 轉真人
+ *   - action: 'reask'           表示客戶輸入不完整，請重新填寫
+ *
+ * 修整前問題：return 結構只有 valid + errorMessage，index.js 收到後只走
+ *   validation_failed 路徑（→ REASK_INFO），訊息說「已轉交人工處理」但
+ *   實際沒真的轉人工，客戶被卡住。
+ *
  * @param {string} address
- * @returns {{ valid: boolean, errorMessage: string|null }}
+ * @returns {{
+ *   valid: boolean,
+ *   errorMessage: string|null,
+ *   action?: string,
+ *   reason?: string
+ * }}
  */
 function validateAddress(address) {
   if (!address || address.trim().length === 0) {
     return {
       valid: false,
+      action: 'reask',
       errorMessage: '地址為必填項目，請提供完整地址（含社區或公司名稱）。',
     };
   }
@@ -35,6 +50,8 @@ function validateAddress(address) {
   if (deniedFound) {
     return {
       valid: false,
+      action: 'handoff_needed',
+      reason: 'out_of_range',
       errorMessage: '不好意思，您的地址超出配送範圍，已轉交人工處理。',
     };
   }
@@ -45,6 +62,8 @@ function validateAddress(address) {
     // 地址不在明確的允許區域，但也不在拒絕區域，需要人工確認
     return {
       valid: false,
+      action: 'handoff_needed',
+      reason: 'needs_confirmation',
       errorMessage: '感謝您的提問！您的地址是否能配送，需由客服進一步確認。已協助轉交人工處理，將盡快回覆您。',
     };
   }
