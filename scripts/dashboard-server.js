@@ -25,7 +25,22 @@ const fs = require('fs');
 const path = require('path');
 const { getOpenDates, getIgnoredKeywords, getTenantId } = require('../src/config');
 const { getOrdersByDate } = require('../src/order/csvReader');
-const yaml = require('js-yaml');
+
+// P1-8：js-yaml fallback。Production 環境遺漏 npm install 時不會 crash。
+// 讀取優先用 js-yaml，失敗時用 src/config.js 的 _parseYamlSimple。
+let yaml = null;
+try {
+  yaml = require('js-yaml');
+} catch (e) {
+  // js-yaml 不可用，用 src/config.js 的 fallback
+  const config = require('../src/config');
+  yaml = {
+    load: (s) => config._parseYamlSimple(s),
+    dump: null, // 寫入仍需 js-yaml
+  };
+  console.warn('[dashboard-server] js-yaml 未安裝，使用 src/config.js fallback parser（讀取模式）');
+}
+const _hasYamlDump = yaml && typeof yaml.dump === 'function';
 
 // 環境變數
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -233,7 +248,10 @@ function updateTenantConfig(updates) {
     };
   }
 
-  // 寫回 yaml
+  // 寫回 yaml（需 js-yaml 提供 dump）
+  if (!_hasYamlDump) {
+    throw new Error('js-yaml 未安裝，無法寫入 config。請跑 npm install。');
+  }
   const yamlStr = yaml.dump(current, {
     lineWidth: 120,
     noRefs: true,
