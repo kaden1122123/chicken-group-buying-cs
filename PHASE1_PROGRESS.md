@@ -1,10 +1,27 @@
 # Phase 1 進度報告
 
-> 最後更新：2026-06-26 15:00
+> 最後更新：2026-06-27 19:30（Session B B3 更新頂部說明）
 > 負責人：brtclaw（規劃 + 實作）
 > 最新文檔：[`docs/INDEX.md`](./docs/INDEX.md)
 > 完整規劃：[`docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md`](./docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md)
 > **2026-06-26 評估與修整**：見 [docs/TODO_2026-06-26.md](./docs/TODO_2026-06-26.md)
+
+---
+
+## ⚠️ src/ 角色重要說明（2026-06-27 Session B B3 新增）
+
+**`src/` 是「設計驗證 + 測試對象」，不是 production runtime。**
+
+- **Production runtime**：跑在 `~/.openclaw/agents/external-user/` 的 OpenClaw agent
+  - 由 `SOUL.md` + `AGENTS.md` + `knowledge/main_idea.md` 驅動
+  - 透過知識庫與 prompt 直接回應 LINE 客戶訊息
+- **`src/` 角色**：把 `knowledge/main_idea.md` 的 prompt 邏輯「模組化拆解 + 寫成可測試程式碼」
+  - `src/rules/` → 對應 prompt 裡的驗證規則
+  - `src/states/` → 對應 prompt 裡的狀態機
+  - `src/handoff/` → 對應 prompt 裡的 14 種轉真人條件
+  - `src/order/` → 對應 prompt 裡的訂單寫入邏輯（CSV）
+- **為何需要 src/**：方便 unit test 驗證規則正確性（OpenClaw agent 本身難以 unit test）
+- **src/ 與 production 的關係**：src/ 是設計驗證的「鏡像」，production 真正用的是 prompt + 知識庫
 
 ---
 

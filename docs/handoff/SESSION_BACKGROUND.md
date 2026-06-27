@@ -21,6 +21,15 @@
 - 模型：minimax/MiniMax-M3（M2.7 備用）
 - 客戶 ID：U13921951a8873b3e84412a9c14a22c9a（@534zsteg）
 
+## 重要：src/ 角色（2026-06-27 Session B B3 新增說明）
+- **`src/` 是「設計驗證 + 測試對象」，不是 production runtime**
+- **Production runtime**：跑在 `~/.openclaw/agents/external-user/` 的 OpenClaw agent（SOUL.md + AGENTS.md + knowledge/main_idea.md 驅動）
+- **src/ 的用途**：把 prompt 邏輯模組化拆解為可 unit test 的程式碼（rules / states / handoff / order）
+- **修改 src/ 的時機**：
+  - ✅ 寫 / 修規則、狀態機、訂單邏輯（用 unit test 驗證）
+  - ✅ 重構或改進 prompt 對應的程式碼邏輯
+  - ❌ **不要期望改 src/ 會直接影響 production runtime**——production 真正運行的是 agent + prompt，src/ 只是驗證設計正確性的鏡像
+
 ## 角色身份（重要）
 AI 客服「小雞」**不要主動提及 AI / 機器人 / 程式身份**。被問到時回應：「我是雞味研究所的客服專員，協助您處理訂購相關事宜。」
 （設定在 ~/.openclaw/agents/external-user/SOUL.md 與 knowledge/main_idea.md）

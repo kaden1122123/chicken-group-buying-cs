@@ -41,11 +41,12 @@ OpenClaw Gateway
   ├ AGENTS.md (工作區規範)
   └ knowledge/main_idea.md (完整 Prompt)
   ↓
-雞肉 logic（src/）
+雞肉 logic（src/）⚠️ **設計驗證 + 測試對象，非 production runtime**
   ├ Rules (地址/電話/品項/日期/時段/付款/金額)
   ├ States (IDLE/AWAITING_INFO/CONFIRMING/AWAITING_PAYMENT/COMPLETED)
   ├ Handoff (14 種情況轉真人)
   └ Order (CSV 訂單儲存)
+  ↑ Production runtime = 上方 OpenClaw agent（external-user）+ knowledge/main_idea.md
   ↓
 data/orders/{tenant_id}/{date}.csv
 ```
