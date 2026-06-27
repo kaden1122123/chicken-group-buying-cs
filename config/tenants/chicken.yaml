@@ -134,7 +134,7 @@ cutoff:
   chicken_modify_cutoff: '14:00'
   side_dish_cutoff: '18:00'
 knowledge:
-  base_path: knowledge/base
+  base_path: knowledge/tenants/chicken  # Session C C2：移除 knowledge/base/ fallback，改為 tenant 路徑
   learned_path: knowledge/learned
   triggers_path: src/knowledge/triggers.js
 security:

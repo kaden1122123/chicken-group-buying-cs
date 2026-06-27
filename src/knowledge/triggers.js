@@ -5,10 +5,12 @@
  * 根據對話階段，回傳應讀取的知識庫檔案列表
  */
 
-const path = require('path');
 const fs = require('fs');
+const { readKBFile, KB_PATH } = require('./loader');
 
-const KNOWLEDGE_BASE_PATH = path.join(__dirname, '../../knowledge/base');
+// Session C C2 變更：KB 讀取統一透過 loader.readKBFile()，
+// 移除本地 KNOWLEDGE_BASE_PATH 常數與重複的 loadKBFile() 函式，
+// 確保知識庫路徑在 loader.js 是 single source of truth。
 
 // intent → 知識庫檔案對照
 const INTENT_KB_MAP = {
@@ -83,22 +85,13 @@ function guessIntent(message) {
 }
 
 /**
- * 讀取指定知識庫檔案內容
- * @param {string} filename - 檔案名稱
- * @returns {string} - 檔案內容，若失敗則回傳空字串
+ * 列出所有可用的知識庫檔案
+ * @returns {string[]}
  */
-function loadKBFile(filename) {
-  try {
-    const filePath = path.join(KNOWLEDGE_BASE_PATH, filename);
-    if (fs.existsSync(filePath)) {
-      return fs.readFileSync(filePath, 'utf8');
-    }
-    console.warn(`[triggers] knowledge file not found: ${filename}`);
-    return '';
-  } catch (e) {
-    console.error(`[triggers] failed to load ${filename}: ${e.message}`);
-    return '';
-  }
+function listKnowledgeFiles() {
+  return fs.existsSync(KB_PATH)
+    ? fs.readdirSync(KB_PATH).filter((f) => f.endsWith('.md'))
+    : [];
 }
 
 /**
@@ -110,7 +103,7 @@ function loadKnowledgeForIntent(intent) {
   const files = getKBFilesForIntent(intent);
   if (files.length === 0) return '';
 
-  const contents = files.map((f) => loadKBFile(f)).filter((c) => c.length > 0);
+  const contents = files.map((f) => readKBFile(f)).filter((c) => c.length > 0);
   return contents.join('\n\n---\n\n');
 }
 
@@ -123,7 +116,7 @@ function loadKnowledgeForState(state) {
   const files = getKBFilesForState(state);
   if (files.length === 0) return '';
 
-  const contents = files.map((f) => loadKBFile(f)).filter((c) => c.length > 0);
+  const contents = files.map((f) => readKBFile(f)).filter((c) => c.length > 0);
   return contents.join('\n\n---\n\n');
 }
 
@@ -131,9 +124,10 @@ module.exports = {
   getKBFilesForIntent,
   getKBFilesForState,
   guessIntent,
-  loadKBFile,
+  loadKBFile: readKBFile, // Session C C2 變更：直接轉用 loader.readKBFile()
   loadKnowledgeForIntent,
   loadKnowledgeForState,
+  listKnowledgeFiles,
   INTENT_KB_MAP,
   STATE_KB_MAP,
 };

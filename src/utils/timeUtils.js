@@ -1,10 +1,10 @@
 'use strict';
 
 const path = require('path');
-const fs = require('fs');
+const { readKBFile } = require('../knowledge/loader');
 
-// 知識庫路徑
-const KNOWLEDGE_BASE_PATH = path.join(__dirname, '../../knowledge/base');
+// 知識庫路徑：透過 loader 統一管理（Session C C2 變更）
+// 之前直接讀 knowledge/base/，現改用 loader.readKBFile() 確保 single source of truth
 
 /**
  * 解析時段
@@ -46,7 +46,7 @@ function formatDate(date) {
  */
 function getCurrentOpenDates() {
   try {
-    const content = fs.readFileSync(path.join(KNOWLEDGE_BASE_PATH, '02_order_flow.md'), 'utf8');
+    const content = readKBFile('02_order_flow.md');
     // 從知識庫解析開團日期（這裡簡化處理，實際由 loader.js 提供完整解析）
     // 預設：本月每週三、五、六開團（根據實際調整）
     // 此函式由 loader.js 的 loadOrderFlow 補充完整邏輯

@@ -1,14 +1,13 @@
 'use strict';
 
-const path = require('path');
-const fs = require('fs');
 const { loadDeliveryAreas } = require('../knowledge/loader');
 
-const KNOWLEDGE_BASE_PATH = path.join(__dirname, '../../knowledge/base');
+// Session C C2 變更：移除 dead code 常數 KNOWLEDGE_BASE_PATH。
+// 原本指向 knowledge/base/，但從未實際使用（地址資料統一從 loader 拿）。
 
 /**
  * 動態載入允許/拒絕區域關鍵字
- * 來源：knowledge/{tenants/chicken|base}/04_delivery.md
+ * 來源：knowledge/tenants/chicken/04_delivery.md（Session C C2 後）
  * 用 loader.loadDeliveryAreas() 動態讀，single source of truth = 04_delivery.md
  *
  * P1-2 修整前：使用 hardcode 的 ALLOWED_KEYWORDS / DENIED_KEYWORDS，

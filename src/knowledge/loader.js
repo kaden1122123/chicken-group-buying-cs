@@ -6,23 +6,19 @@ const fs = require('fs');
 // 規模化：支援多租戶
 // 1. 讀取環境變數 TENANT_ID，未設定則預設 'chicken'
 // 2. 多租戶知識庫路徑：knowledge/tenants/{tenant_id}/
-// 3. 單租戶（向後相容）路徑：knowledge/base/
+//
+// Session C C2 (2026-06-27) 變更：移除 knowledge/base/ 向後相容 fallback。
+// 之前 base/ 與 tenants/chicken/ 11 個檔案 byte-identical、1 個檔案 (04_delivery.md) 不同步，
+// 證明雙重來源會導致內容漂移。改為 tenants/{tenant_id}/ 為 single source of truth。
 const DEFAULT_TENANT = process.env.TENANT_ID || 'chicken';
 const KB_ROOT = path.join(__dirname, '../../knowledge');
 const TENANT_KB_PATH = path.join(KB_ROOT, 'tenants', DEFAULT_TENANT);
-const LEGACY_KB_PATH = path.join(KB_ROOT, 'base');
 
-function resolveKBPath() {
-  if (fs.existsSync(TENANT_KB_PATH)) {
-    return TENANT_KB_PATH;
-  }
-  if (fs.existsSync(LEGACY_KB_PATH)) {
-    return LEGACY_KB_PATH;
-  }
-  throw new Error(`[loader] No knowledge base found for tenant '${DEFAULT_TENANT}'`);
+if (!fs.existsSync(TENANT_KB_PATH)) {
+  throw new Error(`[loader] Knowledge base not found for tenant '${DEFAULT_TENANT}' at ${TENANT_KB_PATH}`);
 }
 
-const KB_PATH = resolveKBPath();
+const KB_PATH = TENANT_KB_PATH;
 
 /**
  * 讀取知識庫檔案

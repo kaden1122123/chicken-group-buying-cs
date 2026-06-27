@@ -1,10 +1,9 @@
 'use strict';
 
-const path = require('path');
-const fs = require('fs');
 const { loadProductMenu } = require('../knowledge/loader');
 
-const KNOWLEDGE_BASE_PATH = path.join(__dirname, '../../knowledge/base');
+// Session C C2 變更：移除 dead code 常數 KNOWLEDGE_BASE_PATH。
+// 原本指向 knowledge/base/，但從未實際使用（商品資料統一從 loader 拿）。
 
 // ============================================================================
 // 商品資料來源：01_product.md（單一真相源）

@@ -158,7 +158,7 @@ cutoff:
 # 知識庫路徑
 # ─────────────────────────────────────────
 knowledge:
-  base_path:    "knowledge/base"
+  base_path:    "knowledge/tenants/chicken"  # Session C C2：移除 knowledge/base/ fallback，改為 tenant 路徑
   learned_path:  "knowledge/learned"
   triggers_path: "src/knowledge/triggers.js"
 
