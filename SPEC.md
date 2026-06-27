@@ -1,6 +1,9 @@
 # 雞肉團購 AI 客服 — Phase 1 實作規格書
-更新時間：2026-06-13
+更新時間：2026-06-27（v1.1 partial update）
 維護者：brtclaw
+
+> ⚠️ **本文件為 Phase 1 規格書**，最新進度見 [`PHASE1_PROGRESS.md`](./PHASE1_PROGRESS.md)。
+> **Source of truth**：`src/order/csvWriter.js`（CSV schema）、`config/tenants/chicken.yaml`（狀態值）、`src/knowledge/loader.js`（知識庫路徑）。
 
 ---
 
@@ -9,6 +12,7 @@
 | 版本 | 日期 | 變更 |
 |------|------|------|
 | v1.0 | 2026-06-13 | 初始規格書 |
+| v1.1 | 2026-06-27 | **Session C C5 partial update**：CSV 27→28 欄、補 order_status 6 個狀態、補 src/ 角色修正、補 v1.1 known deviations |
 
 ---
 
@@ -134,15 +138,20 @@ IF (訊息包含「取消」意圖) THEN
 **修正：** 移除 `userProfile.lineDisplayName` 的 `'Unknown'` fallback，改由 `lineProfileCache.js` 處理。
 
 ### CSV Schema（`csvWriter.js`）
-**27 欄位（2026-06-26 更新，與 csvWriter.js 完全對齊）：**
+**28 欄位（2026-06-27 v1.1 update，以 csvWriter.js CSV_HEADERS 為準）：**
 ```
 order_id, created_at, user_line_name, user_phone, address, community,
-delivery_date, time_slot, chicken_items, side_items, extra_items,
-chicken_count, side_count, total_boxes, subtotal, delivery_fee, total_amount,
-payment_method, payment_status, order_status, staff_notes, customer_notes,
-customer_tags, handoff_type, handoff_logged_at, handoff_resolved_at,
+delivery_date, time_slot,
+chicken_items, side_items, extra_items,
+chicken_count, side_count, total_boxes,
+subtotal, delivery_fee, total_amount,
+payment_method, payment_status, order_status,
+staff_notes, customer_notes, customer_tags,
+handoff_type, handoff_logged_at, handoff_resolved_at,
 source, intent_confirmed
 ```
+
+> **v1.1 修正**：v1.0 為 27 欄位，2026-06-13 改為 28 欄位（加 `intent_confirmed`）。本檔原寫 27 欄位為誤，已修正。Source of truth：`src/order/csvWriter.js` 的 `CSV_HEADERS`。
 
 ---
 
@@ -177,6 +186,46 @@ if (intent) {
 | date_check | 02_order_flow.md |
 | payment_info | 03_payment.md |
 | faq | 06_faq.md |
+
+---
+
+## v1.1 Known Deviations（2026-06-27 Session C C5）
+
+> 本段記錄 v1.0 (2026-06-13) 之後到 v1.1 (2026-06-27) 之間的結構性變更，與 v1.0 規格的偏差。
+
+### src/ 角色（2026-06-27 Session B B3 修正）
+- **v1.0 描述**：`src/` 是 production runtime
+- **v1.1 修正**：`src/` 是「設計驗證 + 測試對象」，**不是** production runtime
+- **Production runtime**：`~/.openclaw/agents/external-user/` 的 OpenClaw agent（SOUL.md + AGENTS.md + knowledge/main_idea.md 驅動）
+- **src/ 用途**：把 prompt 邏輯模組化拆解為可 unit test 的程式碼
+
+### 多租戶架構（2026-06-15 階段 3）
+- 設定路徑：`config/tenants/{tenant_id}.yaml`（預設 `chicken`）
+- 知識庫路徑：`knowledge/tenants/{tenant_id}/`（**Session C C2 後**：移除 `knowledge/base/` fallback）
+- 環境變數 `TENANT_ID` 切換租戶
+- 多租戶設計詳見 `docs/MULTI_TENANT_DESIGN.md`
+
+### Config 介面化（2026-06-26 P2-5）
+- `src/config.js` 提供統一介面（`getOpenDates()`、`getLineBotToken()` 等）
+- 取代過去各模組自己 regex 解析 `config.yaml`
+- 詳見 `tests/config-interface-adoption.test.js`
+
+### order_status 狀態值（6 個，與 config.yaml 對齊）
+```
+new → confirmed → preparing → delivered → completed
+                            └→ cancelled（任何階段可取消）
+```
+
+### payment_status 狀態值（3 個）
+```
+pending → paid → confirmed
+```
+
+### 其他 v1.0 → v1.1 變更
+- 知識庫重構：`main_idea.md` 內容遷移至 `knowledge/tenants/chicken/*.md`（2026-06-11）
+- Cloudflare Worker 部署：Version `ef63e075`（6/14）→ `190c15e1`（6/16，含 postback 處理）
+- 新訂單流程（6/16）：API server + Worker postback + 刪除 order-listener
+- 雙位置架構（6/15）：原位置 = git + 開發入口；主位置 = production runtime。詳見 `MIGRATION_HISTORY.md`
 
 ---
 
