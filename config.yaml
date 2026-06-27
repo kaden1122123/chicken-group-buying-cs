@@ -56,13 +56,12 @@ delivery:
 # Phase 2 改為讀取 Google Sheets / 行事曆
 # ─────────────────────────────────────────
 open_dates:
-  - "2026-06-06"
-  - "2026-06-13"
   - "2026-06-16"
   - "2026-06-18"
   - "2026-06-23"
   - "2026-06-26"
   # 以後改這裡即可，格式為 YYYY-MM-DD
+  # 注意：single source of truth 為 config/tenants/chicken.yaml，config.yaml 為 legacy fallback（保留兩份以防 loader 走 fallback 路徑）
 
 # ─────────────────────────────────────────
 # 忽略關鍵字（Bot 完全不回覆，100% 符合才觸發）
