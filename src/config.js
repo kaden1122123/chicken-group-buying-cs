@@ -25,10 +25,9 @@ const CONFIG_DIR = path.join(__dirname, '..', 'config');
 const TENANT_CONFIG_PATH = path.join(CONFIG_DIR, 'tenants', `${DEFAULT_TENANT}.yaml`);
 const LEGACY_CONFIG_PATH = path.join(__dirname, '..', 'config.yaml'); // 向後相容
 
-// 規模化：知識庫路徑也跟著切換
-const KNOWLEDGE_DIR = path.join(__dirname, '..', 'knowledge');
-const TENANT_KB_PATH = path.join(KNOWLEDGE_DIR, 'tenants', DEFAULT_TENANT);
-const LEGACY_KB_PATH = path.join(KNOWLEDGE_DIR, 'base'); // 向後相容
+// Session C C3 變更：移除 dead code 常數 KNOWLEDGE_DIR / TENANT_KB_PATH / LEGACY_KB_PATH。
+// 原本與 loader.js 的 KB 路徑設定重複（loader.js 已實作完整路徑解析），
+// config.js 這邊只保留 config 路徑與讀取邏輯。知識庫路徑請改用 src/knowledge/loader.js。
 
 function resolveConfigPath() {
   if (fs.existsSync(TENANT_CONFIG_PATH)) {

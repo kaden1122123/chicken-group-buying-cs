@@ -3,6 +3,12 @@
 # 路徑: others/chicken-group-buying-customer-service/config.yaml
 # 更新時間：2026-06-12
 # ============================================================
+#
+# ⚠️ Session C C3 (2026-06-27) 變更：
+# 本檔為「legacy fallback」，single source of truth 為 config/tenants/chicken.yaml
+# 請改 chicken.yaml，本檔會在下次跑 scripts/sync-config.sh 時被同步更新。
+# 為何保留：MULTI_TENANT_DESIGN.md Q2 決定保留作為 fallback，
+# 避免新環境沒有 chicken.yaml 時整個系統崩潰。
 
 # ─────────────────────────────────────────
 # Phase 1：CSV 本地儲存（已啟用）
