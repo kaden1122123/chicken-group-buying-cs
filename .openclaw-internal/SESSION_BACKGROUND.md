@@ -83,7 +83,7 @@ AI 客服「小雞」**不要主動提及 AI / 機器人 / 程式身份**。被�
   - `docs/MULTI_TENANT_DESIGN.md`（多租戶設計）
   - `docs/architecture/NEW_ORDER_FLOW.md`（新訂單流程規劃）
   - `docs/NOTES/2026-06-16-issues.md`（問題筆記）
-  - `docs/handoff/SESSION_BACKGROUND.md`（本檔案）
+  - `.openclaw-internal/SESSION_BACKGROUND.md`（本檔案；2026-06-27 Session B B4 從 docs/handoff/ 搬移過來）
   - `docs/INDEX.md`（文檔入口）
 
 ### OpenClaw agent（external-user）
