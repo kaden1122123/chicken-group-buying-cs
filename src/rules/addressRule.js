@@ -30,7 +30,7 @@ function getKeywords() {
   // 所以這些 broad 關鍵字仍需要 fallback — 從 config 讀而非 hardcode
   const deliveryRules = getDeliveryRules();
   const broadKeywords = (deliveryRules.areas?.allowed || []).filter((k) =>
-    k && k.length >= 2 && k.length < 50 && !allowed.includes(k)
+    k && k.length >= 2 && k.length < 50 && !allowed.includes(k),
   );
   return {
     allowed: [
