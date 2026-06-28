@@ -8,7 +8,7 @@ const { textReply } = require('../utils/lineReply');
 const { formatThankYou } = require('../order/orderFormatter');
 const { writeOrder } = require('../order/csvWriter');
 const { generateOrderId } = require('../order/orderIdGenerator');
-const { getPaymentConfig } = require('../config');
+const { getPaymentConfig, isFeatureEnabled } = require('../config');
 
 /**
  * AWAITING_PAYMENT 狀態處理
@@ -96,6 +96,19 @@ function handleAwaitingPayment(userId, message, orderData, context) {
   const bankCode = paymentConfig.transfer.bank_code;
   const bankAccount = paymentConfig.transfer.account;
   const linepayId = paymentConfig.linepay.line_id;
+  // Session D4-2：檢查 feature flag，關閉的付款方式提示客戶選別的
+  const paymentEnabledMap = {
+    cash: isFeatureEnabled('payment.cash.enabled'),
+    transfer: isFeatureEnabled('payment.transfer.enabled'),
+    jko: isFeatureEnabled('payment.jko.enabled'),
+    linepay: isFeatureEnabled('payment.linepay.enabled') && isFeatureEnabled('official.line_pay.enabled'),
+  };
+  if (paymentMethod in paymentEnabledMap && !paymentEnabledMap[paymentMethod]) {
+    return {
+      reply: textReply('抱歉，這個付款方式目前暫停服務，請選擇其他付款方式（現金 / 轉帳 / 街口 / LINE Pay）。'),
+      newState: STATES.AWAITING_PAYMENT,
+    };
+  }
   switch (paymentMethod) {
     case 'cash':
       paymentInstructions = '請於收到商品時以現金付款給外送人員。';
