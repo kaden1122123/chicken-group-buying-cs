@@ -38,9 +38,9 @@
 
 | # | 項目 | 位置 | 風險 | 阻塞 production？ |
 |---|------|------|------|------------------|
-| A1 | **6/16 訂單流程方向未決定**（A~E 5 個方向待評估）| `docs/NOTES/2026-06-16-issues.md` | 高 | ✅ 是 |
+| ~~A1~~ | **6/16 訂單流程方向** ✅ **決策完成**（D 純 postback）| `docs/architecture/NEW_ORDER_FLOW.md` v2 | 高 | ✅ 已解 |
 | A2 | **api-server.test.js 用過期日期 2026-06-18**（測試可能壞）| `tests/api-server.test.js` | 低 | 否 |
-| A3 | **api-server background 啟動方式未定**（OpenClaw exec 無法保持 background）| `docs/NOTES/2026-06-16-issues.md` | 中 | ✅ 是 |
+| ~~A3~~ | **api-server 啟動方式** ✅ **決策完成**（systemd）| `docs/architecture/NEW_ORDER_FLOW.md` v2 §四 | 中 | ✅ 已解 |
 
 ### 🟡 B. 程式碼品質（中風險高 ROI）
 
@@ -112,9 +112,9 @@
 
 | # | 項目 | 位置 | 影響 |
 |---|------|------|------|
-| G1 | **NEW_ORDER_FLOW.md 標記 Failed 但檔案仍在主目錄** | `docs/architecture/NEW_ORDER_FLOW.md` | 接手者可能誤讀 |
+| ~~G1~~ | **NEW_ORDER_FLOW.md** ✅ **v2 已重寫** | `docs/architecture/NEW_ORDER_FLOW.md` v2 | 已解 |
 | G2 | **PHASE1_PROGRESS.md 還提「11 套測試」** | `PHASE1_PROGRESS.md` line 18（已查） | 同 C1 |
-| G3 | **6/16 issues 仍未解決**（5 方向待定） | `docs/NOTES/2026-06-16-issues.md` | 待 A1 決策 |
+| ~~G3~~ | **6/16 issues** ✅ **2026-06-28 Session E 決策完成** | `docs/NOTES/2026-06-16-issues.md` | 已解 |
 
 ---
 
@@ -139,25 +139,32 @@
 
 > **原則**：高風險高 ROI 先做；低風險快速收尾的批次做；大改動分多 session。
 
-### Session E — 業務流程決策（最高優先，1-2 小時）
+### ~~Session E — 業務流程決策（最高優先，1-2 小時）~~ ✅ 2026-06-28 完成
 
 **目標**：決定 6/16 訂單流程方向 A-E 與 api-server 啟動方式
 
 **項目**：
-- E1. 評估 5 個方向（A 即時 trigger、B LLM 自動辨識、C web hook 註冊、D 純 postback、E 完全手動）
-- E2. 與 Hubert 確認最終方向
-- E3. 確認 api-server 啟動方式（systemd / supervisor / nohup）
-- E4. 重寫 NEW_ORDER_FLOW.md v2 反映新方向
-- E5. 更新 NOTES/2026-06-16-issues.md 標記決策完成
+- E1. 評估 5 個方向（A 即時 trigger、B LLM 自動辨識、C web hook 註冊、D 純 postback、E 完全手動）✅
+- E2. 與 Hubert 確認最終方向 → **D 純 postback** ✅
+- E3. 確認 api-server 啟動方式（systemd / supervisor / nohup）→ **systemd** ✅
+- E4. 重寫 NEW_ORDER_FLOW.md v2 反映新方向 ✅
+- E5. 更新 NOTES/2026-06-16-issues.md 標記決策完成 ✅
 
 **會連帶改**：
-- `docs/architecture/NEW_ORDER_FLOW.md`（v2 重寫）
-- `docs/NOTES/2026-06-16-issues.md`（更新結論）
-- 可能影響 `src/index.js` 或 production prompt（看決策）
+- `docs/architecture/NEW_ORDER_FLOW.md`（v2 重寫）✅
+- `docs/NOTES/2026-06-16-issues.md`（更新結論）✅
+- `docs/CLEANUP_PHASE_2_PLAN.md`（本檔，標記 Session E 完成）✅
+- `docs/KNOWN_ISSUES.md`（active known issues 更新）✅
 
-**風險**：高（影響 production 流程）
+**決策結果**：
+- 流程方向：**D 純 postback**（客戶打「確認」→ Worker 偵測 → API 寫入）
+- 啟動方式：**systemd**（chicken-api.service 開機自動啟動）
+- v2 架構文件：[docs/architecture/NEW_ORDER_FLOW.md](../architecture/NEW_ORDER_FLOW.md)
+- 後續實作：Session N（v2 實作，預估 9 小時）
 
-**估時**：1-2 小時決策 + 後續 session 實作
+**風險**：高（影響 production 流程）→ 決策風險已降為中（待 Session N 實作）
+
+**估時**：1-2 小時決策 ✅ + 後續 session 實作（Session N 預估 9 小時）
 
 ---
 
@@ -362,22 +369,23 @@
 
 ## 四、Session 優先順序彙總
 
-| 優先 | Session | 主題 | 估時 | 風險 |
-|------|---------|------|------|------|
-| 1 | **E** | 業務流程決策 | 1-2 小時 | 🔴 高 |
-| 2 | **F** | 文件一致性 + 6/26 決策落地 | 1.5 小時 | 🟢 低 |
-| 3 | **G** | CI/CD + 程式碼品質基礎 | 2-3 小時 | 🟡 中 |
-| 4 | **H** | 測試覆蓋率補強 | 3-4 小時 | 🟡 中 |
-| 5 | **I** | 安全與 production hardening | 2-3 小時 | 🟡 中 |
-| 6 | **J** | 雙位置架構強化 | 1-2 小時 | 🟢 低 |
-| 7 | **K** | 監控與 logging | 2 小時 | 🟡 中 |
-| 8 | **L** | API 文件化 | 1-2 小時 | 🟢 低 |
-| 9 | **M** | Backup 機制 | 1 小時 | 🟢 低 |
-| **總計** | | | **15-19 小時** | |
+| 優先 | Session | 主題 | 估時 | 風險 | 狀態 |
+|------|---------|------|------|------|------|
+| 1 | ~~**E**~~ | ~~業務流程決策~~ | 1-2 小時 | 🔴 高 | ✅ 2026-06-28 完成 |
+| 1.5 | **N**（新增）| v2 流程實作（D 純 postback + systemd）| 9 小時 | 🟡 中 | ⏸ 待執行 |
+| 2 | **F** | 文件一致性 + 6/26 決策落地 | 1.5 小時 | 🟢 低 | ⏸ 待執行 |
+| 3 | **G** | CI/CD + 程式碼品質基礎 | 2-3 小時 | 🟡 中 | ⏸ 待執行 |
+| 4 | **H** | 測試覆蓋率補強 | 3-4 小時 | 🟡 中 | ⏸ 待執行 |
+| 5 | **I** | 安全與 production hardening | 2-3 小時 | 🟡 中 | ⏸ 待執行 |
+| 6 | **J** | 雙位置架構強化 | 1-2 小時 | 🟢 低 | ⏸ 待執行 |
+| 7 | **K** | 監控與 logging | 2 小時 | 🟡 中 | ⏸ 待執行 |
+| 8 | **L** | API 文件化 | 1-2 小時 | 🟢 低 | ⏸ 待執行 |
+| 9 | **M** | Backup 機制 | 1 小時 | 🟢 低 | ⏸ 待執行 |
+| **總計** | | | **16-20 小時**（含 Session N） | | |
 
-**建議執行順序**：E → F → G → H → I → J → K → L → M
+**建議執行順序**：E ✅ → **N** → F → G → H → I → J → K → L → M
 
-但 E（業務流程）可能引發額外實作 session，需視決策而定。
+Session E（業務流程決策）**已完成**，Session N 為 Session E 衍生的實作 session，必須優先於其他 session 執行（否則 production 訂單流程仍卡住）。
 
 ---
 
