@@ -4,11 +4,82 @@
 
 ---
 
-## Session G — 2026-06-28 20:10 ✅
+## Session G.1 — 2026-06-28 20:23 ✅
 
-**狀態**：完成
-**Commit**：`ef54879`（`01ac0b4..ef54879`，已 pushed）
+**狀態**：完成（CI 真的綠了）
+**Commit**：`df8e7a9`（`ef54879..df8e7a9`，已 pushed + CI ✅）
 **rsync**：✅ 主位置已同步
+
+### 問題發現（Hubert 抓到）
+
+第一次 commit (`ef54879`) 我以為 `npm run lint exit 0 = session 完成`。
+實際上 lint 通過但 `npm test` 在 CI fail。
+
+**真實失敗原因**：
+- GitHub Actions runner 用 UTC 時區
+- `tests/date.test.js:73` 用 `mockTime('2026-06-15T14:00:00+08:00')` 模擬台北時間
+- 程式碼用 `current.getHours()` 取小時，但這是系統時區的小時
+- UTC 環境下 `14:00 +08:00 = 06:00 UTC`，所以 `getHours() = 6 < 13`
+- 沒過收單時間 → 推薦 2026-06-16（測試期望跳過到 2026-06-18）
+
+### 本機重現驗證
+
+```bash
+TZ=UTC npm test        # exit 1, date.test.js:73 fail（重現 CI fail）
+TZ=Asia/Taipei npm test # exit 0（19 套全綠）
+```
+
+### 修法（最小改動）
+
+`.github/workflows/test.yml` 加 `env: TZ: Asia/Taipei`：
+
+```yaml
+jobs:
+  test:
+    env:
+      TZ: Asia/Taipei
+    runs-on: ubuntu-latest
+    ...
+```
+
+### CI 結果（commit `df8e7a9`）
+
+跑 GitHub Actions run `28322040839`，全部 success：
+
+```
+✓ Set up job
+✓ Checkout repository
+✓ Setup Node.js 22
+✓ Install dependencies (npm ci)
+✓ Run linter (npm run lint)
+✓ Run unit tests (npm test)
+✓ Verify .nvmrc
+```
+
+**真的綠了** ✅
+
+### Session 完成的嚴謹定義
+
+這次教訓（Hubert 抓到）：
+
+| 之前我以為 | 實際應該是 |
+|------------|-----------|
+| `npm run lint` exit 0 = lint 過 | 還要 CI 實際跑綠 |
+| 本機 npm test 全綠 = 測試過 | 不同時區 / 環境可能 fail |
+| commit + push = session 完成 | CI 真的 success 才算完成 |
+
+未來 brtclaw session SOP 加入：
+
+1. Commit + push 後必須實際看 CI 結果（用 `gh run view`）
+2. CI 真的 success 才回報「session 完成」
+3. 如果 CI fail，繼續修，不算完成
+
+---
+
+## Session G — 2026-06-28 20:10 ⚠️（**CI fail，已被 G.1 修正**）
+
+**狀態**：第一次 commit 失敗（lint 過但 npm test fail）
+**Commit**：`ef54879`（`01ac0b4..ef54879`，已 pushed 但 CI fail）
 
 ### 動作結果
 
@@ -66,11 +137,13 @@ src/ 風格不完全對齊 semistandard：
 ### 驗證
 
 - [x] commit `ef54879` 包含 62 個檔案（已驗證 `git show HEAD --stat`）
-- [x] push GitHub ✅
-- [x] rsync 主位置 ✅
+- [x] commit `df8e7a9` 修正時區（已驗證 CI 真的 success）
+- [x] push GitHub ✅（`df8e7a9` 推到 origin/main）
+- [x] rsync 主位置 ✅（`.nvmrc`、`.eslintrc.json`、`.github/workflows/test.yml` 都在主位置）
 - [x] 驗證主位置真實訂單仍在 ✅
-- [x] npm test 連續 3 次全綠 ✅
-- [x] npm run lint 0 errors ✅
+- [x] npm test 連續 3 次全綠 ✅（本機）
+- [x] npm run lint 0 errors ✅（本機 + CI 都綠）
+- [x] **GitHub Actions 真的綠** ✅（run 28322040839，10 步全 success）
 - [x] working tree 乾淨 ✅
 - [x] 通知 Hubert ✅（本檔 + Discord reply）
 
