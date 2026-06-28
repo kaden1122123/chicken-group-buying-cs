@@ -45,7 +45,7 @@ console.log(`\n--- 情境 2: isFeatureEnabled 接受 'path' 或 'path.enabled' -
 
 // 預設 config 都設為 enabled: true（chicken.yaml）
 assert.strictEqual(isFeatureEnabled('payment.cash.enabled'), true, 'payment.cash.enabled 預設啟用');
-assert.strictEqual(isFeatureEnabled('payment.cash'), true, "payment.cash（不帶 .enabled）也應啟用");
+assert.strictEqual(isFeatureEnabled('payment.cash'), true, 'payment.cash（不帶 .enabled）也應啟用');
 console.log('  ✓ payment.cash 與 payment.cash.enabled 都回傳 true（啟用）');
 
 console.log(`\n--- 情境 3: 邊界條件 ---`);

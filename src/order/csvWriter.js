@@ -5,6 +5,7 @@ const fs = require('fs');
 const lockfile = require('proper-lockfile');
 const sanitize = require('../utils/sanitizer');
 const { formatDate } = require('../utils/timeUtils');
+const { isFeatureEnabled } = require('../config');
 
 // 規模化：支援多租戶
 // 1. 讀取環境變數 TENANT_ID，未設定則預設 'chicken'
@@ -126,6 +127,12 @@ function formatField(value) {
  * @returns {string} - 寫入的 order_id
  */
 function writeOrder(orderData) {
+  // Session D4-3：storage.phase1.enabled flag 檢查
+  // chicken.yaml 的 storage.phase1.enabled 控制是否寫入 CSV
+  // 未啟用時 throw 明確錯誤，提醒設定錯誤
+  if (!isFeatureEnabled('storage.phase1.enabled')) {
+    throw new Error('[csvWriter] storage.phase1.enabled = false，CSV 寫入已關閉。請檢查 chicken.yaml 設定。');
+  }
   ensureDataDir();
 
   const dateStr = orderData.delivery_date || formatDate(new Date());
@@ -178,6 +185,10 @@ function writeOrder(orderData) {
  * @returns {boolean}
  */
 function updateOrder(orderId, updates) {
+  // Session D4-3：storage.phase1.enabled flag 檢查
+  if (!isFeatureEnabled('storage.phase1.enabled')) {
+    throw new Error('[csvWriter] storage.phase1.enabled = false，CSV 寫入已關閉。請檢查 chicken.yaml 設定。');
+  }
   const dateStr = updates.delivery_date || formatDate(new Date());
   const filename = FILENAME_PATTERN.replace('{date}', dateStr);
   const csvPath = path.join(DATA_DIR, filename);
