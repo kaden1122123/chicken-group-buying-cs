@@ -298,6 +298,16 @@ function getOfficialInfo() {
 }
 
 /**
+ * 取得付款設定（Session D3）
+ * 回傳 { cash: {...}, transfer: {...}, jko: {...}, linepay: {...} }
+ * 各付款方式的硬規則（如現金上限、銀行帳號、LINE Pay ID）都從這裡讀
+ * @returns {object}
+ */
+function getPaymentConfig() {
+  return configYaml.payment || {};
+}
+
+/**
  * 取得配送規則
  */
 function getDeliveryRules() {
@@ -361,6 +371,7 @@ module.exports = {
   getLineChannelSecret,
   getJkoQrCodeUrl,
   getOfficialInfo,
+  getPaymentConfig,
   getDeliveryRules,
   getHandoffConfig,
   getHandoffCustomerReply,

@@ -1,9 +1,14 @@
 'use strict';
 
+// 時區統一設定（Session G.2）：確保即使系統時區是 UTC，業務時間仍用 Asia/Taipei
+require('../utils/timezone');
+
 /**
  * 付款方式驗證規則
- * 新客戶 > NT$1,000 不能選現金
+ * 新客戶 > NT$1,000 不能選現金（Session D3：金額從 config 讀）
  */
+
+const { getPaymentConfig } = require('../config');
 
 // 付款方式對應
 const PAYMENT_METHODS = {
@@ -53,11 +58,12 @@ function validatePayment(paymentMethod, totalAmount, isReturningCustomer = false
     };
   }
 
-  // 新客戶且金額 > NT$1,000，不能選現金
-  if (!isReturningCustomer && totalAmount > 1000 && methodKey === 'cash') {
+  // 新客戶且金額 > 現金上限（從 config 讀，預設 NT$1,000）
+  const newCustomerMax = getPaymentConfig().cash?.new_customer_max || 1000;
+  if (!isReturningCustomer && totalAmount > newCustomerMax && methodKey === 'cash') {
     return {
       valid: false,
-      errorMessage: '首次訂購超過 NT$1,000，需要使用轉帳、街口支付或LINE Pay喔。',
+      errorMessage: `首次訂購超過 NT$${newCustomerMax.toLocaleString()}，需要使用轉帳、街口支付或LINE Pay喔。`,
     };
   }
 
