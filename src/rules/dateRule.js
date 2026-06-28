@@ -1,5 +1,8 @@
 'use strict';
 
+// 時區統一設定（Session G.2）：確保即使系統時區是 UTC，業務時間仍用 Asia/Taipei
+require('../utils/timezone');
+
 const { formatDate, getTodayString } = require('../utils/timeUtils');
 const { getOpenDates: getConfigOpenDates } = require('../config');
 

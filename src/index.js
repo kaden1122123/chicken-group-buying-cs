@@ -5,6 +5,10 @@
  * 整合所有模組，接收 LINE webhook 事件
  */
 
+// 重要：時區統一設定必須是第一個 require
+// 確保所有後續模組的 Date 操作都用 Asia/Taipei
+require('./utils/timezone');
+
 const { STATES, getState, transition, setStateDirectly } = require('./states/stateMachine');
 const { handleIdle, isOrderIntent } = require('./states/idle');
 const { handleAwaitingInfo } = require('./states/awaitingInfo');

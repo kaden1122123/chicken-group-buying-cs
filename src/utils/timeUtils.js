@@ -1,5 +1,9 @@
 'use strict';
 
+// 時區統一設定（Session G.2）：確保即使系統時區是 UTC，業務時間仍用 Asia/Taipei
+// 副作用是 process.env.TZ 被設定，Date.getHours/getDate/getMonth/getFullYear 改用台北時區
+require('./timezone');
+
 const path = require('path');
 const { readKBFile } = require('../knowledge/loader');
 

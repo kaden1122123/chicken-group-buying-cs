@@ -1,5 +1,8 @@
 'use strict';
 
+// 時區統一設定（Session G.2）
+require('../utils/timezone');
+
 const { getTimeSlot } = require('../utils/timeUtils');
 
 /**
