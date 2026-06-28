@@ -35,8 +35,12 @@ delivery:
   # Session D3-2：滿額免運門檻與未達門檻運費（從 hardcode 改為 config）
   delivery_fee_short_fallback: 80
   areas:
+    # Session D3-3：broad 區域關鍵字（04_delivery.md loader 不抓 #### 標題）
+    # 包含三峽、鶯歌等區域名，選址包含這些關鍵字仍視為配送範圍
     allowed:
       - 三鶯生活圈
+      - 三峽
+      - 鶯歌
     denied:
       - 非三鶯生活圈
 open_dates:

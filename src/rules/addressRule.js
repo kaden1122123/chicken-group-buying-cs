@@ -1,6 +1,10 @@
 'use strict';
 
+// 時區統一設定（Session G.2）
+require('../utils/timezone');
+
 const { loadDeliveryAreas } = require('../knowledge/loader');
+const { getDeliveryRules } = require('../config');
 
 // Session C C2 變更：移除 dead code 常數 KNOWLEDGE_BASE_PATH。
 // 原本指向 knowledge/base/，但從未實際使用（地址資料統一從 loader 拿）。
@@ -20,14 +24,18 @@ const { loadDeliveryAreas } = require('../knowledge/loader');
  */
 function getKeywords() {
   const { allowed, denied } = loadDeliveryAreas();
+  // Session D3-3：broad 區域關鍵字從 config 讀（替代 hardcode）
+  // chicken.yaml 的 delivery.areas.allowed 包含「三峽」「鶯歌」等 broad 關鍵字
+  // loader 只抓 04_delivery.md 的 list items，不抓「####」標題
+  // 所以這些 broad 關鍵字仍需要 fallback — 從 config 讀而非 hardcode
+  const deliveryRules = getDeliveryRules();
+  const broadKeywords = (deliveryRules.areas?.allowed || []).filter((k) =>
+    k && k.length >= 2 && k.length < 50 && !allowed.includes(k)
+  );
   return {
-    // 加上 broad 區域名（04_delivery.md 用「#### 三峽地區」「#### 鶯歌地區」標題，
-    // 但 loader 只抓 list item「- xxx」，不抓標題本身。這兩個區域名是核心 high-level 關鍵字，
-    // 硬幣伴在 allowed 結尾作 fallback 避免選址包含「三峽」「鶯歌」但 04_delivery.md
-    // 沒列具體清單時誤判。
     allowed: [
       ...allowed.filter((k) => k && !k.startsWith('#') && k.length >= 2 && k.length < 50),
-      '三峽', '鶯歌',
+      ...broadKeywords,
     ],
     // 04_delivery.md 用「大溪方向」「新店方向」這樣的 broad 關鍵字，但客戶選址寫「大溪區」
     // 不含「方向」。補上 broad 拒絕關鍵字避免誤判。
