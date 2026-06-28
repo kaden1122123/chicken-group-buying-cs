@@ -144,27 +144,54 @@
 **目標**：決定 6/16 訂單流程方向 A-E 與 api-server 啟動方式
 
 **項目**：
-- E1. 評估 5 個方向（A 即時 trigger、B LLM 自動辨識、C web hook 註冊、D 純 postback、E 完全手動）✅
+- E1. 評估 5 個方向 ✅
 - E2. 與 Hubert 確認最終方向 → **D 純 postback** ✅
-- E3. 確認 api-server 啟動方式（systemd / supervisor / nohup）→ **systemd** ✅
+- E3. 確認 api-server 啟動方式 → **systemd** ✅
 - E4. 重寫 NEW_ORDER_FLOW.md v2 反映新方向 ✅
 - E5. 更新 NOTES/2026-06-16-issues.md 標記決策完成 ✅
 
+**決策結果**：
+- 流程方向：**D 純 postback**（Session E 19:00 決策）
+- 啟動方式：**systemd**
+
+**Session N 修正**（2026-06-28 19:30）：
+- 探索發現 D 方案有架構難題（Worker 拿不到 LLM 對話歷史、OpenClaw 沒 tool calling、`handlePostbackEvent` 未實作）
+- 改走 A 方案（LLM 純文字 + Hubert 手動建單）— 30 分鐘上線，零風險
+- 詳見 [docs/handoff/sessions/SESSION_N_PROMPT.md](../handoff/sessions/SESSION_N_PROMPT.md) 與 [docs/architecture/NEW_ORDER_FLOW.md](../architecture/NEW_ORDER_FLOW.md) v2.1
+
+### ~~Session N — v2 流程實作（9 小時）~~ ✅ 2026-06-28 19:30 完成（改 A 方案）
+
+**目標**：實作決策的訂單流程
+
+**項目**：
+- ~~N1. Worker postback 偵測邏輯~~ — ❌ 廢止（A 方案不需要）
+- ~~N2. Worker 對話 context 訂單資料取出~~ — ❌ 廢止（A 方案不需要）
+- N3. api-server.js 連線驗證 — ⏸ 待用（A 方案不需 api-server，保留 B/C 升級用）
+- **N4. main_idea.md 修整為 A 方案** — ✅ 已完成
+- ~~N5. 刪除 v1 監聽式遺留~~ — ✅ Session A 已完成
+- ~~N6. end-to-end 整合測試~~ — ⏸ 待用（A 方案不需要）
+- ~~N7. systemd service 設定~~ — ⏸ 待用（A 方案不需 api-server）
+- N8. 實測（真實 LINE 帳號）— ⏸ 待 Hubert 安排
+- **Push 通知測試** — ⏸ 待第一次客戶確認時驗證
+
 **會連帶改**：
-- `docs/architecture/NEW_ORDER_FLOW.md`（v2 重寫）✅
-- `docs/NOTES/2026-06-16-issues.md`（更新結論）✅
-- `docs/CLEANUP_PHASE_2_PLAN.md`（本檔，標記 Session E 完成）✅
-- `docs/KNOWN_ISSUES.md`（active known issues 更新）✅
+- `~/.openclaw/agents/external-user/knowledge/main_idea.md`（N4）— ✅
+- `docs/architecture/NEW_ORDER_FLOW.md` v2 → v2.1 — ✅
+- `docs/production-prompt/2026-06-28/`（新目錄，prompt 版本快照）— ✅
+- `docs/CLEANUP_PHASE_2_PLAN.md`（本檔）— ✅
+- `docs/handoff/sessions/SESSION_N_PROMPT.md`（新檔）— ✅
+- `docs/handoff/sessions/SESSION_O_PROMPT.md`（B 方案升級 prompt，新檔）— ✅
+- `docs/handoff/sessions/SESSION_P_PROMPT.md`（C 方案升級 prompt，新檔）— ✅
 
 **決策結果**：
-- 流程方向：**D 純 postback**（客戶打「確認」→ Worker 偵測 → API 寫入）
-- 啟動方式：**systemd**（chicken-api.service 開機自動啟動）
-- v2 架構文件：[docs/architecture/NEW_ORDER_FLOW.md](../architecture/NEW_ORDER_FLOW.md)
-- 後續實作：Session N（v2 實作，預估 9 小時）
+- 流程方向：**A 方案**（LLM 純文字 + Hubert 手動建單過渡期）
+- 詳見 [docs/architecture/NEW_ORDER_FLOW.md](../architecture/NEW_ORDER_FLOW.md) v2.1
+- 詳見 [docs/production-prompt/2026-06-28/CHANGELOG.md](../production-prompt/2026-06-28/CHANGELOG.md)
+- 升級路徑：Session O（B 方案）→ Session P（C 方案）
 
-**風險**：高（影響 production 流程）→ 決策風險已降為中（待 Session N 實作）
+**風險**：低（已上線，Hubert 手動建單過渡期）
 
-**估時**：1-2 小時決策 ✅ + 後續 session 實作（Session N 預估 9 小時）
+**估時**：30 分鐘（vs 原估 9 小時，A 方案 0 改架構）
 
 ---
 
@@ -372,7 +399,9 @@
 | 優先 | Session | 主題 | 估時 | 風險 | 狀態 |
 |------|---------|------|------|------|------|
 | 1 | ~~**E**~~ | ~~業務流程決策~~ | 1-2 小時 | 🔴 高 | ✅ 2026-06-28 完成 |
-| 1.5 | **N**（新增）| v2 流程實作（D 純 postback + systemd）| 9 小時 | 🟡 中 | ⏸ 待執行 |
+| 1.5 | ~~**N**~~ | ~~v2 流程實作（D 純 postback + systemd）~~ | ~~9 小時~~ | 🟡 中 | ✅ 2026-06-28 完成（改 A 方案，30 分鐘） |
+| 1.6 | **O**（待用）| B 方案升級（OpenClaw tool calling）| 4-6 小時 | 🟡 中 | ⏸ 待用（依真實訂單模式決定優先） |
+| 1.7 | **P**（待用）| C 方案升級（OpenClaw ↔ Worker KV 同步）| 6-8 小時 | 🟡 中 | ⏸ 待用 |
 | 2 | **F** | 文件一致性 + 6/26 決策落地 | 1.5 小時 | 🟢 低 | ⏸ 待執行 |
 | 3 | **G** | CI/CD + 程式碼品質基礎 | 2-3 小時 | 🟡 中 | ⏸ 待執行 |
 | 4 | **H** | 測試覆蓋率補強 | 3-4 小時 | 🟡 中 | ⏸ 待執行 |
@@ -381,11 +410,9 @@
 | 7 | **K** | 監控與 logging | 2 小時 | 🟡 中 | ⏸ 待執行 |
 | 8 | **L** | API 文件化 | 1-2 小時 | 🟢 低 | ⏸ 待執行 |
 | 9 | **M** | Backup 機制 | 1 小時 | 🟢 低 | ⏸ 待執行 |
-| **總計** | | | **16-20 小時**（含 Session N） | | |
+| **總計** | | | **10-11 小時**（A 方案已上線，B/C 升級待用） | | |
 
-**建議執行順序**：E ✅ → **N** → F → G → H → I → J → K → L → M
-
-Session E（業務流程決策）**已完成**，Session N 為 Session E 衍生的實作 session，必須優先於其他 session 執行（否則 production 訂單流程仍卡住）。
+**建議執行順序**：E ✅ → N ✅ → **F → G → H → I → J → K → L → M**（O/P 升級 session 依真實訂單模式決定）
 
 ---
 
