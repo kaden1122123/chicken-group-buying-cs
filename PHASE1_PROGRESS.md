@@ -44,14 +44,14 @@
 
 ### P1/P2 清理（進行中）
 - ✅ P1-5：package.json test script 分離 unit / integration
-- ✅ P1-7：INDEX.md / SOP.md / SESSION_BACKGROUND.md 測試套數統一為 11 套
+- ✅ P1-7：INDEX.md / SOP.md / SESSION_BACKGROUND.md 測試套數統一為 11 套（2026-06-28 Session F 修正為 **19 套**：17 單元 + 2 整合）
 - ✅ P2-1：刪除 src/states/reaskInfo.js（dead code）
 - ✅ P2-3：刪除 stateMachine `customer_reply` event（dead code）
 - ✅ P2-7：刪除 data/orders/2026-12-31.csv（測試遺留）
 - ⏸ P1-1, P1-2, P1-3, P1-4, P1-6, P1-8, P1-9, P2-2, P2-4, P2-5, P2-8, P2-9, P2-10 留待下輪
 
 ### 測試驗證（2026-06-26 15:00）
-- 11 套單元測試全綠（`npm test`）
+- **19 套測試全綠**（`npm test`：17 單元 + 2 整合）
 - 部署驗證：dashboard-server 啟動成功，5 個端點 HTTP 狀態正確
 - 新增 3 套測試：address-handoff.test.js, handoff-customer-reply.test.js, state-trimmed-value.test.js
 

@@ -195,30 +195,31 @@
 
 ---
 
-### Session F — 文件一致性 + 6/26 決策落地（1.5 小時）
+### ~~Session F — 文件一致性 + 6/26 決策落地（1.5 小時）~~ ✅ 2026-06-28 完成
 
 **目標**：低風險快速收尾的文件修整
 
 **項目**：
-- F1. **更新 INDEX.md 測試套數**（11→19）
-- F2. **更新 PHASE1_PROGRESS.md 測試套數引用**（如還有）
-- F3. **api-server.test.js 用 mock time**（決策 4）
-- F4. **P0-5 cognee placeholder 處理**（決策 1 — 推薦刪除 + 更新 MEMORY.md）
-- F5. **knowledge/learned/ 處理**（保留空目錄 + 加 README 說明用途，或刪除）
-- F6. **knowledge/tenants/chicken/ 10 個 md 驗證清單**（加 INDEX 列出 single source of truth）
+- F1. **更新 INDEX.md 測試套數**（11→19）✅
+- F2. **更新 PHASE1_PROGRESS.md 測試套數引用**（如還有）✅
+- F3. **api-server.test.js 用 mock time**（決策 4）✅ **已實作**（scripts/api-server.js:27-43 MOCK_TODAY 環境變數）
+- F4. **P0-5 cognee placeholder 處理**（決策 1 — 推薦刪除 + 更新 MEMORY.md）✅ **不存在**（`scripts/cognee_import.py` 已刪除；MEMORY.md 是 cross-reference 到獨立的 `cognee/` 專案目錄，是正確的）
+- F5. **knowledge/learned/ 處理**（保留空目錄 + 加 README 說明用途，或刪除）✅ 保留 + 加 README.md
+- F6. **knowledge/tenants/chicken/ 10 個 md 驗證清單**（加 INDEX 列出 single source of truth）✅ 12 個 md 完整 INDEX 已建立
 
 **會連帶改**：
-- `docs/INDEX.md`
-- `PHASE1_PROGRESS.md`
-- `tests/api-server.test.js`
-- `tests/api-server.test.js` mock time helper（可能要新增）
-- `MEMORY.md`（cognee 狀態修正）
-- `knowledge/learned/README.md` 或刪除
-- `knowledge/tenants/chicken/INDEX.md`（新檔）
+- `docs/INDEX.md` ✅
+- `PHASE1_PROGRESS.md` ✅
+- `knowledge/learned/README.md` ✅（新檔）
+- `knowledge/tenants/chicken/INDEX.md` ✅（新檔）
 
-**風險**：低（純文件 + 測試 mock）
+**未變更的（已驗證）**：
+- `tests/api-server.test.js` — MOCK_TODAY 已實作於 api-server.js
+- `MEMORY.md` — cognee 是 cross-reference，不是 placeholder
 
-**估時**：1.5 小時
+**風險**：🟢 低（純文件）
+
+**估時**：30 分鐘（vs 原估 1.5 小時，因 F3 + F4 已實作 / 不存在）
 
 ---
 
@@ -402,7 +403,7 @@
 | 1.5 | ~~**N**~~ | ~~v2 流程實作（D 純 postback + systemd）~~ | ~~9 小時~~ | 🟡 中 | ✅ 2026-06-28 完成（改 A 方案，30 分鐘） |
 | 1.6 | **O**（待用）| B 方案升級（OpenClaw tool calling）| 4-6 小時 | 🟡 中 | ⏸ 待用（依真實訂單模式決定優先） |
 | 1.7 | **P**（待用）| C 方案升級（OpenClaw ↔ Worker KV 同步）| 6-8 小時 | 🟡 中 | ⏸ 待用 |
-| 2 | **F** | 文件一致性 + 6/26 決策落地 | 1.5 小時 | 🟢 低 | ⏸ 待執行 |
+| 2 | ~~**F**~~ | ~~文件一致性 + 6/26 決策落地~~ | ~~1.5 小時~~ | 🟢 低 | ✅ 2026-06-28 完成（30 分鐘） |
 | 3 | **G** | CI/CD + 程式碼品質基礎 | 2-3 小時 | 🟡 中 | ⏸ 待執行 |
 | 4 | **H** | 測試覆蓋率補強 | 3-4 小時 | 🟡 中 | ⏸ 待執行 |
 | 5 | **I** | 安全與 production hardening | 2-3 小時 | 🟡 中 | ⏸ 待執行 |

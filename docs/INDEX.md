@@ -80,24 +80,31 @@ chicken-group-buying-customer-service/
 │   ├── states/
 │   ├── handoff/
 │   └── utils/
-├── tests/                        # 11 套單元測試 + 2 套整合測試
-│   ├── rules.test.js                  # 34+ 案例
-│   ├── states.test.js                  # 狀態機轉換
-│   ├── handoff.test.js                 # 14 種觸發條件
-│   ├── security.test.js                # SQL/Prompt injection 防禦
-│   ├── date.test.js                    # 12+ 時間邊界
-│   ├── config.test.js                  # YAML 載入 + ignored_keywords
-│   ├── whitelist.test.js               # 白名單機制
-│   ├── integration.test.js             # Worker 攔截 mirror
-│   ├── address-handoff.test.js         # P0-1：配送範圍觸發 handoff
-│   ├── handoff-customer-reply.test.js  # P0-2：customer_reply 讀 config
-│   └── state-trimmed-value.test.js     # P0-3：trimmed 值不被覆蓋
+├── tests/                        # 17 套單元測試 + 2 套整合測試（共 19 套）
+│   ├── rules.test.js                       # 34+ 案例
+│   ├── states.test.js                      # 狀態機轉換
+│   ├── handoff.test.js                     # 14 種觸發條件
+│   ├── security.test.js                    # SQL/Prompt injection 防禦
+│   ├── date.test.js                        # 12+ 時間邊界
+│   ├── config.test.js                      # YAML 載入 + ignored_keywords
+│   ├── whitelist.test.js                   # 白名單機制
+│   ├── integration.test.js                 # Worker 攔截 mirror
+│   ├── address-handoff.test.js             # P0-1：配送範圍觸發 handoff
+│   ├── handoff-customer-reply.test.js      # P0-2：customer_reply 讀 config
+│   ├── state-trimmed-value.test.js         # P0-3：trimmed 值不被覆蓋
+│   ├── address-dynamic-keywords.test.js    # 動態關鍵字
+│   ├── community-field.test.js             # community 欄位驗證
+│   ├── config-interface-adoption.test.js   # config interface 採用
+│   ├── csv-writer-concurrency.test.js      # CSV 寫入併發控制
+│   ├── dashboard-server-yaml-fallback.test.js  # dashboard-server yaml fallback
+│   ├── parse-items-dedup.test.js           # 解析品項去重
+│   └── api-server.test.js                  # API server 整合測試（含 MOCK_TODAY）
 ├── scripts/
 │   ├── api-server.js               # HTTP API
 │   ├── dashboard.js                # 儀表板生成器
 │   ├── dashboard-server.js         # 儀表板 + admin 伺服器
 │   ├── admin.html                  # 管理後台 UI（P0-4）
-│   └── dashboard-server-test.js    # 整合測試
+│   └── dashboard-server-test.js    # 整合測試（CSV 讀取）
 └── dashboard.html                # 儀表板輸出
 ```
 
