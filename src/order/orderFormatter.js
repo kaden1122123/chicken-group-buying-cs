@@ -1,6 +1,10 @@
 'use strict';
 
+// 時區統一設定（Session G.2）
+require('../utils/timezone');
+
 const { loadProductMenu } = require('../knowledge/loader');
+const { getDeliveryRules } = require('../config');
 
 /**
  * 計算訂單金額
@@ -51,12 +55,17 @@ function calculatePrice(itemsData) {
   }, 0);
 
   let deliveryFee = 0;
+  const deliveryRules = getDeliveryRules();
+  // 小菜免運門檻（從 config 讀，預設 NT$350）
+  const sideMinNtd = deliveryRules.minimum_order?.side_dish_ntd || 350;
+  // 小菜未滿門檻時的運費（從 config 讀，預設 NT$80）
+  const deliveryFeeFallback = deliveryRules.delivery_fee_short_fallback || 80;
   if (hasChicken) {
     deliveryFee = 0; // 雞肉1盒以上免運
-  } else if (hasSide && sideSubtotal >= 350) {
-    deliveryFee = 0; // 小菜滿$350免運
+  } else if (hasSide && sideSubtotal >= sideMinNtd) {
+    deliveryFee = 0; // 小菜滿$sideMinNtd免運
   } else if (hasSide) {
-    deliveryFee = 80; // 小菜未滿$350，收運費
+    deliveryFee = deliveryFeeFallback; // 小菜未滿門檻，收運費
   }
 
   return {
