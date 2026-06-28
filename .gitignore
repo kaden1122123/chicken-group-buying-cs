@@ -14,3 +14,6 @@ data/orders/**/*.csv
 !data/orders/chicken/2026-06-16.csv
 # 保留 .gitkeep
 !data/orders/**/.gitkeep
+# Session D D2 併發測試 tenant（獨立隔離避免誤刪 chicken tenant 真實訂單）
+data/orders/_csv_concurrency_test/
+knowledge/tenants/_csv_concurrency_test/
