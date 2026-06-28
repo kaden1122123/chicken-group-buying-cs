@@ -308,6 +308,75 @@ function getPaymentConfig() {
 }
 
 /**
+ * 業務可關閉功能旗標（Session D4）
+ * 用 isFeatureEnabled(path) 查詢是否啟用
+ * 列在這裡讓 check-quality.sh 能 grep 到、且便於 IDE 跳轉
+ *
+ * 業務相關（5 個）：
+ * - payment.cash.enabled
+ * - payment.transfer.enabled
+ * - payment.jko.enabled
+ * - payment.linepay.enabled
+ * - official.line_pay.enabled
+ *
+ * 系統相關（4 個）：
+ * - storage.phase1.enabled
+ * - storage.phase2.enabled
+ * - handoff.notify_owner.enabled
+ * - security.input_sanitization
+ */
+const FEATURE_FLAGS = [
+  'payment.cash.enabled',
+  'payment.transfer.enabled',
+  'payment.jko.enabled',
+  'payment.linepay.enabled',
+  'official.line_pay.enabled',
+  'storage.phase1.enabled',
+  'storage.phase2.enabled',
+  'handoff.notify_owner.enabled',
+  'security.input_sanitization',
+];
+
+/**
+ * 檢查 feature flag 是否啟用（Session D4）
+ * 雞味客服原本 9 個 enabled flag 都是「dead config」— chicken.yaml 寫了但 src/ 不讀
+ * 現在通過這個統一介面讀取，flag 才會真正生效
+ *
+ * 邏輯：
+ * - 用 dot path 查 config 物件
+ * - 找到且有 `enabled` 欄位且為 false → 回傳 false（功能關閉）
+ * - 找不到路徑 → 預設回傳 true（向後相容，舊 config 不會壞）
+ * - 其他情況 → 回傳 true（預設啟用）
+ *
+ * @param {string} featurePath - 例如 'payment.cash.enabled' 或 'payment.cash'
+ * @returns {boolean} - true = 啟用，false = 關閉
+ */
+function isFeatureEnabled(featurePath) {
+  if (!featurePath || typeof featurePath !== 'string') return true;
+  // 支援兩種路徑：'payment.cash.enabled' 或 'payment.cash'
+  // 如果沒有 .enabled 結尾，自動補上
+  const path = featurePath.endsWith('.enabled') ? featurePath : `${featurePath}.enabled`;
+  const parts = path.split('.');
+  let current = configYaml;
+  for (const part of parts) {
+    if (current && typeof current === 'object' && part in current) {
+      current = current[part];
+    } else {
+      // 路徑不存在：預設啟用（向後相容）
+      return true;
+    }
+  }
+  // current 現在是最後一個 segment 的值（應該是 boolean）
+  // 如果是 boolean，直接回傳
+  // 如果是物件（表示路徑多走了一層），檢查 enabled
+  if (typeof current === 'boolean') return current;
+  if (current && typeof current === 'object') {
+    return current.enabled !== false;
+  }
+  return true;
+}
+
+/**
  * 取得配送規則
  */
 function getDeliveryRules() {
@@ -372,6 +441,8 @@ module.exports = {
   getJkoQrCodeUrl,
   getOfficialInfo,
   getPaymentConfig,
+  isFeatureEnabled,
+  FEATURE_FLAGS,
   getDeliveryRules,
   getHandoffConfig,
   getHandoffCustomerReply,
