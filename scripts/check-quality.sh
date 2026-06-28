@@ -249,7 +249,8 @@ if [ $FAIL_COUNT -gt 0 ]; then
   echo ""
   echo "修復建議："
   echo "  - npm test 失敗：先修測試"
-  echo "  - hardcode 失敗：依 docs/CONFIG_VARIABLES_TABLE.md 改用 config 讀取"
+  echo "  - hardcode 失敗：依 docs/KNOWN_ISSUES.md F1~F4、Session D3 prompt 修整"
+  echo "  - dead config 失敗：依 docs/KNOWN_ISSUES.md W1~W9、Session D4 prompt 修整"
   echo "  - 真實訂單消失：git checkout HEAD -- data/orders/chicken/"
   exit 1
 fi
