@@ -1,16 +1,20 @@
 'use strict';
 
+// 時區統一設定（Session G.2）
+require('../utils/timezone');
+
 const { STATES, buildCancelResult } = require('./stateMachine');
 const { textReply } = require('../utils/lineReply');
 const { formatThankYou } = require('../order/orderFormatter');
 const { writeOrder } = require('../order/csvWriter');
 const { generateOrderId } = require('../order/orderIdGenerator');
+const { getPaymentConfig } = require('../config');
 
 /**
  * AWAITING_PAYMENT 狀態處理
  * 現金：直接完成 → COMPLETED
  * 轉帳/街口：等待截圖，收到 → COMPLETED（標記 pending）
- * LINE Pay：提供 Willy0221 → COMPLETED
+ * LINE Pay：提供老闆 LINE ID（從 config.payment.linepay.line_id 讀）→ COMPLETED
  */
 
 const PAYMENT_CONFIRM_KEYWORDS = ['已轉帳', '已付款', '轉了', '付了', '轉帳完成', '付款完成', 'ok', '好'];
@@ -86,18 +90,24 @@ function handleAwaitingPayment(userId, message, orderData, context) {
 
   // 尚未確認付款
   let paymentInstructions = '';
+  // Session D3-4/D3-5：銀行帳號與 LINE Pay ID 從 config 讀（替代 hardcode）
+  // 不設 default value：chicken.yaml 必須有這些欄位，fail-fast 提醒設定錯誤
+  const paymentConfig = getPaymentConfig();
+  const bankCode = paymentConfig.transfer.bank_code;
+  const bankAccount = paymentConfig.transfer.account;
+  const linepayId = paymentConfig.linepay.line_id;
   switch (paymentMethod) {
     case 'cash':
       paymentInstructions = '請於收到商品時以現金付款給外送人員。';
       break;
     case 'transfer':
-      paymentInstructions = '請轉帳至：銀行代碼007 / 帳號23257030422\n轉帳完成後回覆「已轉帳」並截圖，謝謝！';
+      paymentInstructions = `請轉帳至：銀行代碼${bankCode} / 帳號${bankAccount}\n轉帳完成後回覆「已轉帳」並截圖，謝謝！`;
       break;
     case 'jko':
       paymentInstructions = '請使用街口支付掃描 QR Code，完成後回覆「已付款」，謝謝！';
       break;
     case 'linepay':
-      paymentInstructions = '請加入老闆 LINE（ID：Willy0221）進行 LINE Pay 付款，完成後回覆「已付款」，謝謝！';
+      paymentInstructions = `請加入老闆 LINE（ID：${linepayId}）進行 LINE Pay 付款，完成後回覆「已付款」，謝謝！`;
       break;
     default:
       paymentInstructions = '請選擇付款方式並完成後回覆「已付款」，謝謝！';
