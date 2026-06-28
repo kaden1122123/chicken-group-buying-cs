@@ -20,7 +20,7 @@ console.log('\n--- IDLE State ---');
 const userId1 = 'test_user_idle_1';
 
 // Initial state should be IDLE
-let state1 = getState(userId1);
+const state1 = getState(userId1);
 assert.strictEqual(state1.state, STATES.IDLE, 'Initial state should be IDLE');
 console.log('  ✓ Initial state is IDLE');
 

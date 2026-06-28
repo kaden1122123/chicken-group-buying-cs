@@ -45,7 +45,7 @@ console.log('  ✓ allowed 包含 04_delivery.md 內所有清單');
 // 不應包含 markdown 結構字符
 assert.ok(
   !areas.allowed.some((k) => k.startsWith('#')),
-  '不應包含 markdown 標題'
+  '不應包含 markdown 標題',
 );
 console.log('  ✓ 不含 markdown 結構字符');
 
@@ -104,20 +104,20 @@ console.log('\n--- 動態載入驗證 ---');
 
 const addressRuleSource = fs.readFileSync(
   path.join(__dirname, '..', 'src', 'rules', 'addressRule.js'),
-  'utf8'
+  'utf8',
 );
 assert.ok(
   addressRuleSource.includes("require('../knowledge/loader')"),
-  'addressRule.js 應 require loader'
+  'addressRule.js 應 require loader',
 );
 assert.ok(
   addressRuleSource.includes('loadDeliveryAreas'),
-  'addressRule.js 應呼叫 loadDeliveryAreas'
+  'addressRule.js 應呼叫 loadDeliveryAreas',
 );
 assert.ok(
-  !addressRuleSource.includes("ALLOWED_KEYWORDS = [") ||
+  !addressRuleSource.includes('ALLOWED_KEYWORDS = [') ||
     addressRuleSource.match(/ALLOWED_KEYWORDS = \[/g).length <= 0,
-  'addressRule.js 不應再有 hardcode ALLOWED_KEYWORDS 陣列'
+  'addressRule.js 不應再有 hardcode ALLOWED_KEYWORDS 陣列',
 );
 console.log('  ✓ addressRule.js 改用 loader，無 hardcode 陣列');
 

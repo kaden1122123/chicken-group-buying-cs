@@ -15,7 +15,9 @@
     "test:whitelist": "node tests/whitelist.test.js",
     "test:integration": "node tests/integration.test.js",
     "test:api-server": "node tests/api-server.test.js",
-    "test:dashboard-server": "node scripts/dashboard-server-test.js"
+    "test:dashboard-server": "node scripts/dashboard-server-test.js",
+    "lint": "eslint src/ tests/ scripts/",
+    "lint:fix": "eslint src/ tests/ scripts/ --fix"
   },
   "keywords": [
     "line-bot",
@@ -27,5 +29,11 @@
   "dependencies": {
     "js-yaml": "^4.1.0",
     "proper-lockfile": "^4.1.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.6.0"
   }
 }

@@ -31,10 +31,10 @@ const { getOrdersByDate } = require('../src/order/csvReader');
 if (process.env.MOCK_TODAY) {
   const RealDate = Date;
   const mockNow = new RealDate(process.env.MOCK_TODAY).getTime();
-  function MockDate(...args) {
+  const MockDate = function (...args) {
     if (args.length === 0) return new RealDate(mockNow);
     return new RealDate(...args);
-  }
+  };
   MockDate.UTC = RealDate.UTC;
   MockDate.parse = RealDate.parse;
   MockDate.now = () => mockNow;

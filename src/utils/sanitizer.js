@@ -13,9 +13,9 @@
 function sanitize(input) {
   if (input === null || input === undefined) return '';
   if (typeof input === 'object' && input !== null) return '';
-  
+
   const str = String(input);
-  
+
   // 移除或跳脫危險字符
   return str
     // 移除 null byte

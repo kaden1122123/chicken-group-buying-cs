@@ -14,28 +14,28 @@ const { readKBFile, KB_PATH } = require('./loader');
 
 // intent → 知識庫檔案對照
 const INTENT_KB_MAP = {
-  'order_start': ['02_order_flow.md', '03_payment.md'],
-  'product_query': ['01_product.md'],
-  'menu_browse': ['01_product.md'],
-  'delivery_check': ['04_delivery.md', '02_order_flow.md'],
-  'date_check': ['02_order_flow.md'],
-  'payment_info': ['03_payment.md'],
-  'order_confirm': ['12_reply_examples.md'],
-  'handoff': ['07_transfer_rules.md'],
-  'faq': ['06_faq.md'],
-  'lead_followup': ['11_lead_followup.md'],
-  'customer_tag': ['10_customer_tags.md'],
-  'order_standard': ['09_order_standard.md'],
+  order_start: ['02_order_flow.md', '03_payment.md'],
+  product_query: ['01_product.md'],
+  menu_browse: ['01_product.md'],
+  delivery_check: ['04_delivery.md', '02_order_flow.md'],
+  date_check: ['02_order_flow.md'],
+  payment_info: ['03_payment.md'],
+  order_confirm: ['12_reply_examples.md'],
+  handoff: ['07_transfer_rules.md'],
+  faq: ['06_faq.md'],
+  lead_followup: ['11_lead_followup.md'],
+  customer_tag: ['10_customer_tags.md'],
+  order_standard: ['09_order_standard.md'],
 };
 
 // state → 知識庫檔案對照
 const STATE_KB_MAP = {
-  'IDLE': [],
-  'AWAITING_INFO': ['01_product.md', '02_order_flow.md', '03_payment.md', '04_delivery.md'],
-  'CONFIRMING': ['12_reply_examples.md'],
-  'AWAITING_PAYMENT': ['03_payment.md'],
-  'HUMAN_HANDOFF': ['07_transfer_rules.md'],
-  'COMPLETED': [],
+  IDLE: [],
+  AWAITING_INFO: ['01_product.md', '02_order_flow.md', '03_payment.md', '04_delivery.md'],
+  CONFIRMING: ['12_reply_examples.md'],
+  AWAITING_PAYMENT: ['03_payment.md'],
+  HUMAN_HANDOFF: ['07_transfer_rules.md'],
+  COMPLETED: [],
 };
 
 /**

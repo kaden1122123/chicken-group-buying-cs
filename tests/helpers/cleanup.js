@@ -26,8 +26,8 @@ const path = require('path');
 // 來源：git ls-files data/orders/<子目錄>/<檔名>.csv（排除 .gitkeep）
 // 6/13 是 PHASE1 第一筆、6/16 是第二筆（從 cleanup-test-orders.sh 沿用）
 const PRODUCTION_DATA_PROTECTED = [
-  '2026-06-13.csv',  // PHASE1 第一筆真實訂單
-  '2026-06-16.csv',  // PHASE1 第二筆真實訂單
+  '2026-06-13.csv', // PHASE1 第一筆真實訂單
+  '2026-06-16.csv', // PHASE1 第二筆真實訂單
 ];
 
 // data/orders/{tenant_id}/ 路徑（與 src/order/csvWriter.js 一致）
@@ -53,7 +53,7 @@ function assertNotProtected(filename) {
     throw new Error(
       `[cleanup] REFUSED: ${filename} is PRODUCTION data (git tracked). ` +
       `Tests must not write/delete this file. ` +
-      `Use /tmp/ for test CSV, or remove from PROTECTED list intentionally.`
+      `Use /tmp/ for test CSV, or remove from PROTECTED list intentionally.`,
     );
   }
 }

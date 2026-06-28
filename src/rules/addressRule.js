@@ -33,7 +33,7 @@ function getKeywords() {
     // 不含「方向」。補上 broad 拒絕關鍵字避免誤判。
     denied: [
       ...denied.filter((k) => k && !k.startsWith('#') && k.length >= 2 && k.length < 50).map((k) =>
-        k.replace(/方向$/, '')
+        k.replace(/方向$/, ''),
       ),
       '大溪', '新店', '龍潭', '楊梅', '桃園', '中壢',
       '土城', '板橋', '中和', '永和', '汐止',

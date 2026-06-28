@@ -29,11 +29,11 @@ console.log(`  parsed: ${JSON.stringify(r1)}`);
 assert.strictEqual(r1.length, 2, '應只有 2 個 items，無重複');
 assert.ok(
   r1.some((it) => it.name === '鹽水雞' && it.quantity === 2),
-  '應有 鹽水雞 x2'
+  '應有 鹽水雞 x2',
 );
 assert.ok(
   r1.some((it) => it.name === '甘蔗煙燻雞' && it.quantity === 1),
-  '應有 甘蔗煙燻雞 x1'
+  '應有 甘蔗煙燻雞 x1',
 );
 console.log('  ✓ 無重複');
 

@@ -1,0 +1,8 @@
+node_modules/
+.git/
+data/orders/
+knowledge/tenants/_csv_concurrency_test/
+tests/fixtures/
+dashboard.tmp.html
+coverage/
+*.log

@@ -23,6 +23,7 @@
 - 測試：19 套全綠（17 既有 + helpers/cleanup + csv-writer-concurrency）
 - 已知問題：8 處 hardcode、10 個 dead config flag、6 個 helper 無單元測試
 - 業務流程：6/16 訂單流程方向未定（影響 production）
+- **CI/CD**（2026-06-28 Session G）：GitHub Actions 自動跑 `npm test` + `npm run lint`
 
 ---
 
@@ -147,16 +148,19 @@ vim src/rules/addressRule.js
 # 2. 跑測試驗證
 npm test                          # 連續 3 次全綠
 
-# 3. 跑品質檢查（pre-commit 自動跑）
+# 3. 跑 lint 檢查（ESLint 0 errors required）
+npm run lint                      # 0 errors, 64 warnings (warning 不擋 CI)
+
+# 4. 跑品質檢查（pre-commit 自動跑）
 bash scripts/check-quality.sh
 
-# 4. Commit
+# 5. Commit
 git add -A
 git status --short
 git diff --cached --stat
 git commit -m "fix(rules): ..."
 
-# 5. Push + rsync 到主位置
+# 6. Push + rsync 到主位置
 git push origin main
 bash scripts/sync-mirror.sh from-legacy
 ```
@@ -189,6 +193,22 @@ npm test
 # 2. 加到 package.json test script
 # 3. 跑驗證
 npm test
+npm run lint
+```
+
+### 6.5 修 lint 違規
+
+```bash
+# 1. 跑 lint 看違規
+npm run lint
+
+# 2. auto-fix 可修的（trailing comma、shorthand、eol-last 等）
+npm run lint:fix
+
+# 3. 手動修剩下的 error（warning 不需處理）
+
+# 4. 驗證
+npm run lint
 ```
 
 ---
@@ -207,6 +227,19 @@ npm test
 | 4 | 6/13 + 6/16 真實訂單仍在 | 阻擋 commit |
 | 5 | 兩位置 rsync 一致 | 警告 |
 | 6 | git working tree 乾淨（commit 前）| 警告 |
+
+### 7.2 CI/CD（GitHub Actions）
+
+`.github/workflows/test.yml` 在 push / pull_request 自動跑：
+
+1. checkout
+2. setup Node.js 22（從 `.nvmrc` 讀）
+3. cache npm
+4. `npm ci` 安裝依賴
+5. `npm run lint`（ESLint，0 errors 必須）
+6. `npm test`（19 套測試必須全綠）
+
+**待 CEO 動作**：去 GitHub repo Settings → Actions → Enable 才會生效。
 
 ### 7.2 Session 結束時檢查
 

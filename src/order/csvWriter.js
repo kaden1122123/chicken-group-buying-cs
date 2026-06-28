@@ -23,9 +23,9 @@ function resolveDataDir() {
 const DATA_DIR = resolveDataDir();
 
 // Lock 設定（Session D D2 race condition 修復）
-const LOCK_STALE_MS = 5000;          // 5 秒沒更新視為 stale（防止死鎖）
-const LOCK_MAX_RETRIES = 50;         // 最多重試 50 次
-const LOCK_RETRY_INTERVAL_MS = 20;   // 每次重試間隔 20ms（busy wait）
+const LOCK_STALE_MS = 5000; // 5 秒沒更新視為 stale（防止死鎖）
+const LOCK_MAX_RETRIES = 50; // 最多重試 50 次
+const LOCK_RETRY_INTERVAL_MS = 20; // 每次重試間隔 20ms（busy wait）
 const LOCK_MAX_WAIT_MS = LOCK_MAX_RETRIES * LOCK_RETRY_INTERVAL_MS; // = 1000ms
 
 /**
@@ -59,7 +59,7 @@ function acquireLockSync(lockTarget) {
   }
   throw new Error(
     `[csvWriter] failed to acquire lock on ${lockTarget} after ` +
-    `${LOCK_MAX_RETRIES} retries (${LOCK_MAX_WAIT_MS}ms)`
+    `${LOCK_MAX_RETRIES} retries (${LOCK_MAX_WAIT_MS}ms)`,
   );
 }
 
@@ -205,7 +205,7 @@ function updateOrder(orderId, updates) {
         for (const [key, value] of Object.entries(updates)) {
           const idx = headers.indexOf(key);
           if (idx !== -1) {
-            let formattedVal = typeof value === 'object' ? JSON.stringify(value) : String(value);
+            const formattedVal = typeof value === 'object' ? JSON.stringify(value) : String(value);
             cols[idx] = formatField(formattedVal);
           }
         }
@@ -214,7 +214,7 @@ function updateOrder(orderId, updates) {
     });
 
     if (!found) {
-      return false;  // 找不到對應的 orderId
+      return false; // 找不到對應的 orderId
     }
 
     const output = [CSV_HEADER_LINE, ...updatedLines].join('\n') + '\n';

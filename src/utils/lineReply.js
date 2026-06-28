@@ -12,7 +12,7 @@
 function textReply(text) {
   return {
     type: 'text',
-    text: text,
+    text,
   };
 }
 
@@ -25,7 +25,7 @@ function flexReply(contents) {
   return {
     type: 'flex',
     altText: contents.altText || '訂單摘要',
-    contents: contents,
+    contents,
   };
 }
 
@@ -46,9 +46,9 @@ function quickReply(text, options) {
   }));
   return {
     type: 'text',
-    text: text,
+    text,
     quickReply: {
-      items: items,
+      items,
     },
   };
 }

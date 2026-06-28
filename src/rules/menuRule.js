@@ -57,10 +57,10 @@ function clearMenuCache() {
 // 透過 Object.defineProperty getter 攔截，確保即使在 module load 後才使用，也能取到最新值
 // ============================================================================
 
-let VALID_ITEMS = [];
-let PRICES = {};
-let CHICKEN_ITEMS = new Set();
-let SIDE_ITEMS = new Set();
+const VALID_ITEMS = [];
+const PRICES = {};
+const CHICKEN_ITEMS = new Set();
+const SIDE_ITEMS = new Set();
 
 // 用物件 getter 轉接到 ensureDerived
 Object.defineProperty(module.exports, 'VALID_ITEMS', {
@@ -188,7 +188,7 @@ function calculateChickenCount(items) {
   const wholeNames = new Set(
     (typeof getMenu === 'function' ? getMenu().items : [])
       .filter((i) => i.isWhole)
-      .map((i) => i.name)
+      .map((i) => i.name),
   );
   for (const item of items) {
     if (chickenSet.has(item.name)) {

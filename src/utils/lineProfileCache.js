@@ -42,7 +42,7 @@ function fetchLineProfile(userId) {
       path: `/v2/bot/profile/${encodeURIComponent(userId)}`,
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${LINE_BOT_TOKEN}`,
+        Authorization: `Bearer ${LINE_BOT_TOKEN}`,
       },
     };
 

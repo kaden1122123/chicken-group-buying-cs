@@ -57,22 +57,22 @@ const handoffSource = fs.readFileSync(HANDOFF_SOURCE, 'utf8');
 
 // 應該 require config
 assert.ok(
-  handoffSource.includes("require('../config')") || handoffSource.includes("require(\"../config\")"),
-  'handoff.js should require config'
+  handoffSource.includes("require('../config')") || handoffSource.includes('require("../config")'),
+  'handoff.js should require config',
 );
 console.log('  ✓ handoff.js requires config');
 
 // 應該使用 getHandoffCustomerReply
 assert.ok(
   handoffSource.includes('getHandoffCustomerReply'),
-  'handoff.js should use getHandoffCustomerReply'
+  'handoff.js should use getHandoffCustomerReply',
 );
 console.log('  ✓ handoff.js uses getHandoffCustomerReply()');
 
 // 應該定義 DEFAULT fallback
 assert.ok(
   handoffSource.includes('DEFAULT_HANDOFF_CUSTOMER_REPLY'),
-  'handoff.js should define DEFAULT_HANDOFF_CUSTOMER_REPLY'
+  'handoff.js should define DEFAULT_HANDOFF_CUSTOMER_REPLY',
 );
 console.log('  ✓ handoff.js defines DEFAULT_HANDOFF_CUSTOMER_REPLY');
 
@@ -111,7 +111,7 @@ handleHandoff(
   'test-user-id',
   '要退款',
   {},
-  { lineDisplayName: '測試用戶' }
+  { lineDisplayName: '測試用戶' },
 ).then((result) => {
   assert.ok(result.reply, 'should return reply');
   assert.strictEqual(result.reply.type, 'text', 'reply should be text type');
@@ -122,7 +122,7 @@ handleHandoff(
   assert.strictEqual(
     result.reply.text,
     expectedText,
-    `reply text should match config.getHandoffCustomerReply()\n  Expected: ${JSON.stringify(expectedText)}\n  Got:      ${JSON.stringify(result.reply.text)}`
+    `reply text should match config.getHandoffCustomerReply()\n  Expected: ${JSON.stringify(expectedText)}\n  Got:      ${JSON.stringify(result.reply.text)}`,
   );
   console.log(`  ✓ handleHandoff() uses config reply: "${result.reply.text.trim().substring(0, 30)}..."`);
 

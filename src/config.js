@@ -61,8 +61,8 @@ function parseYamlSimple(content) {
   const root = {};
   // 遞迴 stack: 每個是 { indent, obj }
   const stack = [{ indent: -1, obj: root }];
-  let currentListKey = null; // 當前在 list 模式中
-  let currentListIndent = -1;
+  const currentListKey = null; // 當前在 list 模式中
+  const currentListIndent = -1;
 
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i];
@@ -144,10 +144,10 @@ function parseYamlSimple(content) {
       }
       if (nextLine.trim().startsWith('-')) {
         parent[key] = [];
-        stack.push({ indent: indent, obj: parent[key] });
+        stack.push({ indent, obj: parent[key] });
       } else {
         parent[key] = {};
-        stack.push({ indent: indent, obj: parent[key] });
+        stack.push({ indent, obj: parent[key] });
       }
     } else {
       // scalar value
@@ -222,9 +222,9 @@ function loadConfig() {
 loadConfig();
 
 // ─── 環境變數 ───
-const LINE_BOT_TOKEN     = process.env.LINE_BOT_TOKEN     || '';
+const LINE_BOT_TOKEN = process.env.LINE_BOT_TOKEN || '';
 const LINE_CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET || '';
-const JKO_QR_CODE_URL    = process.env.JKO_QR_CODE_URL    || '';
+const JKO_QR_CODE_URL = process.env.JKO_QR_CODE_URL || '';
 
 // ─── 匯出設定 ───
 

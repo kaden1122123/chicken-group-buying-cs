@@ -49,7 +49,7 @@ async function notifyHubert(message) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${lineToken}`,
+        Authorization: `Bearer ${lineToken}`,
         'Content-Length': Buffer.byteLength(payloadStr),
       },
     };

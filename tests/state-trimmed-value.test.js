@@ -66,7 +66,7 @@ const awaitingResult2 = handleAwaitingInfo('test-user-2', rawInput, {}, { awaiti
 const fieldValue = awaitingResult2.orderData.address; // 已 trimmed
 const transitionResult = transition('test-user-2', 'field_received', {
   fieldName: 'address',
-  fieldValue: fieldValue, // 已 trimmed 的值
+  fieldValue, // 已 trimmed 的值
   value: rawInput, // 未 trim 的值（向後相容用）
   nextField: awaitingResult2.context.awaitingField,
   validationFailed: false,
@@ -75,7 +75,7 @@ const transitionResult = transition('test-user-2', 'field_received', {
 assert.strictEqual(
   transitionResult.orderData.address,
   '三峽北大特區學成路100號',
-  'transition 應用 trimmed 後的值'
+  'transition 應用 trimmed 後的值',
 );
 console.log('  ✓ transition 用 trimmed 值（fieldValue 優先）');
 console.log(`    address: "${transitionResult.orderData.address}"`);
@@ -158,7 +158,7 @@ const transitionB = transition('test-user-5', 'field_received', {
 assert.strictEqual(
   transitionB.orderData.address,
   '三峽',
-  '驗證失敗不應覆蓋已驗證的 address'
+  '驗證失敗不應覆蓋已驗證的 address',
 );
 console.log('  ✓ 驗證失敗時 address 保持 trimmed 值');
 

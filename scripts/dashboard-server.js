@@ -98,7 +98,7 @@ function parseQuery(url) {
     qs.split('&').map((kv) => {
       const [k, v] = kv.split('=');
       return [decodeURIComponent(k), decodeURIComponent(v || '')];
-    })
+    }),
   );
 }
 

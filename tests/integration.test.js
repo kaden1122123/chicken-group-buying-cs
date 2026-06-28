@@ -25,7 +25,7 @@ console.log('\n=== Worker Integration Tests ===');
  */
 const PAYMENT_KEYWORDS = [
   '帳號', '匯款', '轉帳', '付款', '如何付款', 'line pay', '街口',
-  '銀行', '怎麼付', '付錢', '費用的問題', '多少錢', '匯費'
+  '銀行', '怎麼付', '付錢', '費用的問題', '多少錢', '匯費',
 ];
 const PAYMENT_MAX_LENGTH = 50;
 
@@ -35,7 +35,7 @@ const PAYMENT_MAX_LENGTH = 50;
 function shouldInterceptPayment(text) {
   if (!text) return false;
   const lowerText = text.toLowerCase();
-  const isPaymentQuery = PAYMENT_KEYWORDS.some(kw => lowerText.includes(kw));
+  const isPaymentQuery = PAYMENT_KEYWORDS.some((kw) => lowerText.includes(kw));
   return text.length <= PAYMENT_MAX_LENGTH && isPaymentQuery;
 }
 

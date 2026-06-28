@@ -1,10 +1,35 @@
 # Phase 1 進度報告
 
-> 最後更新：2026-06-27 19:30（Session B B3 更新頂部說明）
+> 最後更新：2026-06-28 20:05（Session G 加入 CI/CD + ESLint + .nvmrc）
 > 負責人：brtclaw（規劃 + 實作）
 > 最新文檔：[`docs/INDEX.md`](./docs/INDEX.md)
 > 完整規劃：[`docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md`](./docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md)
 > **2026-06-26 評估與修整**：見 [docs/TODO_2026-06-26.md](./docs/TODO_2026-06-26.md)
+
+---
+
+## ✅ Session G 完成（2026-06-28 20:05）— CI/CD + ESLint + .nvmrc
+
+### 產出
+
+- ✅ **G1**：`.nvmrc` 寫入 `22`（對應 Node 22.x，目前系統用 22.22.2）
+- ✅ **G2**：ESLint 8.57.1 + `eslint:recommended` + 自訂 rules 對齊 src/ 風格
+  - `npm run lint`：0 errors, 64 warnings（warning 不擋 CI）
+  - `npm run lint:fix`：auto-fix 風格問題（shorthand, trailing comma, eol-last 等）
+- ✅ **G3**：`.github/workflows/test.yml`（push/PR 觸發、Node 22 matrix、cache npm、跑 lint + test）
+
+### 統計
+
+- 1 commit（session-G + eslint fix）
+- npm test 連續 3 次全綠（19 套）
+- ESLint --fix 自動修 53 個檔案（純風格：shorthand、trailing comma、const、eol-last）
+- 新增 6 個檔案：`.nvmrc`、`.eslintrc.json`、`.eslintignore`、`.github/workflows/test.yml`、`SESSION_G_PROMPT.md`、`.task-state/session-G/`
+- 真實訂單保護 ✅（2026-06-13.csv + 2026-06-16.csv 仍在）
+
+### 待 CEO 動作
+
+- ⏸ 去 GitHub repo [kaden1122123/chicken-group-buying-cs](https://github.com/kaden1122123/chicken-group-buying-cs) → Settings → Actions → Enable
+- workflow 檔案已 commit，enable 後自動生效
 
 ---
 

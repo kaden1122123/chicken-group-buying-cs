@@ -39,7 +39,7 @@ console.log('\n--- assertNotProtected: protected 應拋錯 ---');
 assert.throws(
   () => cleanup.assertNotProtected('2026-06-13.csv'),
   /REFUSED.*2026-06-13\.csv.*PRODUCTION/,
-  '應拋出明確 REFUSED 錯誤'
+  '應拋出明確 REFUSED 錯誤',
 );
 console.log('  ✓ 對 6/13 拋出明確 REFUSED 錯誤');
 
@@ -58,7 +58,7 @@ assert.ok(wasProtected, 'precondition: 6/13 真實訂單必須在磁碟上');
 assert.throws(
   () => cleanup.safeUnlinkCSV('2026-06-13.csv'),
   /REFUSED/,
-  'safeUnlinkCSV 對 protected 應拋錯'
+  'safeUnlinkCSV 對 protected 應拋錯',
 );
 
 assert.ok(fs.existsSync(protectedPath), 'postcondition: 6/13 真實訂單必須仍在磁碟上');

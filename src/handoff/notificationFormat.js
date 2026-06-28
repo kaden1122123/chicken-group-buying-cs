@@ -7,22 +7,22 @@
 // 與 transferRules.js 的 TRIGGER_PATTERNS.type 保持同步
 // 若 transferRules 新增 type，請補上對應標題
 const HANDOFF_TITLES = {
-  'refund_request': '【退貨/退款】',
-  'cancel_request': '【取消訂單】',
-  'reschedule_request': '【改天需求】',
-  'complaint': '【售後/客訴】',
-  'escalation': '【客訴/爭議】',
-  'explicit_request': '【明確要求真人】',
-  'discount_request': '【折扣請求】',
-  'delivery_confirm_needed': '【配送範圍確認】',
-  'bulk_order': '【大批訂單/公司合作】',
-  'high_value_order': '【金額異常】',
-  'payment_mismatch': '【付款異常】',
-  'linepay_failed': '【LINE Pay 付款失敗】',
-  'open_date_inquiry': '【開團日期確認】',
-  'late_modify': '【截單後變更】',
-  'general': '【一般轉報】',
-  'general_inquiry': '【一般轉報】',
+  refund_request: '【退貨/退款】',
+  cancel_request: '【取消訂單】',
+  reschedule_request: '【改天需求】',
+  complaint: '【售後/客訴】',
+  escalation: '【客訴/爭議】',
+  explicit_request: '【明確要求真人】',
+  discount_request: '【折扣請求】',
+  delivery_confirm_needed: '【配送範圍確認】',
+  bulk_order: '【大批訂單/公司合作】',
+  high_value_order: '【金額異常】',
+  payment_mismatch: '【付款異常】',
+  linepay_failed: '【LINE Pay 付款失敗】',
+  open_date_inquiry: '【開團日期確認】',
+  late_modify: '【截單後變更】',
+  general: '【一般轉報】',
+  general_inquiry: '【一般轉報】',
 };
 
 /**
@@ -111,7 +111,7 @@ function formatLINENotificationMessage(orderData, userMessage) {
   const text = formatLINENotification(orderData, userMessage);
   return {
     type: 'text',
-    text: text,
+    text,
   };
 }
 

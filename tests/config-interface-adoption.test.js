@@ -51,43 +51,43 @@ const notifierSource = fs.readFileSync(NOTIFIER_PATH, 'utf8');
 
 assert.ok(
   notifierSource.includes("require('../config')"),
-  'notifier.js 應 require config'
+  'notifier.js 應 require config',
 );
 assert.ok(
   notifierSource.includes('getLineBotToken') || notifierSource.includes('getLineToken'),
-  'notifier.js 應使用 getLineBotToken 或 getLineToken'
+  'notifier.js 應使用 getLineBotToken 或 getLineToken',
 );
 assert.ok(
   notifierSource.includes('getNotifyOwnerUserId') || notifierSource.includes('getHubertLineUserId'),
-  'notifier.js 應使用 getNotifyOwnerUserId'
+  'notifier.js 應使用 getNotifyOwnerUserId',
 );
 console.log('  ✓ notifier.js 用 config 介面');
 
 assert.ok(
   !notifierSource.includes('fs.readFileSync(configPath'),
-  'notifier.js 不應再自己讀 config.yaml'
+  'notifier.js 不應再自己讀 config.yaml',
 );
 // 原始 hardcode 是 module-level let HUBERT_LINE_USER_ID = '...'
 // 修整後只剩 DEFAULT_HUBERT_LINE_USER_ID 常數（fallback 用途，config 沒設才使用）
 assert.ok(
   !notifierSource.match(/^\s*let\s+HUBERT_LINE_USER_ID\s*=\s*['"]/m),
-  'notifier.js 不應再有 module-level HUBERT_LINE_USER_ID let 變數'
+  'notifier.js 不應再有 module-level HUBERT_LINE_USER_ID let 變數',
 );
 assert.ok(
   !notifierSource.match(/^\s*let\s+LINE_BOT_TOKEN\s*=\s*['"]/m),
-  'notifier.js 不應再有 module-level LINE_BOT_TOKEN let 變數'
+  'notifier.js 不應再有 module-level LINE_BOT_TOKEN let 變數',
 );
 console.log('  ✓ notifier.js 移除 module-level hardcode 變數（保留 DEFAULT_ fallback）');
 
 assert.ok(
   !notifierSource.includes('module.exports') ||
     !notifierSource.match(/module\.exports[\s\S]{0,500}/)?.[0].includes('HUBERT_LINE_USER_ID'),
-  'notifier.js 不應 export HUBERT_LINE_USER_ID'
+  'notifier.js 不應 export HUBERT_LINE_USER_ID',
 );
 assert.ok(
   !notifierSource.includes('module.exports') ||
     !notifierSource.match(/module\.exports[\s\S]{0,500}/)?.[0].includes('LINE_BOT_TOKEN'),
-  'notifier.js 不應 export LINE_BOT_TOKEN'
+  'notifier.js 不應 export LINE_BOT_TOKEN',
 );
 console.log('  ✓ notifier.js 移除 export 變數');
 
@@ -98,21 +98,21 @@ const profileSource = fs.readFileSync(PROFILE_CACHE_PATH, 'utf8');
 
 assert.ok(
   profileSource.includes("require('../config')"),
-  'lineProfileCache.js 應 require config'
+  'lineProfileCache.js 應 require config',
 );
 assert.ok(
   profileSource.includes('getLineBotToken'),
-  'lineProfileCache.js 應使用 getLineBotToken'
+  'lineProfileCache.js 應使用 getLineBotToken',
 );
 console.log('  ✓ lineProfileCache.js 用 config 介面');
 
 assert.ok(
   !profileSource.includes('fs.readFileSync(configPath'),
-  'lineProfileCache.js 不應再自己讀 config.yaml'
+  'lineProfileCache.js 不應再自己讀 config.yaml',
 );
 assert.ok(
   !profileSource.match(/let\s+LINE_BOT_TOKEN\s*=\s*['"]/),
-  'lineProfileCache.js 不應再有 hardcode LINE_BOT_TOKEN 變數'
+  'lineProfileCache.js 不應再有 hardcode LINE_BOT_TOKEN 變數',
 );
 console.log('  ✓ lineProfileCache.js 移除 hardcode');
 

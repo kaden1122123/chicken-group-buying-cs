@@ -76,7 +76,7 @@ for (const kw of skipKeywords) {
   assert.strictEqual(a2.context.awaitingField, 'name', `「${kw}」應跳到 name`);
   assert.ok(
     !('community' in a2.orderData),
-    `「${kw}」不應存 community 到 orderData`
+    `「${kw}」不應存 community 到 orderData`,
   );
 }
 console.log(`  ✓ ${skipKeywords.length} 個跳過關鍵字全綠`);
@@ -103,7 +103,7 @@ const prompt = buildFieldPrompt('community');
 assert.strictEqual(prompt.type, 'text');
 assert.ok(
   prompt.text.includes('社區') || prompt.text.includes('公司'),
-  'community 提示應包含「社區」或「公司」字樣'
+  'community 提示應包含「社區」或「公司」字樣',
 );
 console.log(`  ✓ prompt 包含引導字樣: "${prompt.text}"`);
 
@@ -116,7 +116,7 @@ console.log('\n--- CSV schema ---');
 
 const csvWriterSource = fs.readFileSync(
   path.join(__dirname, '..', 'src', 'order', 'csvWriter.js'),
-  'utf8'
+  'utf8',
 );
 assert.ok(csvWriterSource.includes('community'), 'csvWriter 應有 community 欄位');
 console.log('  ✓ csvWriter 有 community 欄位');

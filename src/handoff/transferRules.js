@@ -2,7 +2,7 @@
 
 /**
  * Human Handoff 觸發條件比對器
- * 
+ *
  * 設計原則：
  * - 使用「語意相近就觸發」（Semantic Matching），非精確關鍵字比對
  * - 關鍵字/規則先行快速過濾明顯案例
@@ -183,7 +183,7 @@ function quickMatch(message) {
 /**
  * 語意相似度判斷（使用 MiniMax API）
  * 當 quickMatch 未命中時，對模糊訊息做語意分類
- * 
+ *
  * @param {string} message - 客戶訊息
  * @param {string} context - 對話上下文（可選）
  * @returns {Promise<{ matched: boolean, type: string|null, level: string|null, confidence: number }>}
@@ -198,7 +198,7 @@ async function semanticMatch(message, context = '') {
   // 模糊匹配：使用 MiniMax API 進行語意分類
   // 這裡使用內建的模糊規則作為 fallback
   // 實際部署時可替換為 MiniMax API 調用
-  
+
   const msg = message.toLowerCase();
 
   // 模糊案例：語意相近但關鍵字不明顯

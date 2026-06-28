@@ -38,7 +38,7 @@ if (!fs.existsSync(ORDERS_DIR)) {
 
 // 讀取所有訂單
 const allOrders = [];
-const dateFiles = fs.readdirSync(ORDERS_DIR).filter(f => f.endsWith('.csv'));
+const dateFiles = fs.readdirSync(ORDERS_DIR).filter((f) => f.endsWith('.csv'));
 for (const file of dateFiles) {
   const dateStr = file.replace('.csv', '');
   const orders = getOrdersByDate(dateStr);
@@ -53,7 +53,7 @@ console.log(`[Dashboard] Loaded ${allOrders.length} orders from ${dateFiles.leng
 const totalOrders = allOrders.length;
 const totalRevenue = allOrders.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0);
 const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-const uniquePhones = new Set(allOrders.map(o => o.user_phone).filter(Boolean)).size;
+const uniquePhones = new Set(allOrders.map((o) => o.user_phone).filter(Boolean)).size;
 
 // 訂單按日分組
 const ordersByDate = {};
@@ -103,8 +103,8 @@ for (const order of allOrders) {
     customerOrderCount[phone] = (customerOrderCount[phone] || 0) + 1;
   }
 }
-const newCustomers = Object.values(customerOrderCount).filter(c => c === 1).length;
-const returningCustomers = Object.values(customerOrderCount).filter(c => c > 1).length;
+const newCustomers = Object.values(customerOrderCount).filter((c) => c === 1).length;
+const returningCustomers = Object.values(customerOrderCount).filter((c) => c > 1).length;
 
 // 生成 HTML
 const html = generateHTML({
@@ -220,7 +220,7 @@ function generateHTML(data) {
       </tr>
     </thead>
     <tbody>
-      ${data.recentOrders.map(o => `
+      ${data.recentOrders.map((o) => `
         <tr>
           <td>${o.order_id || '-'}</td>
           <td>${o.delivery_date || '-'}</td>

@@ -103,7 +103,7 @@ function buildOrderFormatReply() {
       { label: '我要訂購', text: '我要訂購' },
       { label: '查看菜單', text: '有什麼商品' },
       { label: '常見問題', text: '常見問題' },
-    ]
+    ],
   );
 }
 

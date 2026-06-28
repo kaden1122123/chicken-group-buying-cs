@@ -65,8 +65,8 @@ function handleAwaitingInfo(userId, message, orderData, context) {
   // 解析欄位
   const { fieldName, value: rawValue, rawMessage } = parseFieldFromMessage(message);
   const value = (rawValue || '').trim(); // 統一 trim 去除前後空白
-  let updatedOrderData = { ...orderData };
-  let updatedContext = { ...context };
+  const updatedOrderData = { ...orderData };
+  const updatedContext = { ...context };
 
   // 根據當前等待的欄位或自動偵測欄位
   const targetField = context.awaitingField || fieldName;
@@ -191,7 +191,7 @@ function handleAwaitingInfo(userId, message, orderData, context) {
       const { validatePayment } = require('../rules');
       validationResult = validatePayment(value, totalAmount, isReturning);
       if (validationResult.valid) {
-        const methodMap = { '現金': 'cash', '轉帳': 'transfer', '街口': 'jko', 'LINE Pay': 'linepay' };
+        const methodMap = { 現金: 'cash', 轉帳: 'transfer', 街口: 'jko', 'LINE Pay': 'linepay' };
         updatedOrderData.payment_method = methodMap[value] || value;
         updatedContext.awaitingField = null;
       }

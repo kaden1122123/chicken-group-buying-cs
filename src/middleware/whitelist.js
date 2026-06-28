@@ -44,7 +44,7 @@ function getBlockReply() {
   const { textReply } = require('../utils/lineReply');
   return textReply(
     '此服務目前僅供測試，感謝理解 🐔\n' +
-    '有問題請聯繫：LINE 社群 @620boqol'
+    '有問題請聯繫：LINE 社群 @620boqol',
   );
 }
 

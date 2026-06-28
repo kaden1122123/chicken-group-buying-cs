@@ -24,12 +24,12 @@ const fs = require('fs');
 const { spawnSync } = require('child_process');
 
 const CSV_WRITER_PATH = path.join(__dirname, '..', 'src', 'order', 'csvWriter.js');
-const TEST_TENANT = '_csv_concurrency_test';  // 獨立 tenant（避免誤刪 chicken tenant 真實訂單）
-const TEST_DELIVERY_DATE = '2099-12-31';  // 未來日期，不會跟現有真實訂單衝突
+const TEST_TENANT = '_csv_concurrency_test'; // 獨立 tenant（避免誤刪 chicken tenant 真實訂單）
+const TEST_DELIVERY_DATE = '2099-12-31'; // 未來日期，不會跟現有真實訂單衝突
 const ORDERS_ROOT = path.join(__dirname, '..', 'data', 'orders');
 const KB_ROOT = path.join(__dirname, '..', 'knowledge', 'tenants');
-const TEST_DIR = path.join(ORDERS_ROOT, TEST_TENANT);  // data/orders/_csv_concurrency_test/
-const TEST_KB_DIR = path.join(KB_ROOT, TEST_TENANT);   // knowledge/tenants/_csv_concurrency_test/
+const TEST_DIR = path.join(ORDERS_ROOT, TEST_TENANT); // data/orders/_csv_concurrency_test/
+const TEST_KB_DIR = path.join(KB_ROOT, TEST_TENANT); // knowledge/tenants/_csv_concurrency_test/
 const TEST_CSV = path.join(TEST_DIR, `${TEST_DELIVERY_DATE}.csv`);
 
 console.log('\n=== CSV Writer Concurrency Tests (Session D D2) ===');
@@ -40,15 +40,15 @@ console.log('\n--- 原始碼檢查：lock 機制存在 ---');
 const csvWriterSource = fs.readFileSync(CSV_WRITER_PATH, 'utf8');
 assert.ok(
   csvWriterSource.includes('lockfile.lockSync') || csvWriterSource.includes('acquireLockSync'),
-  'csvWriter 應使用 proper-lockfile 鎖定（lockSync 或自寫 acquireLockSync）'
+  'csvWriter 應使用 proper-lockfile 鎖定（lockSync 或自寫 acquireLockSync）',
 );
 assert.ok(
   csvWriterSource.includes('lockfile.unlockSync') || csvWriterSource.includes('unlockSync'),
-  'csvWriter 應在 finally 區塊 unlock'
+  'csvWriter 應在 finally 區塊 unlock',
 );
 assert.ok(
   csvWriterSource.includes('try {') && csvWriterSource.includes('finally'),
-  'csvWriter 應用 try/finally 確保 lock release'
+  'csvWriter 應用 try/finally 確保 lock release',
 );
 console.log('  ✓ csvWriter 有 lockSync + try/finally + unlockSync');
 
@@ -132,7 +132,7 @@ for (let p = 1; p <= PROCESS_COUNT; p++) {
 children.forEach(({ pid, result }) => {
   assert.ok(
     result.stdout.includes('wrote ' + ORDERS_PER_PROCESS + ' orders'),
-    'Worker ' + pid + ' 應回報寫了 ' + ORDERS_PER_PROCESS + ' 筆'
+    'Worker ' + pid + ' 應回報寫了 ' + ORDERS_PER_PROCESS + ' 筆',
   );
 });
 console.log('  ✓ ' + PROCESS_COUNT + ' 個 child process 各寫了 ' + ORDERS_PER_PROCESS + ' 筆訂單');
@@ -144,13 +144,13 @@ assert.ok(fs.existsSync(TEST_CSV), 'CSV 檔案應存在：' + TEST_CSV);
 
 const csvContent = fs.readFileSync(TEST_CSV, 'utf8');
 const csvLines = csvContent.trim().split('\n');
-const expectedLines = 1 + (PROCESS_COUNT * ORDERS_PER_PROCESS);  // header + data
+const expectedLines = 1 + (PROCESS_COUNT * ORDERS_PER_PROCESS); // header + data
 
 console.log('  CSV 行數：' + csvLines.length + ' (預期 ' + expectedLines + ')');
 assert.strictEqual(
   csvLines.length,
   expectedLines,
-  'CSV 行數應為 ' + expectedLines + '（header + ' + (PROCESS_COUNT * ORDERS_PER_PROCESS) + ' 筆訂單）'
+  'CSV 行數應為 ' + expectedLines + '（header + ' + (PROCESS_COUNT * ORDERS_PER_PROCESS) + ' 筆訂單）',
 );
 console.log('  ✓ 行數正確：' + expectedLines);
 

@@ -18,7 +18,7 @@ function calculatePrice(itemsData) {
   let chickenCount = 0;
   let sideCount = 0;
 
-  //雞肉品項
+  // 雞肉品項
   const chicken = itemsData.chicken_items || {};
   for (const [name, qty] of Object.entries(chicken)) {
     const price = priceMap[name] || 0;

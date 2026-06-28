@@ -119,7 +119,7 @@ async function handleMessage(userId, message, userProfile = {}) {
         const fieldValue = result.orderData ? result.orderData[context.awaitingField] : undefined;
         transition(userId, event, {
           fieldName: context.awaitingField,
-          fieldValue: fieldValue,
+          fieldValue,
           value: cleanMessage,
           nextField: result.context.awaitingField,
           validationFailed: result.action === 'validation_failed',

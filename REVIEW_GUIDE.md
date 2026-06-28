@@ -201,9 +201,9 @@ node tests/integration.test.js
 
 ## 測試總覽
 
-**17 套（15 unit + 2 integration）：**
+**19 套（17 unit + 2 integration）：**
 
-### Unit（15 套）
+### Unit（17 套）
 
 1. `tests/address-dynamic-keywords.test.js`
 2. `tests/address-handoff.test.js`
@@ -220,20 +220,26 @@ node tests/integration.test.js
 13. `tests/states.test.js`
 14. `tests/state-trimmed-value.test.js`
 15. `tests/whitelist.test.js`
+16. `tests/helpers/cleanup.test.js`（Session D D1）
+17. `tests/csv-writer-concurrency.test.js`（Session D D2）
 
 ### Integration（2 套）
 
-16. `tests/api-server.test.js`（HTTP server 端對端）
-17. `tests/integration.test.js`（Cloudflare Worker 攔截邏輯）
+18. `tests/api-server.test.js`（HTTP server 端對端）
+19. `tests/integration.test.js`（Cloudflare Worker 攔截邏輯）
 
 ### 全套執行
 
 ```bash
-for f in tests/*.test.js; do
-  echo "=== $f ==="
-  node "$f" 2>&1 | tail -3
-done
+npm test                              # 19 套 全綠
+npm run lint                          # 0 errors, 64 warnings
+npm run lint:fix                      # auto-fix 風格問題
+bash scripts/check-quality.sh         # 6 項品質檢查
 ```
+
+### CI/CD（GitHub Actions）
+
+`.github/workflows/test.yml` 在 push / PR 自動跑 `npm test` + `npm run lint`（Node 22，從 `.nvmrc` 讀取）。
 
 ---
 

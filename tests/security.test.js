@@ -19,7 +19,7 @@ const sqlInjectionCases = [
   "'; DROP TABLE orders; --",
   "1' OR '1'='1",
   "'; DELETE FROM users; --",
-  "1; DROP TABLE orders",
+  '1; DROP TABLE orders',
   "' OR 1=1 --",
   "admin'--",
   "' OR 'a'='a",
@@ -29,12 +29,12 @@ for (const input of sqlInjectionCases) {
   const sanitized = sanitize(input);
   // 單引號應該被跳脫或移除
   assert.ok(
-    !sanitized.includes("DROP") && !sanitized.includes("DELETE"),
-    `SQL injection "${input}" should be sanitized`
+    !sanitized.includes('DROP') && !sanitized.includes('DELETE'),
+    `SQL injection "${input}" should be sanitized`,
   );
   assert.ok(
     !sanitized.includes("'") || sanitized.includes("''"),
-    `SQL injection quotes should be escaped in: "${input}"`
+    `SQL injection quotes should be escaped in: "${input}"`,
   );
   console.log(`  ✓ SQL injection blocked: "${input}"`);
 }
@@ -85,7 +85,7 @@ for (const input of controlCharCases) {
     !sanitized.includes('\r') &&
     !sanitized.includes('\n') &&
     !sanitized.includes('\x00'),
-    `Control characters in "${input}" should be removed`
+    `Control characters in "${input}" should be removed`,
   );
   console.log(`  ✓ Control chars removed: "${input}"`);
 }
@@ -126,7 +126,7 @@ for (const input of xssCases) {
     !sanitized.includes('<script') &&
     !sanitized.includes('javascript:') &&
     !sanitized.includes('<img'),
-    `XSS "${input}" should be sanitized`
+    `XSS "${input}" should be sanitized`,
   );
   console.log(`  ✓ XSS blocked: "${input}"`);
 }
@@ -147,7 +147,7 @@ for (const input of pathInjectionCases) {
   assert.ok(
     !sanitized.includes('..') &&
     !sanitized.includes('\\'),
-    `Path injection "${input}" should be sanitized`
+    `Path injection "${input}" should be sanitized`,
   );
   console.log(`  ✓ Path injection blocked: "${input}"`);
 }

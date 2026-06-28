@@ -63,23 +63,23 @@ console.log('\n--- dashboard-server.js 程式碼檢查 ---');
 const dashboardSource = fs.readFileSync(DASHBOARD_PATH, 'utf8');
 assert.ok(
   dashboardSource.includes("require('js-yaml')"),
-  '應有 require js-yaml'
+  '應有 require js-yaml',
 );
 assert.ok(
   dashboardSource.includes('} catch (e)'),
-  '應有 try/catch fallback'
+  '應有 try/catch fallback',
 );
 assert.ok(
   dashboardSource.includes('_parseYamlSimple'),
-  'fallback 應用 _parseYamlSimple'
+  'fallback 應用 _parseYamlSimple',
 );
 assert.ok(
   dashboardSource.includes('js-yaml 未安裝'),
-  'fallback 訊息應明確告知 js-yaml 未安裝'
+  'fallback 訊息應明確告知 js-yaml 未安裝',
 );
 assert.ok(
   dashboardSource.includes('_hasYamlDump') || dashboardSource.includes('hasYamlDump'),
-  '寫入時應檢查 hasYamlDump'
+  '寫入時應檢查 hasYamlDump',
 );
 console.log('  ✓ dashboard-server.js 有完整 fallback 邏輯');
 
@@ -90,7 +90,7 @@ console.log('\n--- 動態驗證：屏蔽 js-yaml 後啟動 server ---');
 // 把 scripts/dashboard-server.js 改成 require 一個不存在的路徑，模擬 js-yaml 缺失
 const modifiedSource = dashboardSource.replace(
   "yaml = require('js-yaml')",
-  "yaml = require('js-yaml-disabled-for-test')"
+  "yaml = require('js-yaml-disabled-for-test')",
 );
 
 const tmpFile = path.join('/tmp', 'dashboard-server-fallback-test.js');
@@ -115,7 +115,7 @@ console.log('  stderr:', result.stderr.substring(0, 200));
 // 預期：stderr 包含 'js-yaml 未安裝' 警告訊息
 assert.ok(
   result.stderr.includes('js-yaml 未安裝') || result.stderr.includes('Cannot find module'),
-  'stderr 應有 js-yaml 未安裝警告（已修改 require 路徑）'
+  'stderr 應有 js-yaml 未安裝警告（已修改 require 路徑）',
 );
 console.log('  ✓ js-yaml 不可用時正確觸發 fallback 警告');
 

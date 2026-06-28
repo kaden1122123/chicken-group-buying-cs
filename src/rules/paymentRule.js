@@ -7,16 +7,16 @@
 
 // 付款方式對應
 const PAYMENT_METHODS = {
-  '現金': 'cash',
-  '现金': 'cash',
-  '轉帳': 'transfer',
-  '转账': 'transfer',
-  '街口': 'jko',
-  '街口支付': 'jko',
+  現金: 'cash',
+  现金: 'cash',
+  轉帳: 'transfer',
+  转账: 'transfer',
+  街口: 'jko',
+  街口支付: 'jko',
   'LINE Pay': 'linepay',
   'line pay': 'linepay',
-  'linepay': 'linepay',
-  'line': 'linepay',
+  linepay: 'linepay',
+  line: 'linepay',
 };
 
 const PAYMENT_LABELS = {
