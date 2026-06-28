@@ -1,0 +1,233 @@
+# 雞味客服 — CEO 決策指南（給 Hubert）
+
+> **目的**：讓 CEO 能在 1 分鐘內理解每個 session 的「做什麼、為什麼做、要不要做」
+> **使用方式**：每個 session 開始時，brtclaw 用本指南的格式問你決策
+> **撰寫原則**：以「功能性」描述，不列函數 / 變數 / 程式碼
+
+---
+
+## 決策模式（給 CEO）
+
+brtclaw 問決策時，格式：
+
+```
+🔴 / 🟡 / 🟢  [業務問題]
+影響：[對客戶 / 對你的影響]
+做法：[簡單描述要做什麼]
+預估：[時間 / 風險]
+你決定：做 / 不做 / 之後做 / 換做法
+```
+
+**你要做的**：回 `做` / `不做` / `換做法：xxxx`
+
+---
+
+## 為什麼不用函數描述
+
+函數 / 變數 / 行號對 CEO 沒意義 — 你想知道的是：
+
+| 你關心的 | brtclaw 不該說 | brtclaw 應該說 |
+|---------|---------------|--------------|
+| 客戶會不會收到錯誤資訊 | 「paymentRule.js line 57」 | 「客戶拿 1001 元現金訂雞，系統會接受」|
+| 改 config 有沒有用 | 「dead config flag」 | 「你改 chicken.yaml 不會生效」|
+| 修這個要多久 | 「8 files changed」 | 「2 小時、低風險、不影響 production」|
+
+---
+
+## 目前待你決策的 sessions（CEO 視角）
+
+> 每個 session 開始前，brtclaw 會貼對應段落問你。
+
+---
+
+### 🔴 Session E：6/16 訂單流程方向（影響 production）
+
+**業務問題**：
+客戶訂完雞、看完摘要，要按「確認訂購」按鈕才會真的寫進訂單系統。但按鈕現在沒顯示，所以訂單根本沒成立。
+
+**影響**：
+- 客戶以為訂到了，但你後台沒收到
+- 你需要手動看 LINE 訊息建立訂單
+- 營收損失風險
+
+**5 個做法**：
+| 做法 | 描述 | 優缺 |
+|------|------|------|
+| A | LLM 完成立即調 API（自動）| 不可靠（LLM 會出錯）|
+| B | LLM 自動辨識 action block | 同 A |
+| C | LINE webhook 註冊 | 按鈕問題沒解決 |
+| **D（推薦）** | 純 postback，不用按鈕，客戶打「確認」 | 簡單可靠 |
+| E | 完全手動 trigger | 客戶要打字，UX 差 |
+
+**brtclaw 推薦**：D（純 postback）
+**預估**：1-2 小時決策 + 1-2 天實作
+**你決定**：______
+
+---
+
+### 🔴 Session D3：客服業務規則統一（5 個硬規則）
+
+**業務問題**：
+你改 `chicken.yaml` 的某些設定（運費門檻、付款上限、配送範圍）**沒效果**，因為程式碼寫死了。這代表你想調整業務規則時，要請工程師改程式碼。
+
+**影響**：
+- 想擋掉大額現金訂單？改 config 沒用，要改 src/
+- 想調整運費規則？改 config 沒用
+- 想加配送區？改 config 沒用
+- **改程式碼有風險**（要 deploy、要測試）
+
+**做法**：
+把 5 個 hardcode 改成「讀 config」：
+1. 現金上限（1000 元）
+2. 滿額免運（350 元、運費 80 元）
+3. 配送範圍（三峽、鶯歌 fallback）
+4. 銀行帳號（007 / 23257030422）
+5. LINE Pay ID（Willy0221）
+
+之後你改 config 就會生效。
+
+**brtclaw 推薦**：做
+**預估**：2-3 小時、中風險、有 unit test 守門
+**你決定**：______
+
+---
+
+### 🔴 Session D4：9 個開關無作用
+
+**業務問題**：
+`chicken.yaml` 有 9 個「啟用/未啟用」開關（payment.*.enabled、storage.phase2.enabled 等），但程式永遠當「啟用」處理。意思是改這些開關**完全沒效果**。
+
+**影響**：
+- 你以為某功能已關閉（看 config 寫 false），實際是開的
+- 想暫停某付款方式？改 config 沒用，要改程式
+- 想測試某功能關閉的行為？沒辦法（永遠是啟用）
+
+**做法**：
+建立統一介面 `config.isFeatureEnabled('payment.cash')`，所有 flag 都生效。
+
+**brtclaw 推薦**：做（與 D3 一起做，效益最高）
+**預估**：2 小時、低風險
+**你決定**：______
+
+---
+
+### 🟡 Session F：文件一致性 + 6/26 audit 剩餘決策落地
+
+**業務問題**：
+有些文件寫的東西跟實際狀況對不上（例如 `INDEX.md` 寫「11 套測試」但實際 19 套）。
+
+**影響**：
+- 接手的人（或新 brtclaw session）看舊文件會誤導
+- 6/26 audit 有些事當時沒決定，現在累積著
+- 文件不一致 = 協作成本增加
+
+**做法**（6 個低風險動作）：
+1. 修 `INDEX.md` 測試套數
+2. 修 `PHASE1_PROGRESS.md` 測試套數
+3. `api-server.test.js` 用 mock time（修測試壞掉問題）
+4. 刪除 cognee placeholder + 更新 MEMORY.md
+5. 處理 `knowledge/learned/` 空目錄
+6. 為 `knowledge/tenants/chicken/` 10 個 md 加 INDEX 驗證清單
+
+**brtclaw 推薦**：做（1.5 小時、低風險）
+**你決定**：______
+
+---
+
+### 🟡 Session G：CI/CD + ESLint + .nvmrc
+
+**業務問題**：
+- 沒有自動化測試（每次 push 要手動跑 `npm test`）
+- 沒有 ESLint（程式碼風格不一致，新人寫 code 不一定符合既有風格）
+- 沒有 `.nvmrc`（不同人用不同 Node 版本可能踩雷）
+
+**影響**：
+- 改壞了程式沒人發現（push 就壞了）
+- 程式碼品質靠記憶維持（不可靠）
+
+**做法**：
+1. 加 GitHub Actions（每次 push 自動跑 `npm test`）
+2. 加 ESLint（standard 風格）
+3. 加 `.nvmrc`（固定 Node 22）
+
+**brtclaw 推薦**：做（2-3 小時、中風險）
+**附註**：GitHub Actions 需要你去 repo enable。
+**你決定**：______
+
+---
+
+### 🟡 Session H：6 個 helper 補 unit test
+
+**業務問題**：
+6 個重要的輔助模組（金額計算、訂單 ID 產生、訂單讀取、時間處理、訊息格式）**完全沒有專屬 unit test**。如果有人改壞了，現有測試抓不到。
+
+**影響**：
+- 改了 `orderFormatter.js`（金額計算）壞了，沒測試抓
+- 改了 `csvReader.js`（讀訂單）壞了，沒測試抓
+
+**做法**：為這 6 個模組補 50+ 個 unit test
+
+**brtclaw 推薦**：做（3-4 小時、中風險）
+**你決定**：______
+
+---
+
+### 🟢 Session J：雙位置架構強化
+
+**業務問題**：
+`scripts/sync-mirror.sh` 同步時會**自動刪除主位置的測試資料**。意思是如果你不小心跑錯，主位置的真實資料可能被清掉。
+
+**影響**：
+- sync 指令要小心用（沒有 dry-run）
+- 不熟悉的人可能誤刪資料
+
+**做法**：
+1. sync-mirror.sh 加 `--dry-run` 選項（先看會動什麼）
+2. sync-mirror.sh 加 `.rsync-filter` 排除測試 CSV
+3. `cleanup-test-orders.sh` 整合 helper（避免重複定義 protected 清單）
+
+**brtclaw 推薦**：做（1-2 小時、低風險）
+**你決定**：______
+
+---
+
+### 🟢 Session K：結構化 logging
+
+**業務問題**：
+程式裡到處 `console.log` / `console.error`，訊息格式不一致。出問題很難找原因。
+
+**影響**：
+- 客戶回報錯誤，你要 grep 一堆 console 訊息
+- 沒辦法依「嚴重程度」過濾 log
+
+**做法**：
+建立 `src/utils/logger.js`，提供 `logger.info/warn/error()`，JSON 格式輸出。
+
+**brtclaw 推薦**：做（2 小時、中風險）
+**你決定**：______
+
+---
+
+## 你的決策輸入格式
+
+直接在 Discord 回：
+
+```
+E: D（純 postback）
+D3: 做
+D4: 做
+F: 做
+G: 之後做
+H: 做
+J: 做
+K: 做
+```
+
+brtclaw 收到後會：
+1. 寫入 `docs/DECISIONS_NEEDED.md`
+2. 更新 `docs/CLEANUP_PHASE_2_PLAN.md` 標記已決策
+3. 通知你「可以 renew session 處理」
+
+---
+
+_本指南是 CEO 與 brtclaw 溝通決策的橋樑_
