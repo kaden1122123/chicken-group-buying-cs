@@ -3,7 +3,7 @@
 const https = require('https');
 // P2-5：改用 src/config.js 介面，不自己 regex 解析 config.yaml
 // 支援多租戶、js-yaml 缺失 fallback、與 src/ 其他模組一致
-const { getLineBotToken, getNotifyOwnerUserId } = require('../config');
+const { getLineBotToken, getNotifyOwnerUserId, isFeatureEnabled } = require('../config');
 
 // 預設值（若 config 沒設定時使用，僅在開發環境有意義）
 const DEFAULT_HUBERT_LINE_USER_ID = 'Uf56650056d35626deb64165926a26182';
@@ -22,6 +22,13 @@ function getLineToken() {
  * @returns {Promise<boolean>}
  */
 async function notifyHubert(message) {
+  // Session D4-4：handoff.notify_owner.enabled flag 檢查
+  // chicken.yaml 的 handoff.notify_owner.enabled 控制是否通知 Hubert
+  // 未啟用時跳過（return false 表示「不通知」），不丟錯誤
+  if (!isFeatureEnabled('handoff.notify_owner.enabled')) {
+    console.warn('[notifier] handoff.notify_owner.enabled = false，跳過通知 Hubert');
+    return false;
+  }
   const lineToken = getLineToken();
   if (!lineToken) {
     console.warn('LINE Bot Token not configured, skipping notification');
