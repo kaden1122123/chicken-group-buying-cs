@@ -276,6 +276,10 @@ api-server.js 5 個 hardening + dashboard-server.js 1 個 yaml 修整：
 - 排程方案 B — 系統 crontab（傳統做法）
 - 預設時間：每天 02:00（避開營業時間）
 
+**實際（2026-06-29）**：Hubert 選擇**方案 A**，brtclaw 用 cron.add 加 job
+- Job ID `bd933551-4774-4533-91b9-8599777bd6d3`
+- Force run 驗證成功（archive 20K / 27 檔含真實訂單）
+
 ---
 
 ## 你的決策輸入格式

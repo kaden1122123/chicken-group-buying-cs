@@ -667,4 +667,13 @@ crontab -e
 0 2 * * * /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service/scripts/backup.sh >> ~/.backups/chicken-cron.log 2>&1
 ```
 
-Hubert 選擇後，**我可以幫忙加**（A 或 B 任一）— 但這是運維動作，預設由 Hubert 決定。
+Hubert 已決定**方案 A**（OpenClaw cron），2026-06-29 15:43 force run 驗證成功：
+
+- **Job ID**: `bd933551-4774-4533-91b9-8599777bd6d3`
+- **排程**：每天 02:00 Asia/Taipei（nextRunAtMs 1782756000000 = 2026-06-30 02:00）
+- **sessionTarget**: isolated（一次性 agent 跑，不佔主 session）
+- **delivery**: announce 到 Discord channel 1512213273846485058
+- **Force run 結果**：
+  - Archive: `~/.backups/chicken/2026-06-29/chicken-backup-20260629-154323.tar.gz`（20,687 bytes / 27 個檔）
+  - 真實訂單 `2026-06-13.csv` + `2026-06-16.csv` 都正確包含
+  - 知識庫、config tenants 全部包含
