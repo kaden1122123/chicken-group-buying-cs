@@ -27,7 +27,7 @@ console.log(`\n--- 情境 1: calculatePrice 金額計算 ---`);
 
 // 1.1 半隻雞單一（NT$380）
 const r1 = orderFormatter.calculatePrice({
-  chicken_items: { '鹽水雞': 1 },
+  chicken_items: { 鹽水雞: 1 },
   side_items: {},
   extra_items: {},
 });
@@ -38,7 +38,7 @@ console.log('  ✓ 半隻雞 1 隻: 小計 380, 免運, 總計 380');
 
 // 1.2 整隻雞單一（NT$820，chicken_count = 2 盒）
 const r2 = orderFormatter.calculatePrice({
-  chicken_items: { '玉米雞': 1 },
+  chicken_items: { 玉米雞: 1 },
   side_items: {},
   extra_items: {},
 });
@@ -51,7 +51,7 @@ console.log('  ✓ 整隻雞 1 隻: 小計 820, chicken_count = 2');
 
 // 1.3 多項雞肉
 const r3 = orderFormatter.calculatePrice({
-  chicken_items: { '鹽水雞': 2, '甘蔗煙燻雞': 1 },
+  chicken_items: { 鹽水雞: 2, 甘蔗煙燻雞: 1 },
   side_items: {},
   extra_items: {},
 });
@@ -63,7 +63,7 @@ console.log('  ✓ 多項雞肉加總正確（半隻 + 半隻 = 3 盒）');
 
 // 1.3b 多項雞肉含整隻
 const r3b = orderFormatter.calculatePrice({
-  chicken_items: { '鹽水雞': 1, '玉米雞': 1 }, // 1 半隻 + 1 整隻 = 1 + 2 = 3 盒
+  chicken_items: { 鹽水雞: 1, 玉米雞: 1 }, // 1 半隻 + 1 整隻 = 1 + 2 = 3 盒
   side_items: {},
   extra_items: {},
 });
@@ -73,8 +73,8 @@ console.log('  ✓ 多項雞肉含整隻正確（1 半隻 + 1 整隻 = 3 盒）'
 
 // 1.4 雞肉 + 小菜
 const r4 = orderFormatter.calculatePrice({
-  chicken_items: { '鹽水雞': 1 },
-  side_items: { '秘製黑胡椒蒜味毛豆': 2 },
+  chicken_items: { 鹽水雞: 1 },
+  side_items: { 秘製黑胡椒蒜味毛豆: 2 },
   extra_items: {},
 });
 assert.strictEqual(r4.subtotal, 380 + 70 * 2, '雞肉 + 小菜');
@@ -86,7 +86,7 @@ console.log('  ✓ 雞肉 + 小菜加總正確');
 // 1.5 純小菜，未滿免運門檻（NT$350）→ 收運費 NT$80
 const r5 = orderFormatter.calculatePrice({
   chicken_items: {},
-  side_items: { '秘製黑胡椒蒜味毛豆': 2 },
+  side_items: { 秘製黑胡椒蒜味毛豆: 2 },
   extra_items: {},
 });
 assert.strictEqual(r5.subtotal, 140, '小菜 2 份 NT$140');
@@ -97,7 +97,7 @@ console.log('  ✓ 純小菜未滿門檻收運費 80');
 // 1.6 純小菜，剛好 NT$350 門檻 → 免運
 const r6 = orderFormatter.calculatePrice({
   chicken_items: {},
-  side_items: { '秘製麻油粉肝': 4 }, // 100 * 4 = 400
+  side_items: { 秘製麻油粉肝: 4 }, // 100 * 4 = 400
   extra_items: {},
 });
 assert.strictEqual(r6.subtotal, 400);
@@ -107,9 +107,9 @@ console.log('  ✓ 純小菜滿 350 免運');
 
 // 1.7 加購品（不影響運費判斷）
 const r7 = orderFormatter.calculatePrice({
-  chicken_items: { '鹽水雞': 1 },
+  chicken_items: { 鹽水雞: 1 },
   side_items: {},
-  extra_items: { '雞脖子': 5 }, // 10 * 5 = 50
+  extra_items: { 雞脖子: 5 }, // 10 * 5 = 50
 });
 assert.strictEqual(r7.subtotal, 380 + 50);
 assert.strictEqual(r7.delivery_fee, 0, '有雞肉免運（加購品不影響）');
@@ -119,7 +119,7 @@ console.log('  ✓ 加購品不影響運費判斷');
 const r8 = orderFormatter.calculatePrice({
   chicken_items: {},
   side_items: {},
-  extra_items: { '雞脖子': 3 },
+  extra_items: { 雞脖子: 3 },
 });
 assert.strictEqual(r8.subtotal, 30);
 assert.strictEqual(r8.delivery_fee, 0, '純加購品運費 = 0（邊界）');
@@ -142,7 +142,7 @@ console.log('  ✓ 空訂單全部 = 0');
 
 // 1.10 未知品項（priceMap 找不到 → price = 0）
 const r10 = orderFormatter.calculatePrice({
-  chicken_items: { '神秘雞': 1 },
+  chicken_items: { 神秘雞: 1 },
   side_items: {},
   extra_items: {},
 });
@@ -151,9 +151,9 @@ console.log('  ✓ 未知品項價格 fallback 為 0');
 
 // 1.11 total_boxes = chicken_count + side_count
 const r11 = orderFormatter.calculatePrice({
-  chicken_items: { '鹽水雞': 2 },
-  side_items: { '秘製黑胡椒蒜味毛豆': 3 },
-  extra_items: { '雞脖子': 10 },
+  chicken_items: { 鹽水雞: 2 },
+  side_items: { 秘製黑胡椒蒜味毛豆: 3 },
+  extra_items: { 雞脖子: 10 },
 });
 assert.strictEqual(r11.total_boxes, r11.chicken_count + r11.side_count, 'total_boxes = chicken_count + side_count（不含加購）');
 console.log('  ✓ total_boxes = chicken_count + side_count（不含加購）');
@@ -166,7 +166,7 @@ console.log('  ✓ 全空回傳「（未填寫品項）」');
 
 // 2.2 只有雞肉
 const d2 = orderFormatter.formatItemsDisplay({
-  chicken_items: { '鹽水雞': 2 },
+  chicken_items: { 鹽水雞: 2 },
   side_items: {},
   extra_items: {},
 });
@@ -176,7 +176,7 @@ console.log('  ✓ 只有雞肉：含 🐔 emoji');
 // 2.3 只有小菜
 const d3 = orderFormatter.formatItemsDisplay({
   chicken_items: {},
-  side_items: { '秘製黑胡椒蒜味毛豆': 1 },
+  side_items: { 秘製黑胡椒蒜味毛豆: 1 },
   extra_items: {},
 });
 assert.ok(d3.includes('🥒 秘製黑胡椒蒜味毛豆 x1'));
@@ -186,16 +186,16 @@ console.log('  ✓ 只有小菜：含 🥒 emoji');
 const d4 = orderFormatter.formatItemsDisplay({
   chicken_items: {},
   side_items: {},
-  extra_items: { '雞脖子': 5 },
+  extra_items: { 雞脖子: 5 },
 });
 assert.ok(d4.includes('➕ 雞脖子 x5'));
 console.log('  ✓ 只有加購：含 ➕ emoji');
 
 // 2.5 雞肉 + 小菜 + 加購（完整）
 const d5 = orderFormatter.formatItemsDisplay({
-  chicken_items: { '鹽水雞': 1 },
-  side_items: { '秘製黑胡椒蒜味毛豆': 2 },
-  extra_items: { '雞脖子': 3 },
+  chicken_items: { 鹽水雞: 1 },
+  side_items: { 秘製黑胡椒蒜味毛豆: 2 },
+  extra_items: { 雞脖子: 3 },
 });
 assert.ok(d5.includes('🐔'));
 assert.ok(d5.includes('🥒'));
@@ -204,7 +204,7 @@ console.log('  ✓ 雞肉+小菜+加購：3 種 emoji 都有');
 
 // 2.6 多個雞肉品項（多行）
 const d6 = orderFormatter.formatItemsDisplay({
-  chicken_items: { '鹽水雞': 2, '玉米雞': 1 },
+  chicken_items: { 鹽水雞: 2, 玉米雞: 1 },
   side_items: {},
   extra_items: {},
 });
@@ -222,7 +222,7 @@ const s1 = orderFormatter.formatOrderSummary({
   community: '',
   delivery_date: '2026-06-19',
   time_slot: 'morning',
-  chicken_items: { '鹽水雞': 2 },
+  chicken_items: { 鹽水雞: 2 },
   side_items: {},
   extra_items: {},
   payment_method: 'transfer',
@@ -245,7 +245,7 @@ const s2 = orderFormatter.formatOrderSummary({
   community: '',
   delivery_date: '2026-06-20',
   time_slot: 'afternoon',
-  chicken_items: { '鹽水雞': 1 },
+  chicken_items: { 鹽水雞: 1 },
   side_items: {},
   extra_items: {},
   payment_method: 'linepay',
@@ -272,7 +272,7 @@ const s4 = orderFormatter.formatOrderSummary({
   community: '三峽大埔社區',
   delivery_date: '2026-06-19',
   time_slot: 'morning',
-  chicken_items: { '鹽水雞': 1 },
+  chicken_items: { 鹽水雞: 1 },
   side_items: {},
   extra_items: {},
   payment_method: 'cash',
@@ -295,7 +295,7 @@ const detail = orderFormatter.formatOrderDetail({
   community: '',
   delivery_date: '2026-06-19',
   time_slot: 'morning',
-  chicken_items: { '鹽水雞': 2 },
+  chicken_items: { 鹽水雞: 2 },
   side_items: {},
   extra_items: {},
   total_amount: 760,

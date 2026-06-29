@@ -99,7 +99,7 @@ function formatDateWithWeekday(dateStr) {
  * @param {string} [customerMessage] - 客戶原始訊息（用於日後擴展）
  * @returns {{ valid: boolean, errorMessage: string|null, errorType: string|null, suggestedDate: string|null }}
  */
-function validateDate(inputDate, customerMessage) {
+function validateDate(inputDate, _customerMessage) {
   if (!inputDate) {
     return {
       valid: false,
@@ -127,7 +127,6 @@ function validateDate(inputDate, customerMessage) {
   }
 
   const now = new Date();
-  const todayStr = getTodayString();
   const deliveryDateStr = formatDate(deliveryDate);
   const openDates = getOpenDates();
   const suggestedDate = getNextOrderableOpenDate(now);

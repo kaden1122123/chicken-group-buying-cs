@@ -21,7 +21,7 @@ const { generateOrderId } = require('../order/orderIdGenerator');
  * @param {object} context
  * @returns {{ action: string, reply: object|null, newState: string }}
  */
-function handleCompleted(userId, message, orderData, context) {
+function handleCompleted(userId, message, _orderData, _context) {
   // 檢查是否為新訂購意圖
   const { isOrderIntent } = require('./idle');
 

@@ -61,7 +61,10 @@ function parseYamlSimple(content) {
   const root = {};
   // 遞迴 stack: 每個是 { indent, obj }
   const stack = [{ indent: -1, obj: root }];
+  // 註：currentListKey / currentListIndent 保留為未來 nested list 解析預留欄位
+  // eslint-disable-next-line no-unused-vars
   const currentListKey = null; // 當前在 list 模式中
+  // eslint-disable-next-line no-unused-vars
   const currentListIndent = -1;
 
   for (let i = 0; i < lines.length; i++) {
@@ -86,6 +89,7 @@ function parseYamlSimple(content) {
     // 處理 list item
     if (text.startsWith('- ')) {
       const itemContent = text.substring(2).trim();
+      // eslint-disable-next-line no-unused-vars
       const parentIndent = stack[stack.length - 1].indent;
       // 確保 parent 是 array（根據上下文）
       if (!Array.isArray(parent)) {

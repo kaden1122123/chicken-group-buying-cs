@@ -5,7 +5,6 @@ require('../utils/timezone');
 
 const { STATES, buildCancelResult } = require('./stateMachine');
 const { textReply } = require('../utils/lineReply');
-const { formatThankYou } = require('../order/orderFormatter');
 const { writeOrder } = require('../order/csvWriter');
 const { generateOrderId } = require('../order/orderIdGenerator');
 const { getPaymentConfig, isFeatureEnabled } = require('../config');

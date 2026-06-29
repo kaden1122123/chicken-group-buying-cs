@@ -2,7 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const { formatDate, getTodayString } = require('../utils/timeUtils');
+const { getTodayString } = require('../utils/timeUtils');
 const { FILENAME_PATTERN } = require('./csvWriter');
 
 // 規模化：與 csvWriter 共用路徑

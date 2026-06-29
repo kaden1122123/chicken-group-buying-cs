@@ -60,7 +60,7 @@ async function waitForServer() {
   for (let i = 0; i < 30; i++) {
     try {
       await new Promise((resolve, reject) => {
-        const req = http.request({ hostname: 'localhost', port: PORT, path: '/', method: 'GET' }, (res) => {
+        const req = http.request({ hostname: 'localhost', port: PORT, path: '/', method: 'GET' }, (_res) => {
           resolve();
         });
         req.on('error', reject);

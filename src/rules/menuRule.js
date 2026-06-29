@@ -57,9 +57,13 @@ function clearMenuCache() {
 // 透過 Object.defineProperty getter 攔截，確保即使在 module load 後才使用，也能取到最新值
 // ============================================================================
 
+// eslint-disable-next-line no-unused-vars
 const VALID_ITEMS = [];
+// eslint-disable-next-line no-unused-vars
 const PRICES = {};
+// eslint-disable-next-line no-unused-vars
 const CHICKEN_ITEMS = new Set();
+// eslint-disable-next-line no-unused-vars
 const SIDE_ITEMS = new Set();
 
 // 用物件 getter 轉接到 ensureDerived

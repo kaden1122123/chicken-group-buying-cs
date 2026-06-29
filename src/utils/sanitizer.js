@@ -75,7 +75,7 @@ function sanitize(input) {
     .replace(/\s+/g, ' ')
     // 再次移除殘留的危險關鍵字（替換為星號）
     .replace(/\b(DROP|DELETE|TRUNCATE|ALTER|CREATE|INSERT|UPDATE|EXEC|UNION|SELECT|SHOW|GRANT)\b/gi, '***')
-    .replace(/etc[\/\.]*passwd/gi, '***')
+    .replace(/etc[/.]*passwd/gi, '***')
     .replace(/<[^>]*>/g, '');
 }
 

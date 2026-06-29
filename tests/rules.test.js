@@ -10,11 +10,13 @@ const assert = require('assert');
 // Load rules
 const validatePhone = require('../src/rules/phoneRule');
 const validateAddress = require('../src/rules/addressRule');
-const { validateMenu, parseItems, calculateChickenCount, calculateTotalBoxes, calculateSubtotal, VALID_ITEMS, PRICES } = require('../src/rules/menuRule');
-const { validateDate, getOpenDates } = require('../src/rules/dateRule');
+const { validateMenu } = require('../src/rules/menuRule');
+// eslint-disable-next-line no-unused-vars
+const { validateDate } = require('../src/rules/dateRule');
 const { validateTimeSlot } = require('../src/rules/timeSlotRule');
 const { validatePayment } = require('../src/rules/paymentRule');
 const { calculatePrice } = require('../src/rules/priceRule');
+// eslint-disable-next-line no-unused-vars
 const { validateAll } = require('../src/rules');
 
 // ========== Phone Rule Tests ==========

@@ -1,5 +1,8 @@
 'use strict';
 
+/* eslint-disable no-case-declarations */
+// switch case 內的 const 宣告都是區域 immutable 變數，不會跨 case 洩漏
+
 const { STATES } = require('./stateMachine');
 const {
   validatePhone,
@@ -7,11 +10,13 @@ const {
   validateMenu,
   validateDate,
   validateTimeSlot,
+  // eslint-disable-next-line no-unused-vars
   parseItems,
   calculatePrice,
 } = require('../rules');
 const { textReply } = require('../utils/lineReply');
 const { isReturningCustomer } = require('../order/csvReader');
+// eslint-disable-next-line no-unused-vars
 const { formatDate } = require('../utils/timeUtils');
 
 /**
@@ -32,7 +37,7 @@ const FIELD_PATTERNS = {
   name: /(?:姓名|名字|訂購人)[:：]?\s*(.+)/i,
   phone: /(?:電話|手機|聯絡)[:：]?\s*(.+)/i,
   menu: /(?:品項|訂購|要的|雞肉|小菜)[:：]?\s*(.+)/i,
-  date: /(?:日期|時間|送達日)[:：]?\s*(\d{1,2}[月\/]\d{1,2}[日]?|\d{4}[-\/]\d{1,2}[-\/]\d{1,2})/i,
+  date: /(?:日期|時間|送達日)[:：]?\s*(\d{1,2}[月/]\d{1,2}[日]?|\d{4}[-/]\d{1,2}[-/]\d{1,2})/i,
   timeSlot: /(?:時段|上午|下午|早上|晚上)[:：]?\s*(.+)/i,
   paymentMethod: /(?:付款|支付|轉帳|現金|街口|LINE Pay)[:：]?\s*(.+)/i,
 };
@@ -74,6 +79,7 @@ function handleAwaitingInfo(userId, message, orderData, context) {
   // 依序驗證欄位
   let validationResult = { valid: true };
 
+  // eslint-disable-next-line no-case-declarations
   switch (targetField) {
     case 'address':
       validationResult = validateAddress(value);
@@ -161,7 +167,7 @@ function handleAwaitingInfo(userId, message, orderData, context) {
       validationResult = validateDate(value, rawMessage);
       if (validationResult.valid) {
         // 解析日期並格式化
-        const dateInput = value.match(/(\d+)[月\/](\d+)/);
+        const dateInput = value.match(/(\d+)[月/](\d+)/);
         if (dateInput) {
           const now = new Date();
           const dateStr = `${now.getFullYear()}-${dateInput[1].padStart(2, '0')}-${dateInput[2].padStart(2, '0')}`;

@@ -185,10 +185,9 @@ function quickMatch(message) {
  * 當 quickMatch 未命中時，對模糊訊息做語意分類
  *
  * @param {string} message - 客戶訊息
- * @param {string} context - 對話上下文（可選）
  * @returns {Promise<{ matched: boolean, type: string|null, level: string|null, confidence: number }>}
  */
-async function semanticMatch(message, context = '') {
+async function semanticMatch(message) {
   // 先做快速匹配
   const quick = quickMatch(message);
   if (quick.matched) {
@@ -230,7 +229,7 @@ async function semanticMatch(message, context = '') {
  * @returns {Promise<{ shouldTransfer: boolean, type: string|null, level: string|null }>}
  */
 async function shouldTransfer(message, options = {}) {
-  const { totalAmount, address, context } = options;
+  const { totalAmount, context } = options;
 
   // L2: 金額異常（> NT$3000）
   if (totalAmount && totalAmount > 3000) {

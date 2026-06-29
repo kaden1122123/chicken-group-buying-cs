@@ -21,7 +21,9 @@ const fs = require('fs');
 const path = require('path');
 
 const CONFIG_PATH = path.join(__dirname, '..', 'config', 'tenants', 'chicken.yaml');
+// eslint-disable-next-line no-unused-vars
 const CONFIG_SOURCE = path.join(__dirname, '..', 'src', 'config.js');
+// eslint-disable-next-line no-unused-vars
 const HANDOFF_SOURCE = path.join(__dirname, '..', 'src', 'states', 'handoff.js');
 
 console.log('\n=== Handoff Customer Reply Tests (P0-2) ===');
@@ -90,17 +92,22 @@ console.log('\n--- handleHandoff behavior ---');
 
 // 用 stub mock handoff/notifier + csvWriter（避免實際 IO）
 const Module = require('module');
+// eslint-disable-next-line no-unused-vars
 const originalResolve = Module._resolveFilename;
+// eslint-disable-next-line no-unused-vars
 const originalRequire = Module.prototype.require;
 
-// 建立 stub
+// 建立 stub（預留未來 mock 實作，目前未使用）
+// eslint-disable-next-line no-unused-vars
 const stubs = {
   '../order/csvWriter': { writeOrder: () => {} },
   '../handoff/notifier': { notifyHubert: () => Promise.resolve() },
 };
 
-// 暫時替換 require 行為（簡化版）
+// 暫時替換 require 行為（簡化版，預留未來 mock 實作）
+// eslint-disable-next-line no-unused-vars
 const originalCsvWriter = require('../src/order/csvWriter');
+// eslint-disable-next-line no-unused-vars
 const originalNotifier = require('../src/handoff/notifier');
 
 // 用 env var 測 fallback 行為（無法直接 mock config，僅驗證現有 config 行為）

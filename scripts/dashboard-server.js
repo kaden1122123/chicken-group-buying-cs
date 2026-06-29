@@ -23,7 +23,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { getOpenDates, getIgnoredKeywords, getTenantId } = require('../src/config');
+const { getTenantId } = require('../src/config');
 const { getOrdersByDate } = require('../src/order/csvReader');
 
 // P1-8：js-yaml fallback。Production 環境遺漏 npm install 時不會 crash。
@@ -85,21 +85,6 @@ function checkAuth(req, res) {
   });
   res.end('401 Unauthorized - 請提供正確的帳號密碼');
   return false;
-}
-
-/**
- * 解析 query string
- */
-function parseQuery(url) {
-  const idx = url.indexOf('?');
-  if (idx < 0) return {};
-  const qs = url.slice(idx + 1);
-  return Object.fromEntries(
-    qs.split('&').map((kv) => {
-      const [k, v] = kv.split('=');
-      return [decodeURIComponent(k), decodeURIComponent(v || '')];
-    }),
-  );
 }
 
 /**

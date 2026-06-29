@@ -20,7 +20,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { getTenantId, getConfigPath } = require('../src/config');
+const { getTenantId } = require('../src/config');
 const { getOrdersByDate } = require('../src/order/csvReader');
 
 const TENANT = getTenantId();

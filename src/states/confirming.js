@@ -2,7 +2,7 @@
 
 const { STATES, buildCancelResult } = require('./stateMachine');
 const { textReply } = require('../utils/lineReply');
-const { formatOrderSummary, formatCustomerReply } = require('../order/orderFormatter');
+const { formatCustomerReply } = require('../order/orderFormatter');
 
 /**
  * CONFIRMING 狀態處理
@@ -53,6 +53,7 @@ function isModifyIntent(message) {
  * @param {object} context
  * @returns {{ action: string, reply: object|null, newState: string, orderData: object, context: object }}
  */
+// eslint-disable-next-line no-unused-vars
 function handleConfirming(userId, message, orderData, context) {
   if (isConfirmReply(message)) {
     return {

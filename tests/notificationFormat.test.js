@@ -29,7 +29,7 @@ const order1 = {
   user_line_name: '王小明',
   user_phone: '0912345678',
   address: '三峽區學成路100號',
-  chicken_items: { '鹽水雞': 2 },
+  chicken_items: { 鹽水雞: 2 },
   side_items: {},
   total_amount: 760,
 };
@@ -126,6 +126,7 @@ console.log(`\n--- 情境 4: HANDOFF_TITLES 與 transferRules 同步 ---`);
 
 // 4.1 從 transferRules.TRIGGER_PATTERNS 取得所有 type，確保都在 HANDOFF_TITLES
 // 注意：transferRules 是 internal，謹慎取出 type
+// eslint-disable-next-line no-unused-vars
 let triggerTypes = [];
 if (transferRules.TRIGGER_PATTERNS && typeof transferRules.TRIGGER_PATTERNS === 'object') {
   for (const pattern of transferRules.TRIGGER_PATTERNS) {

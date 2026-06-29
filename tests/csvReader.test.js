@@ -58,8 +58,8 @@ const orders1 = csvReader.readCSV(TEST_FILE_1);
 assert.strictEqual(orders1.length, 2, '應解析 2 筆訂單');
 assert.strictEqual(orders1[0].order_id, 'ORD-20991231-001');
 assert.strictEqual(orders1[0].user_line_name, '王小明');
-assert.deepStrictEqual(orders1[0].chicken_items, { '鹽水雞': 2 }, 'chicken_items 應 JSON.parse 為物件');
-assert.deepStrictEqual(orders1[1].side_items, { '秘製黑胡椒蒜味毛豆': 2 }, 'side_items 應 JSON.parse 為物件');
+assert.deepStrictEqual(orders1[0].chicken_items, { 鹽水雞: 2 }, 'chicken_items 應 JSON.parse 為物件');
+assert.deepStrictEqual(orders1[1].side_items, { 秘製黑胡椒蒜味毛豆: 2 }, 'side_items 應 JSON.parse 為物件');
 console.log('  ✓ 正常 CSV 解析（含 JSON 欄位 → 物件）');
 
 // 1.3 空檔案（只有 header）→ 0 筆

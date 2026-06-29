@@ -2,7 +2,6 @@
 
 const path = require('path');
 const fs = require('fs');
-const { formatDate } = require('../utils/timeUtils');
 
 // 規模化：與 csvWriter 共用路徑解析邏輯
 const DEFAULT_TENANT = process.env.TENANT_ID || 'chicken';

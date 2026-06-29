@@ -49,7 +49,7 @@ console.log('  ✓ 檔案不存在回傳 0');
 fs.writeFileSync(
   TEST_CSV_PATH,
   'order_id,created_at\nORD-20991231-001,2099-12-31T10:00:00+08:00\nORD-20991231-002,2099-12-31T11:00:00+08:00\nORD-20991231-005,2099-12-31T12:00:00+08:00\n',
-  'utf8'
+  'utf8',
 );
 assert.strictEqual(orderIdGenerator.getMaxSequence(TEST_DATE), 5, '最大序號應為 5');
 console.log('  ✓ 從 CSV 解析最大序號 = 5');
@@ -99,7 +99,7 @@ if (!fs.existsSync(todayCsvPath)) {
   fs.writeFileSync(
     todayCsvPath,
     `order_id,created_at\nORD-${yyyy}${mm}${dd}-003,${todayStr}T10:00:00+08:00\n`,
-    'utf8'
+    'utf8',
   );
   createdTodayFile = true;
 } else {

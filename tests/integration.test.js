@@ -202,7 +202,6 @@ console.log('\n--- Worker Deployment Consistency ---');
 
 // 確認 production Worker 真的有 IGNORED_KEYWORDS 邏輯
 const fs = require('fs');
-const path = require('path');
 const dryRunPath = '/tmp/wrangler-dryrun2/index.js';
 
 if (fs.existsSync(dryRunPath)) {

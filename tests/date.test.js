@@ -13,7 +13,7 @@
 
 const assert = require('assert');
 const { validateDate, getNextOpenDate, getNextOrderableOpenDate, formatDateWithWeekday } = require('../src/rules/dateRule');
-const { validateTimeSlot, validateTimeSlotWithDate } = require('../src/rules/timeSlotRule');
+const { validateTimeSlotWithDate } = require('../src/rules/timeSlotRule');
 
 const RealDate = Date;
 

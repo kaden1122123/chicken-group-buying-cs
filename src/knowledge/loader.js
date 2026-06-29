@@ -83,17 +83,6 @@ function cleanItemName(name) {
 }
 
 /**
- * 從「保存方式」資料中提取類型（chicken / side / extra）
- * 並判斷是否為整隻
- * @param {string} originalName
- * @returns {{ category: string, isWhole: boolean }}
- */
-function classifyItem(originalName) {
-  const isWhole = originalName.includes('整隻') || originalName.includes('（整隻');
-  return { category: 'unknown', isWhole };
-}
-
-/**
  * 讀取商品菜單（01_product.md）
  * 這是商品資料的唯一來源（single source of truth）
  * @returns {{

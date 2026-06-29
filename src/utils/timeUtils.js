@@ -4,7 +4,6 @@
 // 副作用是 process.env.TZ 被設定，Date.getHours/getDate/getMonth/getFullYear 改用台北時區
 require('./timezone');
 
-const path = require('path');
 const { readKBFile } = require('../knowledge/loader');
 
 // 知識庫路徑：透過 loader 統一管理（Session C C2 變更）
@@ -50,7 +49,7 @@ function formatDate(date) {
  */
 function getCurrentOpenDates() {
   try {
-    const content = readKBFile('02_order_flow.md');
+    readKBFile('02_order_flow.md');
     // 從知識庫解析開團日期（這裡簡化處理，實際由 loader.js 提供完整解析）
     // 預設：本月每週三、五、六開團（根據實際調整）
     // 此函式由 loader.js 的 loadOrderFlow 補充完整邏輯
