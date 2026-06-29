@@ -14,8 +14,10 @@ const { getDeliveryRules } = require('../config');
 function calculatePrice(itemsData) {
   const { items } = loadProductMenu();
   const priceMap = {};
+  const isWholeMap = {};
   items.forEach((item) => {
     priceMap[item.name] = item.price;
+    isWholeMap[item.name] = item.isWhole;
   });
 
   let subtotal = 0;
@@ -27,8 +29,8 @@ function calculatePrice(itemsData) {
   for (const [name, qty] of Object.entries(chicken)) {
     const price = priceMap[name] || 0;
     subtotal += price * qty;
-    // 半隻=1盒，整隻=2盒
-    const isWhole = name.includes('整隻') || name.includes('玉米雞（整隻') || name.includes('土雞（整隻') || name.includes('烏骨公雞（整隻') || name.includes('玉米公雞（整隻');
+    // 整隻 = 2 盒，半隻 = 1 盒（從 loadProductMenu().items[i].isWhole 讀，loader.js 已正確判斷）
+    const isWhole = isWholeMap[name] === true;
     chickenCount += isWhole ? qty * 2 : qty;
   }
 

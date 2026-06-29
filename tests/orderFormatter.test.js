@@ -11,11 +11,10 @@
  * 3. formatOrderSummary：訂單摘要（給客戶）
  * 4. formatOrderDetail：訂單詳細（給 Hubert 內部）
  *
- * ⚠️ 已知現象（記錄供未來修整）：
- * - calculatePrice 的 isWhole 判斷用傳入 name（cleaned name 不含「整隻」字眼），
- *   所以「整隻雞」目前會被算成 1 盒而不是 2 盒。
- * - 金額用 priceMap[cleanedName] 是正確的。
- * - 此現象由 PROMPT 觀察到，屬於 session 後續修整範圍。
+ * 盒數規則（2026-06-29 Hubert 明確）：
+ * - 半隻 = 1 盒
+ * - 一隻（整隻） = 2 盒
+ * - 來源：loadProductMenu().items[i].isWhole（loader.js 已正確判斷）
  */
 
 const assert = require('assert');
@@ -37,7 +36,7 @@ assert.strictEqual(r1.delivery_fee, 0, '有雞肉免運');
 assert.strictEqual(r1.total_amount, 380);
 console.log('  ✓ 半隻雞 1 隻: 小計 380, 免運, 總計 380');
 
-// 1.2 整隻雞單一（NT$820，金額正確但 chicken_count 應為 2 盒目前實作為 1 盒，記錄現象）
+// 1.2 整隻雞單一（NT$820，chicken_count = 2 盒）
 const r2 = orderFormatter.calculatePrice({
   chicken_items: { '玉米雞': 1 },
   side_items: {},
@@ -46,9 +45,9 @@ const r2 = orderFormatter.calculatePrice({
 assert.strictEqual(r2.subtotal, 820, '整隻雞金額 NT$820（priceMap 正確）');
 assert.strictEqual(r2.delivery_fee, 0, '有雞肉免運');
 assert.strictEqual(r2.total_amount, 820);
-// 當前實作：chicken_count 為 1（非 2），記錄現象
-assert.strictEqual(r2.chicken_count, 1, '⚠️ 當前實作：整隻雞 chicken_count = 1（非 2，已知現象見檔頭）');
-console.log('  ⚠️ 整隻雞 1 隻: 小計 820, chicken_count = 1（已知現象）');
+assert.strictEqual(r2.chicken_count, 2, '整隻雞 1 隻 = 2 盒（isWhole 從 loadProductMenu 讀）');
+assert.strictEqual(r2.total_boxes, 2, 'total_boxes = 2（只有 1 隻整隻雞）');
+console.log('  ✓ 整隻雞 1 隻: 小計 820, chicken_count = 2');
 
 // 1.3 多項雞肉
 const r3 = orderFormatter.calculatePrice({
@@ -58,8 +57,19 @@ const r3 = orderFormatter.calculatePrice({
 });
 assert.strictEqual(r3.subtotal, 380 * 2 + 380 * 1, '2 隻鹽水 + 1 隻甘蔗');
 assert.strictEqual(r3.total_amount, r3.subtotal);
-assert.strictEqual(r3.chicken_count, 3, 'chicken_count = 3');
-console.log('  ✓ 多項雞肉加總正確');
+// 全部都是半隻：2 半隻 + 1 半隻 = 3 盒
+assert.strictEqual(r3.chicken_count, 3, '2 半隻 + 1 半隻 = 3 盒');
+console.log('  ✓ 多項雞肉加總正確（半隻 + 半隻 = 3 盒）');
+
+// 1.3b 多項雞肉含整隻
+const r3b = orderFormatter.calculatePrice({
+  chicken_items: { '鹽水雞': 1, '玉米雞': 1 }, // 1 半隻 + 1 整隻 = 1 + 2 = 3 盒
+  side_items: {},
+  extra_items: {},
+});
+assert.strictEqual(r3b.subtotal, 380 + 820, '半隻 380 + 整隻 820');
+assert.strictEqual(r3b.chicken_count, 3, '1 半隻 + 1 整隻 = 1 + 2 = 3 盒');
+console.log('  ✓ 多項雞肉含整隻正確（1 半隻 + 1 整隻 = 3 盒）');
 
 // 1.4 雞肉 + 小菜
 const r4 = orderFormatter.calculatePrice({

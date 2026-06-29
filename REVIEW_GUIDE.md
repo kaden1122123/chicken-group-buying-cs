@@ -260,10 +260,10 @@ bash scripts/check-quality.sh         # 6 項品質檢查
 | H5 | `src/order/csvReader.js` | `tests/csvReader.test.js` | CSV 讀取：readCSV（JSON 欄位解析）+ 5 查詢函數（getOrderById / getOrdersByDate / getCustomerByPhone / isReturningCustomer / getAllOrders） |
 | H6 | `src/handoff/notificationFormat.js` | `tests/notificationFormat.test.js` | LINE 通知格式：formatLINENotification（基本/缺欄位/JSON字串）+ formatLINENotificationMessage + getHandoffTitle（含未知 type fallback + console.warn） + HANDOFF_TITLES 與 transferRules 同步 |
 
-**已知現象**（H4 commit 記錄，供未來修整參考）：
-- `orderFormatter.calculatePrice` 的 `isWhole` 判斷用傳入 name（cleaned name 已移除「整隻」字眼）→ 整隻雞目前會被算成 1 盒而非 2 盒。
-- 金額用 `priceMap[cleanedName]` 正確，僅 `chicken_count` 失真。
-- 建議：orderFormatter 改讀 `loadProductMenu().items[i].isWhole`（loader.js 已有正確判斷）。
+**盒數規則**（2026-06-29 Hubert 明確）：
+- 半隻 = 1 盒
+- 一隻（整隻） = 2 盒
+- 來源：`loadProductMenu().items[i].isWhole`（loader.js 已有正確判斷：`originalName.includes('整隻')`）
 
 ### CI/CD（GitHub Actions）
 
@@ -305,7 +305,8 @@ bash scripts/check-quality.sh         # 6 項品質檢查
   - 測試套數：20 → 26（+6 helper unit）
   - 新增對照表：6 個 helper 模組測試
   - check-quality.sh：動態計算測試套數（避免硬寫）
-  - 記錄 H4 發現的 `isWhole` 判斷現象（orderFormatter.calculatePrice 對 cleaned name 永遠 false，建議未來修整）
+  - H4 發現的 `isWhole` 判斷現象已在 09:50 修整（`isWholeMap` 讀 `loadProductMenu().items[i].isWhole`）
+  - 補上 `r3b` 測試：1 半隻 + 1 整隻 = 3 盒（驗證整隻 = 2 盒）
 
 ---
 
