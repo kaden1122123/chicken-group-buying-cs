@@ -13,6 +13,7 @@
  *   const { getOpenDates, getIgnoredKeywords, isIgnoredKeyword } = require('./config');
  */
 
+const logger = require('./utils/logger');
 const fs = require('fs');
 const path = require('path');
 
@@ -205,7 +206,7 @@ function loadConfig() {
   try {
     content = fs.readFileSync(CONFIG_PATH, 'utf8');
   } catch (e) {
-    console.error(`[config] Failed to read ${CONFIG_PATH}:`, e.message);
+    logger.error(`[config] Failed to read ${CONFIG_PATH}`, { err: e.message });
     return {};
   }
 

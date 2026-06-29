@@ -1,5 +1,6 @@
 'use strict';
 
+const logger = require('../utils/logger');
 const { STATES } = require('./stateMachine');
 const { textReply } = require('../utils/lineReply');
 const { writeOrder } = require('../order/csvWriter');
@@ -73,7 +74,7 @@ async function handleHandoff(userId, userMessage, orderData = {}, userProfile = 
   try {
     writeOrder(handoffOrderData);
   } catch (e) {
-    console.error('Handoff CSV write failed:', e);
+    logger.error('Handoff CSV write failed', { err: e.message });
     handoffOrderData.staff_notes = 'CSV寫入失敗，請人工確認';
   }
 
@@ -84,7 +85,7 @@ async function handleHandoff(userId, userMessage, orderData = {}, userProfile = 
   // Step 3: LINE Push 通知 Hubert（非同步）
   const notification = formatLINENotification(handoffOrderData, userMessage);
   notifyHubert(notification).catch((e) => {
-    console.error('LINE notification failed:', e);
+    logger.error('LINE notification failed', { err: e.message });
     handoffOrderData.staff_notes = 'LINE通知失敗，請人工確認';
     try {
       writeOrder(handoffOrderData); // 更新 staff_notes

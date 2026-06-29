@@ -8,6 +8,7 @@
  * 不再使用脆弱的手動逐行 YAML 解析，改為統一從 config.js 載入
  */
 
+const logger = require('../utils/logger');
 const {
   getAllowedLineUsers,
   getBlockOthers,
@@ -63,7 +64,7 @@ function checkWhitelist(userId) {
   }
 
   if (!isWhitelisted(userId)) {
-    console.warn(`[whitelist] blocked userId: ${userId}`);
+    logger.warn(`[whitelist] blocked userId: ${userId}`);
     return { blocked: true, reply: getBlockReply() };
   }
 

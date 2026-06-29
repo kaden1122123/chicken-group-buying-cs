@@ -7,6 +7,7 @@
  * 禁止直接 fallback 到 'Unknown'。
  */
 
+const logger = require('./logger');
 const https = require('https');
 // P2-5：改用 src/config.js 介面，不自己 regex 解析 config.yaml
 // 支援多租戶、js-yaml 缺失 fallback、與 src/ 其他模組一致
@@ -119,11 +120,11 @@ async function getLineDisplayName(userId) {
     return profile.displayName;
   } catch (e) {
     // API 失敗時
-    console.error(`[lineProfileCache] fetch failed for ${userId}: ${e.message}`);
+    logger.error(`[lineProfileCache] fetch failed for ${userId}`, { err: e.message });
 
     // 有過期快取 → 使用過期快取（避免使用者看到空名稱）
     if (cached) {
-      console.warn(`[lineProfileCache] using expired cache for ${userId}`);
+      logger.warn(`[lineProfileCache] using expired cache for ${userId}`);
       return cached.displayName;
     }
 
@@ -162,7 +163,7 @@ async function getLineProfile(userId) {
     });
     return profile;
   } catch (e) {
-    console.error(`[lineProfileCache] full profile fetch failed for ${userId}: ${e.message}`);
+    logger.error(`[lineProfileCache] full profile fetch failed for ${userId}`, { err: e.message });
     if (cached) {
       return {
         displayName: cached.displayName,

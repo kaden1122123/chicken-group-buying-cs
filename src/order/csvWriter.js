@@ -1,5 +1,6 @@
 'use strict';
 
+const logger = require('../utils/logger');
 const path = require('path');
 const fs = require('fs');
 const lockfile = require('proper-lockfile');
@@ -166,7 +167,7 @@ function writeOrder(orderData) {
         lockfile.unlockSync(DATA_DIR);
       } catch (e) {
         // unlock 失敗不應影響主流程（lockfile 已 stale 或已被外部清理）
-        console.error('[csvWriter] unlockSync failed:', e.message);
+        logger.error('[csvWriter] unlockSync failed', { err: e.message });
       }
     }
   }
@@ -238,7 +239,7 @@ function updateOrder(orderId, updates) {
       try {
         lockfile.unlockSync(DATA_DIR);
       } catch (e) {
-        console.error('[csvWriter] unlockSync failed:', e.message);
+        logger.error('[csvWriter] unlockSync failed', { err: e.message });
       }
     }
   }

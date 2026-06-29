@@ -3,6 +3,7 @@
 // 時區統一設定（Session G.2）
 require('../utils/timezone');
 
+const logger = require('../utils/logger');
 const { STATES, buildCancelResult } = require('./stateMachine');
 const { textReply } = require('../utils/lineReply');
 const { writeOrder } = require('../order/csvWriter');
@@ -76,7 +77,7 @@ function handleAwaitingPayment(userId, message, orderData, context) {
       writeOrder(updatedOrderData);
     } catch (e) {
       // 寫入失敗仍繼續，但不阻断流程
-      console.error('CSV write failed:', e);
+      logger.error('CSV write failed', { err: e.message });
     }
 
     return {

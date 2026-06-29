@@ -3,6 +3,7 @@
 // Session D4-5：security.input_sanitization flag 介面
 // 注意：關閉輸入消毒會有 SQL injection / prompt injection 風險！
 // 建議永遠保持 enabled（雞味預設 true）
+const logger = require('./logger');
 const { isFeatureEnabled } = require('../config');
 
 /**
@@ -19,7 +20,7 @@ function sanitize(input) {
   // Session D4-5：security.input_sanitization flag 檢查
   // 關閉時 log 警告並 bypass 消毒（⚠️ 安全風險！）
   if (!isFeatureEnabled('security.input_sanitization')) {
-    console.warn('[sanitizer] ⚠️ SECURITY RISK: security.input_sanitization = false，輸入消毒已關閉！');
+    logger.warn('[sanitizer] ⚠️ SECURITY RISK: security.input_sanitization = false，輸入消毒已關閉！');
     return input == null ? '' : String(input);
   }
   if (input === null || input === undefined) return '';

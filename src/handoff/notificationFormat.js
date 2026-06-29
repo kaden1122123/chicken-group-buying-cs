@@ -1,5 +1,7 @@
 'use strict';
 
+const logger = require('../utils/logger');
+
 /**
  * 通知格式 — LINE Push 訊息格式
  */
@@ -36,9 +38,7 @@ function getHandoffTitle(handoffType) {
     return HANDOFF_TITLES[handoffType];
   }
   // 未知 type：警告開發者（避免持續 fallback 到「一般轉報」）
-  if (typeof console !== 'undefined' && console.warn) {
-    console.warn(`[notificationFormat] 未知 handoff_type: "${handoffType}"，請補上 HANDOFF_TITLES 對應項目`);
-  }
+  logger.warn(`[notificationFormat] 未知 handoff_type: "${handoffType}"，請補上 HANDOFF_TITLES 對應項目`);
   return '【一般轉報】';
 }
 

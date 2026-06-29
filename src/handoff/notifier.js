@@ -1,5 +1,6 @@
 'use strict';
 
+const logger = require('../utils/logger');
 const https = require('https');
 // P2-5：改用 src/config.js 介面，不自己 regex 解析 config.yaml
 // 支援多租戶、js-yaml 缺失 fallback、與 src/ 其他模組一致
@@ -26,12 +27,12 @@ async function notifyHubert(message) {
   // chicken.yaml 的 handoff.notify_owner.enabled 控制是否通知 Hubert
   // 未啟用時跳過（return false 表示「不通知」），不丟錯誤
   if (!isFeatureEnabled('handoff.notify_owner.enabled')) {
-    console.warn('[notifier] handoff.notify_owner.enabled = false，跳過通知 Hubert');
+    logger.warn('[notifier] handoff.notify_owner.enabled = false，跳過通知 Hubert');
     return false;
   }
   const lineToken = getLineToken();
   if (!lineToken) {
-    console.warn('LINE Bot Token not configured, skipping notification');
+    logger.warn('LINE Bot Token not configured, skipping notification');
     return false;
   }
 
@@ -68,14 +69,14 @@ async function notifyHubert(message) {
         if (res.statusCode === 200 || res.statusCode === 201) {
           resolve(true);
         } else {
-          console.error('LINE notification failed:', res.statusCode, data);
+          logger.error('LINE notification failed', { status: res.statusCode, body: data });
           reject(new Error(`LINE API returned ${res.statusCode}: ${data}`));
         }
       });
     });
 
     req.on('error', (e) => {
-      console.error('LINE notification error:', e);
+      logger.error('LINE notification error', { err: e.message });
       reject(e);
     });
 

@@ -1,5 +1,6 @@
 'use strict';
 
+const logger = require('../utils/logger');
 const { STATES } = require('./stateMachine');
 const { textReply } = require('../utils/lineReply');
 const { formatThankYou } = require('../order/orderFormatter');
@@ -63,7 +64,7 @@ function executeCompleted(orderData) {
   try {
     writeOrder(finalizedOrder);
   } catch (e) {
-    console.error('CSV write failed in completed:', e);
+    logger.error('CSV write failed in completed', { err: e.message });
   }
 
   const thankYouMessage = textReply(formatThankYou(finalizedOrder));

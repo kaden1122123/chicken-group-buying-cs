@@ -103,23 +103,24 @@ assert.strictEqual(notificationFormat.getHandoffTitle('linepay_failed'), '【LIN
 assert.strictEqual(notificationFormat.getHandoffTitle('high_value_order'), '【金額異常】');
 console.log('  ✓ 已知 handoff_type 對應正確標題');
 
-// 3.2 未知 type → fallback「【一般轉報】」+ console.warn
-// 攔截 console.warn
-const originalWarn = console.warn;
+// 3.2 未知 type → fallback「【一般轉報】」+ logger.warn
+// 攔截 process.stderr.write 看 logger 是否走 stderr
+const originalStderr = process.stderr.write.bind(process.stderr);
 let warnCalled = false;
 let warnMessage = '';
-console.warn = (msg) => {
+process.stderr.write = (msg) => {
   warnCalled = true;
-  warnMessage = msg;
+  warnMessage += String(msg);
+  return true;
 };
 try {
   const fallback = notificationFormat.getHandoffTitle('unknown_type_xyz');
   assert.strictEqual(fallback, '【一般轉報】', '未知 type → 【一般轉報】');
-  assert.ok(warnCalled, '未知 type 應觸發 console.warn');
+  assert.ok(warnCalled, '未知 type 應觸發 logger.warn');
   assert.ok(warnMessage.includes('unknown_type_xyz'), 'warn 應含未知 type 名稱');
-  console.log('  ✓ 未知 type → 【一般轉報】+ console.warn 提醒開發者');
+  console.log('  ✓ 未知 type → 【一般轉報】+ logger.warn 提醒開發者');
 } finally {
-  console.warn = originalWarn;
+  process.stderr.write = originalStderr;
 }
 
 console.log(`\n--- 情境 4: HANDOFF_TITLES 與 transferRules 同步 ---`);
