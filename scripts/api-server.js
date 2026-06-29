@@ -59,6 +59,45 @@ const API_CORS_ORIGINS = (process.env.API_CORS_ORIGINS || '')
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);
+// I3：IP-based token bucket rate limit
+const API_RATE_LIMIT = parseInt(process.env.API_RATE_LIMIT || '60', 10);
+const API_RATE_LIMIT_WINDOW_MS = parseInt(process.env.API_RATE_LIMIT_WINDOW_MS || '60000', 10);
+// 每個 IP 一個 bucket，{ count, resetAt } (記憶體 in-memory，不持久化)
+// 重啟 server 會清空（可接受，客戶端正確 retry 即可）
+const rateLimitBuckets = new Map();
+
+// 定期清理過期 bucket（避免記憶體成長無上限）
+// 每 10 分鐘清一次超過 window 的桶
+const RATE_LIMIT_CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
+const rateLimitCleanupTimer = setInterval(() => {
+  const now = Date.now();
+  let cleaned = 0;
+  for (const [ip, bucket] of rateLimitBuckets.entries()) {
+    if (bucket.resetAt <= now) {
+      rateLimitBuckets.delete(ip);
+      cleaned++;
+    }
+  }
+  if (cleaned > 0) {
+    console.log(`[api-server] Rate limit cleanup: removed ${cleaned} expired buckets (size now ${rateLimitBuckets.size})`);
+  }
+}, RATE_LIMIT_CLEANUP_INTERVAL_MS);
+rateLimitCleanupTimer.unref();
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  let bucket = rateLimitBuckets.get(ip);
+  if (!bucket || bucket.resetAt <= now) {
+    bucket = { count: 0, resetAt: now + API_RATE_LIMIT_WINDOW_MS };
+    rateLimitBuckets.set(ip, bucket);
+  }
+  bucket.count++;
+  return {
+    allowed: bucket.count <= API_RATE_LIMIT,
+    remaining: Math.max(0, API_RATE_LIMIT - bucket.count),
+    resetSec: Math.ceil((bucket.resetAt - now) / 1000),
+  };
+}
 
 // 路徑
 const ROOT = path.join(__dirname, '..');
@@ -365,6 +404,20 @@ const server = http.createServer((req, res) => {
       success: false,
       error: 'Server is shutting down, please retry later',
     }));
+    return;
+  }
+
+  // I3：IP-based rate limit（在 auth 之前套用，避免 auth 也被 DDoS）
+  const clientIp = req.socket.remoteAddress || 'unknown';
+  const rl = checkRateLimit(clientIp);
+  res.setHeader('X-RateLimit-Limit', String(API_RATE_LIMIT));
+  res.setHeader('X-RateLimit-Remaining', String(rl.remaining));
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', String(rl.resetSec));
+    sendJson(res, 429, {
+      success: false,
+      error: `Rate limit exceeded (${API_RATE_LIMIT} per ${API_RATE_LIMIT_WINDOW_MS}ms). Retry in ${rl.resetSec}s.`,
+    });
     return;
   }
 
