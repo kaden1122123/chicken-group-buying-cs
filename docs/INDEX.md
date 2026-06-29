@@ -1,7 +1,7 @@
 # 雞肉團購 AI 客服 — 文檔索引
 
 > 維護者：brtclaw
-> 最後更新：2026-06-14 14:50
+> 最後更新：2026-06-29 16:50（Session J/L/K/M 產出補齊）
 
 ---
 
@@ -30,9 +30,10 @@
 - [TODO_2026-06-26.md](./TODO_2026-06-26.md) — 2026-06-26 評估與修整 TODO（14 個問題、利弊分析、決策表）|
 
 ### 進度與日誌
-- [../PHASE1_PROGRESS.md](../PHASE1_PROGRESS.md) — Phase 1 進度
+- [../PHASE1_PROGRESS.md](../PHASE1_PROGRESS.md) — Phase 1 進度（最後更新 2026-06-29 15:45）
 - [DAILY_SUMMARY_2026-06-12.md](./DAILY_SUMMARY_2026-06-12.md) — 2026-06-12 日報
-- [DAILY_SUMMARY_2026-06-26.md](./DAILY_SUMMARY_2026-06-26.md) — 2026-06-26 大規模修整日（audit + P0~P2 修整 + prompt 改動）|
+- [DAILY_SUMMARY_2026-06-26.md](./DAILY_SUMMARY_2026-06-26.md) — 2026-06-26 大規模修整日（audit + P0~P2 修整 + prompt 改動）
+- [../.task-state/](../.task-state/) — 各 session 狀態檔（goal + steps）
 
 ### 規格與審查
 - [../SPEC.md](../SPEC.md) — 完整規格
@@ -80,7 +81,7 @@ chicken-group-buying-customer-service/
 │   ├── states/
 │   ├── handoff/
 │   └── utils/
-├── tests/                        # 17 套單元測試 + 2 套整合測試（共 19 套）
+├── tests/                        # 29 套 unit + 1 套 integration（共 30 套,2026-06-29）
 │   ├── rules.test.js                       # 34+ 案例
 │   ├── states.test.js                      # 狀態機轉換
 │   ├── handoff.test.js                     # 14 種觸發條件
@@ -97,14 +98,24 @@ chicken-group-buying-customer-service/
 │   ├── config-interface-adoption.test.js   # config interface 採用
 │   ├── csv-writer-concurrency.test.js      # CSV 寫入併發控制
 │   ├── dashboard-server-yaml-fallback.test.js  # dashboard-server yaml fallback
+│   ├── dashboard-server-yaml-patch.test.js     # dashboard-server I5 yaml patch (Session I)
+│   ├── api-server-hardening.test.js           # api-server I1-I4 hardening (Session I)
 │   ├── parse-items-dedup.test.js           # 解析品項去重
-│   └── api-server.test.js                  # API server 整合測試（含 MOCK_TODAY）
+│   ├── api-server.test.js                  # API server 整合測試（含 MOCK_TODAY）
+│   ├── logger.test.js                      # 結構化 logging (Session K)
+│   └── ...（完整 29 套 unit test,詳見 REVIEW_GUIDE.md）
 ├── scripts/
-│   ├── api-server.js               # HTTP API
+│   ├── api-server.js               # HTTP API（+ /api/docs Swagger UI · Session L）
 │   ├── dashboard.js                # 儀表板生成器
 │   ├── dashboard-server.js         # 儀表板 + admin 伺服器
 │   ├── admin.html                  # 管理後台 UI（P0-4）
-│   └── dashboard-server-test.js    # 整合測試（CSV 讀取）
+│   ├── backup.sh                   # 每日備份（Session M）
+│   ├── backup_smoke_test.sh        # 5 步煙霧測試（Session M）
+│   ├── sync-mirror.sh              # 雙位置同步（Session J 加 --dry-run + .rsync-filter）
+│   ├── cleanup-test-orders.{sh,js} # 清理測試訂單（Session J 重構,PROTECTED 單一來源）
+│   └── dashboard-server-test.js    # 整合測試（CSV 讀取,跑在 npm run test:all）
+├── openapi.yaml                    # OpenAPI 3.0 spec（Session L）
+├── docs/API_CURL.md                # curl 範例文件（Session L）
 └── dashboard.html                # 儀表板輸出
 ```
 
@@ -118,5 +129,6 @@ chicken-group-buying-customer-service/
 
 ---
 
-_最後更新：2026-06-26_
+_最後更新：2026-06-29 16:50（Session J/L/K/M 產出補齊 + 測試套數 19→30）_
 _最近評估：見 [TODO_2026-06-26.md](./TODO_2026-06-26.md)_
+_Session 修整進度：見 [CLEANUP_PHASE_2_PLAN.md](./CLEANUP_PHASE_2_PLAN.md) §四 優先順序彙總_

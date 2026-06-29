@@ -12,8 +12,10 @@
 - ✅ **src/ 角色**：`src/` 是「設計驗證 + 測試對象」，**不是 production runtime**。
   Production 跑 `~/.openclaw/agents/external-user/`（OpenClaw agent）。
 - ✅ **CSV 欄位數**：以 `csvWriter.js` 為準，目前 **28 欄**。
-- ✅ **測試套數**：以 `tests/*.test.js` 為準，目前 **29 套（25 unit + 3 server-integration hardening + 1 logger unit）**（2026-06-29 Session I 加 api-server + dashboard-server hardening 測試（共 2 套 spawn server 集成（api-server + dashboard-server））。
-  - 2026-06-29 Session K 加 logger.test.js（15+ 測試）
+- ✅ **測試套數**：以 `tests/*.test.js` + `scripts/dashboard-server-test.js` 為準，目前 **30 套（29 unit + 1 integration）**
+  - 2026-06-29 Session I 加 api-server-hardening.test.js + dashboard-server-yaml-patch.test.js（2 套 unit）
+  - 2026-06-29 Session K 加 logger.test.js（15+ 測試 unit）
+  - 整合測試：`scripts/dashboard-server-test.js`（CSV 讀取 + dashboard server 啟動驗證,跑在 `npm run test:all`）
 
 ---
 
@@ -241,10 +243,15 @@ node tests/integration.test.js
 
 - `tests/api-server.test.js`（HTTP server 端對端，需要 port 3457 可用）
 
+### Integration（1 套，於 `npm run test:all`）
+
+- `scripts/dashboard-server-test.js`（CSV 讀取 + dashboard server 啟動驗證）
+
 ### 全套執行
 
 ```bash
-npm test                              # 26 套 全綠
+npm test                              # 29 套 unit 全綠（2026-06-29 Session I/K 後）
+npm run test:all                      # 30 套全綠（含 1 套 integration）
 npm run lint                          # 0 errors, 0 warnings（2026-06-29 修整）
 npm run lint:fix                      # auto-fix 風格問題
 bash scripts/check-quality.sh         # 6 項品質檢查
@@ -302,6 +309,10 @@ bash scripts/check-quality.sh         # 6 項品質檢查
   - 新增 src/ 角色說明（設計驗證+測試對象，非 production runtime）
   - 新增測試總覽、安全機制、設定檔介面、API Server、Worker 整合章節
   - 新增變更歷史
+- **2026-06-29 16:50**：Housekeeping（本檔修整）
+  - 測試套數 26 → 30（Session I/K 新增 4 套 unit + 1 套 integration）
+  - 補上 `scripts/dashboard-server-test.js` 整合測試說明
+  - 補上 Session I/K/L/M 變更歷史摘要
 - **2026-06-29**：Session H 補 6 個 helper unit test
   - 測試套數：20 → 26（+6 helper unit）
   - 新增對照表：6 個 helper 模組測試
