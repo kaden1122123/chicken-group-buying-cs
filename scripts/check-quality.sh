@@ -85,7 +85,9 @@ cd "$PROJECT_ROOT"
 section "Check 1/6: npm test"
 
 if npm test > /tmp/npm-test-output.log 2>&1; then
-  pass "npm test 全綠（19 套）"
+  # 動態計算 npm test 實際跑的測試檔數（數行首的 ▶▶▶ 行數，排除 shell trace）
+  test_count=$(grep -c '^▶▶▶' /tmp/npm-test-output.log)
+  pass "npm test 全綠（${test_count} 個測試檔）"
 else
   fail "npm test 失敗（看 /tmp/npm-test-output.log）"
   tail -20 /tmp/npm-test-output.log

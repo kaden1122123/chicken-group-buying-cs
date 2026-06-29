@@ -4,7 +4,7 @@
   "description": "雞肉團購智能客服 — Phase 1 核心功能",
   "main": "src/index.js",
   "scripts": {
-    "test": "for f in tests/rules.test.js tests/states.test.js tests/handoff.test.js tests/security.test.js tests/date.test.js tests/config.test.js tests/whitelist.test.js tests/integration.test.js tests/address-handoff.test.js tests/handoff-customer-reply.test.js tests/state-trimmed-value.test.js tests/parse-items-dedup.test.js tests/address-dynamic-keywords.test.js tests/community-field.test.js tests/dashboard-server-yaml-fallback.test.js tests/config-interface-adoption.test.js tests/helpers/cleanup.test.js tests/csv-writer-concurrency.test.js tests/timezone.test.js tests/config-feature-flag.test.js; do echo \"▶▶▶ $f ◀◀◀\"; node \"$f\" || exit 1; done && echo \"✅ All unit tests passed\"",
+    "test": "for f in tests/rules.test.js tests/states.test.js tests/handoff.test.js tests/security.test.js tests/date.test.js tests/config.test.js tests/whitelist.test.js tests/integration.test.js tests/address-handoff.test.js tests/handoff-customer-reply.test.js tests/state-trimmed-value.test.js tests/parse-items-dedup.test.js tests/address-dynamic-keywords.test.js tests/community-field.test.js tests/dashboard-server-yaml-fallback.test.js tests/config-interface-adoption.test.js tests/helpers/cleanup.test.js tests/csv-writer-concurrency.test.js tests/timezone.test.js tests/config-feature-flag.test.js tests/timeUtils.test.js tests/lineReply.test.js tests/orderIdGenerator.test.js tests/orderFormatter.test.js tests/csvReader.test.js tests/notificationFormat.test.js; do echo \"▶▶▶ $f ◀◀◀\"; node \"$f\" || exit 1; done && echo \"✅ All unit tests passed\"",
     "test:all": "for f in tests/*.test.js; do echo \"▶▶▶ $f ◀◀◀\"; node \"$f\" || exit 1; done && node scripts/dashboard-server-test.js && echo \"✅ All tests (including server integration) passed\"",
     "test:rules": "node tests/rules.test.js",
     "test:states": "node tests/states.test.js",
@@ -15,6 +15,12 @@
     "test:whitelist": "node tests/whitelist.test.js",
     "test:integration": "node tests/integration.test.js",
     "test:api-server": "node tests/api-server.test.js",
+    "test:time-utils": "node tests/timeUtils.test.js",
+    "test:line-reply": "node tests/lineReply.test.js",
+    "test:order-id": "node tests/orderIdGenerator.test.js",
+    "test:order-formatter": "node tests/orderFormatter.test.js",
+    "test:csv-reader": "node tests/csvReader.test.js",
+    "test:notification-format": "node tests/notificationFormat.test.js",
     "test:dashboard-server": "node scripts/dashboard-server-test.js",
     "lint": "eslint src/ tests/ scripts/",
     "lint:fix": "eslint src/ tests/ scripts/ --fix"
