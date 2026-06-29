@@ -117,6 +117,8 @@ function checkRateLimit(ip) {
 const ROOT = path.join(__dirname, '..');
 const TENANT = getTenantId();
 const ORDERS_DIR = path.join(ROOT, 'data', 'orders', TENANT);
+// Session L2：openapi.yaml 檔案路徑（serve Swagger UI 用）
+const OPENAPI_FILE = path.join(ROOT, 'openapi.yaml');
 
 // ========== HTTP 工具 ==========
 
@@ -553,6 +555,52 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Session L2：GET /api/docs — Swagger UI HTML（需 auth）
+  if (path === '/api/docs' && method === 'GET') {
+    if (!checkAuth(req, res)) return;
+    const html = `<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <title>雞味研究所 API — Swagger UI</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css">
+  <style>body { margin: 0; }</style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
+  <script>
+    window.onload = () => {
+      window.ui = SwaggerUIBundle({
+        url: '/api/docs/openapi.yaml',
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [SwaggerUIBundle.presets.apis],
+        layout: 'BaseLayout',
+      });
+    };
+  </script>
+</body>
+</html>
+`;
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(html);
+    return;
+  }
+
+  // Session L2：GET /api/docs/openapi.yaml — openapi spec 內容（需 auth）
+  if (path === '/api/docs/openapi.yaml' && method === 'GET') {
+    if (!checkAuth(req, res)) return;
+    if (!fs.existsSync(OPENAPI_FILE)) {
+      sendJson(res, 404, { success: false, error: 'openapi.yaml not found' });
+      return;
+    }
+    const content = fs.readFileSync(OPENAPI_FILE, 'utf-8');
+    res.writeHead(200, { 'Content-Type': 'application/yaml; charset=utf-8' });
+    res.end(content);
+    return;
+  }
+
   // 公開：GET /api/health
   if (path === '/api/health' && method === 'GET') {
     return sendJson(res, 200, { success: true, status: 'ok', tenant: TENANT, time: new Date().toISOString() });
@@ -600,6 +648,8 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`  GET  /api/orders            → 查詢訂單（需 auth）`);
   console.log(`  GET  /api/orders/:id        → 查單筆（需 auth）`);
   console.log(`  PATCH /api/orders/:id      → 更新訂單（需 auth）`);
+  console.log(`  GET  /api/docs              → Swagger UI（需 auth）`);
+  console.log(`  GET  /api/docs/openapi.yaml → OpenAPI 3.0 spec（需 auth）`);
   console.log(`[api-server] Graceful shutdown timeout: ${API_GRACEFUL_TIMEOUT_MS}ms`);
 });
 
