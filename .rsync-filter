@@ -1,0 +1,19 @@
+# .rsync-filter — sync-mirror.sh 排除規則（Session J2）
+#
+# 用途：sync 兩鏡像時，避免把「測試 fixtures / 環境特有檔案」同步到 production 位置。
+# 規則語法跟 rsync --filter 一樣（每行一個 pattern）。
+# 詳見：man rsync "INCLUDE/EXCLUDE PATTERN RULES"
+#
+# 如何套用：scripts/sync-mirror.sh 會自動檢查 source 端的 .rsync-filter，
+# 如果存在就加 --exclude-from="$SOURCE/.rsync-filter"。
+#
+# 目前排除的東西：
+
+# --- Session I 測試 fixture（test-yaml-patch-i5 tenant）---
+# 避免 sync 到主位置後遺，留在 production
+config/tenants/test-yaml-patch-*.yaml
+knowledge/tenants/test-yaml-patch-*/
+
+# --- 未來可能加的 test fixtures ---
+# data/orders/_csv_concurrency_test/
+# data/orders/*/_integration_test/

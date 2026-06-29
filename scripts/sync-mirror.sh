@@ -77,6 +77,17 @@ if [ ${#RSYNC_EXTRA[@]} -gt 0 ]; then
   RSYNC_FLAGS+=("${RSYNC_EXTRA[@]}")
 fi
 
+# Session J2：源端 .rsync-filter（如果存在）
+# sync 時如果 source 有 .rsync-filter（rsync exclude pattern file），
+# 會自動套用，避免主位置被 sync 進測試 fixtures / tmp 檔案。
+if [ "$DIRECTION" = "from-legacy" ] && [ -f "$LEGACY/.rsync-filter" ]; then
+  RSYNC_FLAGS+=(--exclude-from="$LEGACY/.rsync-filter")
+  echo "[exclude-from] 使用 $LEGACY/.rsync-filter" >&2
+elif [ "$DIRECTION" = "from-primary" ] && [ -f "$PRIMARY/.rsync-filter" ]; then
+  RSYNC_FLAGS+=(--exclude-from="$PRIMARY/.rsync-filter")
+  echo "[exclude-from] 使用 $PRIMARY/.rsync-filter" >&2
+fi
+
 if [ "$DIRECTION" = "from-primary" ]; then
   echo "同步：主位置 → 原位置"
   rsync "${RSYNC_FLAGS[@]}" "$PRIMARY/" "$LEGACY/"
