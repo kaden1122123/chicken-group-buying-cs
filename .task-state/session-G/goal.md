@@ -1,9 +1,11 @@
 # Session G — CI/CD + ESLint + .nvmrc
 
 > **建立時間**：2026-06-28 19:50 (Asia/Taipei)
+> **完成時間**：2026-06-28（兩個 commit：`ef54879` + `df8e7a9`）
 > **維護者**：brtclaw
 > **觸發**：Hubert 2026-06-28 19:48 開 Session G（CEO_GUIDE.md §G）
-> **狀態**：⏳ 等待 Hubert 確認 3 個子決策
+> **狀態**：✅ 已完成（2026-06-28 ef54879 + df8e7a9）
+> **後續修整**：2026-06-29 11:00 lint 警告 64 → 0（clean state）
 
 ---
 
@@ -112,4 +114,15 @@
 
 ---
 
-_本檔由 brtclaw 維護，Hubert 確認後開始執行_
+_本檔由 brtclaw 維護，Session G 已於 2026-06-28 完成。檔案內容為當時計畫紀錄，保留供 audit。_
+
+## 完成摘要
+
+Session G 範圍已全部完成並 commit：
+- ✅ G1：`.nvmrc` = `22`（Node 22 版本鎖定）
+- ✅ G2：ESLint + `.eslintrc.json`（src/ 100% 合規，套上零修改）
+- ✅ G3：`.github/workflows/test.yml`（push + PR 觸發，Node 22 + cache npm + lint + test）
+
+**為何檔頭誤寫「⏳ 等待決策」**：建立 goal.md 時 G 還沒做完，但實際 G 在 2026-06-28 已經完成 commit（ef54879 + df8e7a9）。本檔於 2026-06-29 更新狀態為 ✅。
+
+**2026-06-29 補充修整**：H session 改的 6 個 helper 測試沒跑 `lint:fix`，累積 64 warnings。今日清理完成（0 errors, 0 warnings），`npm test` 3 次連跑全綠。

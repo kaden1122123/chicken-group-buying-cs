@@ -244,7 +244,7 @@ node tests/integration.test.js
 
 ```bash
 npm test                              # 26 套 全綠
-npm run lint                          # 0 errors, 64 warnings
+npm run lint                          # 0 errors, 0 warnings（2026-06-29 修整）
 npm run lint:fix                      # auto-fix 風格問題
 bash scripts/check-quality.sh         # 6 項品質檢查
 ```
@@ -307,6 +307,10 @@ bash scripts/check-quality.sh         # 6 項品質檢查
   - check-quality.sh：動態計算測試套數（避免硬寫）
   - H4 發現的 `isWhole` 判斷現象已在 09:50 修整（`isWholeMap` 讀 `loadProductMenu().items[i].isWhole`）
   - 補上 `r3b` 測試：1 半隻 + 1 整隻 = 3 盒（驗證整隻 = 2 盒）
+  - **11:00 修整 ESLint 警告**：64 warnings → 0 warnings（0 errors 維持）
+    - 自動修：40 errors（`npm run lint:fix`，含 eol-last / quote-props 中文 key / comma-dangle）
+    - 手動修：64 warnings（unused imports + no-useless-escape + no-case-declarations）
+    - 補完後 `npm test` 3 次連跑全綠、`check-quality` 7/7 通過
 
 ---
 

@@ -1,6 +1,6 @@
 # Phase 1 進度報告
 
-> 最後更新：2026-06-29 00:20（Session D4 完成，9 個 dead config flag 真正生效）
+> 最後更新：2026-06-29 11:00（Session H + ESLint 警告修整完成）
 > 負責人：brtclaw（規劃 + 實作）
 > 最新文檔：[`docs/INDEX.md`](./docs/INDEX.md)
 > 完整規劃：[`docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md`](./docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md)
@@ -14,7 +14,7 @@
 
 - ✅ **G1**：`.nvmrc` 寫入 `22`（對應 Node 22.x，目前系統用 22.22.2）
 - ✅ **G2**：ESLint 8.57.1 + `eslint:recommended` + 自訂 rules 對齊 src/ 風格
-  - `npm run lint`：0 errors, 64 warnings（warning 不擋 CI）
+  - `npm run lint`：**2026-06-29 修整後 0 errors, 0 warnings**（原本 0 errors, 64 warnings）
   - `npm run lint:fix`：auto-fix 風格問題（shorthand, trailing comma, eol-last 等）
 - ✅ **G3**：`.github/workflows/test.yml`（push/PR 觸發、Node 22 matrix、cache npm、跑 lint + test）
 
@@ -52,6 +52,36 @@
 ### 業務影響
 
 改 `chicken.yaml` 這 5 個業務規則現在立即生效，不用改 code。
+
+---
+
+## ✅ Session H 完成（2026-06-29 10:00）— 6 個 helper unit test + isWhole bug 修整
+
+### 產出
+
+- ✅ **H1**：`tests/timeUtils.test.js` — 6 個函數（getTimeSlot / formatDate / getCurrentOpenDates / isWithinOrderTime / getTodayString / parseDateInput）
+- ✅ **H2**：`tests/lineReply.test.js` — 4 個 LINE 回覆格式（textReply / flexReply / quickReply / imageReply）
+- ✅ **H3**：`tests/orderIdGenerator.test.js` — 訂單 ID 格式（ORD-YYYYMMDD-XXX / PENDING-{ts} / getMaxSequence）
+- ✅ **H4**：`tests/orderFormatter.test.js` — 金額計算 + 格式（calculatePrice / formatItemsDisplay / formatOrderSummary / formatOrderDetail）
+- ✅ **H5**：`tests/csvReader.test.js` — CSV 解析 + 5 查詢函數
+- ✅ **H6**：`tests/notificationFormat.test.js` — LINE 通知格式 + handoff title
+- ✅ **Fix isWhole**：`orderFormatter.calculatePrice` 整隻雞 = 2 盒（Hubert 明確指示）
+  - 原 bug：cleaned name 不含「整隻」字眼導致 isWhole 永遠 false
+  - 修整：改讀 `loadProductMenu().items[i].isWhole`（loader.js 已有正確判斷）
+- ✅ **Housekeeping**：6 個 helper 測試加入 `npm test` for loop + 6 個 `test:*` script
+- ✅ **check-quality.sh**：動態計算測試套數（避免硬寫 19）
+
+### 統計
+
+- 9 個 commit（4df1bd4 / 3812235 / adde3a4 / 024e387 / 58b43e1 / 013ff13 / 3a7cff5 / 0a6a529 / 6a854e3）
+- 測試套數：20 → 26（+6 helper unit）
+- 測試：6 個檔案 / 99 個 assert / npm test 5 次連跑全綠
+- ESLint：40 errors + 64 warnings → 0 errors, 0 warnings（`npm run lint:fix` 自動修 + 手動清 unused）
+- check-quality.sh：6/6 通過
+
+### 業務影響
+
+6 個 helper 模組（金額計算、訂單 ID、訂單讀取、時間處理、訊息格式）現在有專屬 unit test，改壞了能被測試抓到。`isWhole` bug 修整讓「整隻雞」正確算成 2 盒（金額用 priceMap 正確，僅 chicken_count 失真已修）。
 
 ---
 

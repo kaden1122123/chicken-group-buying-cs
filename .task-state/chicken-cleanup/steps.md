@@ -56,8 +56,8 @@
 
 | Session | 主題 | 狀態 |
 |---------|------|------|
-| G | CI/CD + ESLint + .nvmrc | ⏸ 待執行 |
-| H | 6 個 helper 補 unit test | ⏸ 待執行 |
+| G | CI/CD + ESLint + .nvmrc | ✅ 2026-06-28 完成（ef54879 + df8e7a9）|
+| H | 6 個 helper 補 unit test | ✅ 2026-06-29 完成（9 個 commit）|
 | I | 安全與 production hardening | ⏸ 待執行 |
 | J | 雙位置架構強化 | ⏸ 待執行 |
 | K | 結構化 logging | ⏸ 待執行 |
@@ -66,6 +66,14 @@
 | O | B 方案升級（待用）| ⏸ 升級觸發時做 |
 | P | C 方案升級（待用）| ⏸ 升級觸發時做 |
 
-## 下次建議：Session G（CI/CD + ESLint + .nvmrc · 2-3 小時）
+## 下次建議：Session I（安全 + Production Hardening · 2-3 小時）
 
-要繼續做 G 嗎？還是今天先到這？
+G、H 已完成。Session I 是下個高優先（🟡 中影響、production 風險）。H session 順手修整了 ESLint 警告（64 → 0），CI 基礎就緒。
+
+## 2026-06-29 更新（Hubert 指示：有錯誤就修）
+
+- Session H 完成：6 個 helper unit test + 1 fix（isWhole）+ housekeeping + docs
+- Hub bug 修整：`orderFormatter.calculatePrice` 整隻 = 2 盒（Hubert 明確指示）
+- ESLint 狀態：0 errors, 0 warnings（從 40 errors + 64 warnings 清為 0）
+- test 套數：20 → 26
+- 10 個 commit（4df1bd4 ~ 6a854e3 + Session G 補 8 個）
