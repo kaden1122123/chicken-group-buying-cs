@@ -282,15 +282,29 @@ function findTopLevelBlockRange(lines, key) {
 
 /**
  * 把 YAML 內容中 `${key}:` 開頭的 top-level block 替換為新內容
- * 用簡單的 list 格式重建（不會破壞其他區段、其他 keys、其他 top-level 註解）
+ *
+ * 保留舊區段的 separator（在 list items 後、下個 top-level key 前的空行 / 註解），
+ * 避免刪除原檔的裝飾註解。
  */
 function replaceTopLevelBlock(content, key, newBlockLines) {
   const lines = content.split('\n');
   const range = findTopLevelBlockRange(lines, key);
   if (!range) return content;
+  // 找舊區段的「內容結束行」— list/內容的最後一行（不含空行/註解 separator）
+  let contentEnd = range.startLine + 1;
+  for (let i = range.startLine + 1; i < range.endLine; i++) {
+    const trimmed = lines[i].trim();
+    if (trimmed.length === 0 || trimmed.startsWith('#')) {
+      // separator 開始（空行 / 註解）
+      break;
+    }
+    contentEnd = i + 1;
+  }
+  // 把 [contentEnd, endLine) 之間的 separator 內容保留下來
   return [
     ...lines.slice(0, range.startLine),
     ...newBlockLines,
+    ...lines.slice(contentEnd, range.endLine), // separator（空行 + 裝飾註解）
     ...lines.slice(range.endLine),
   ].join('\n');
 }
