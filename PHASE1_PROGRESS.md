@@ -559,3 +559,45 @@ H session 完成後專案已 production-grade（測試 28 套、ESLint 0/0、CI 
 ### 待 CEO 動作
 
 無（api-server 可直接進入 production。Hubert 需決定 production 環境的 env 設定）
+
+---
+
+## ✅ Sessions J + L 完成（2026-06-29 12:18）— 雙位置架構強化 + API 文件化
+
+### 背景
+
+Session I 完成 production hardening 後，續做兩個「低風險高 ROI」的 session：J（操作安全）跟 L（API 文件化）。兩個 session 不互相依賴、可並行思考。
+
+### Session J 產出
+
+- ✅ **J1 sync-mirror --dry-run**（f6177db）：`bash scripts/sync-mirror.sh from-legacy --dry-run` 預覽會動的檔案；其他 rsync 參數自動透傳
+- ✅ **J2 .rsync-filter**（89ebdf9）：repo 內 `.rsync-filter` 列排除 patterns；sync-mirror.sh 自動 --exclude-from source 端的 .rsync-filter
+- ✅ **J3 cleanup 重構**（256183f）：bash script → Node script（cleanup-test-orders.js）+ .sh wrapper；PRODUCTION_DATA_PROTECTED 單一來源在 tests/helpers/cleanup.js
+
+### Session L 產出
+
+- ✅ **L1 openapi.yaml**（7c4e5a1）：OpenAPI 3.0 spec 475 行，5 個 endpoints + 4 個 schemas（OrderCreateData/OrderUpdateRequest/Order/Error）
+- ✅ **L2 /api/docs Swagger UI**（871860f）：HTML + Swagger UI bundle 從 unpkg CDN；`/api/docs/openapi.yaml` spec 內容；都需 auth
+- ✅ **L3 docs/API_CURL.md**（0404ce5）：每 endpoint curl 範例 + e2e 流程 + 常見錯誤對照表
+
+### 統計
+
+- **6 commits**（f6177db / 89ebdf9 / 256183f / 7c4e5a1 / 871860f / 0404ce5）
+- npm test 28 套全綠 / npm run lint 0 errors
+- 0 個 zombie process
+- 0 個新 npm 依賴（Session L 約束）
+
+### 副產品
+
+- 新檔 `.rsync-filter` — sync 排除 patterns
+- 新檔 `openapi.yaml` — API spec
+- 新檔 `docs/API_CURL.md` — curl 範例
+- 新檔 `scripts/cleanup-test-orders.js` — Node 實作的 cleanup
+- `scripts/sync-mirror.sh` — 從 26 行 → 99 行（加 --dry-run + 解析器）
+- `scripts/cleanup-test-orders.sh` — 從 45 行 → 17 行（變 pure wrapper）
+- `scripts/api-server.js` — 50 行新增（/api/docs、/api/docs/openapi.yaml）
+- CEO 指南 更新 Session J/L「已完成」標記
+
+### 待 CEO 動作
+
+無（兩個 session 都不需運維動作；J2 .rsync-filter 已生效；L1-L3 文件已就位）

@@ -198,7 +198,7 @@ api-server.js 5 個 hardening + dashboard-server.js 1 個 yaml 修整：
 
 ---
 
-### 🟢 Session J：雙位置架構強化
+### 🟢 Session J：雙位置架構強化（已完成 2026-06-29）
 
 **業務問題**：
 `scripts/sync-mirror.sh` 同步時會**自動刪除主位置的測試資料**。意思是如果你不小心跑錯，主位置的真實資料可能被清掉。
@@ -206,14 +206,37 @@ api-server.js 5 個 hardening + dashboard-server.js 1 個 yaml 修整：
 **影響**：
 - sync 指令要小心用（沒有 dry-run）
 - 不熟悉的人可能誤刪資料
+- `cleanup-test-orders.sh` 跟 `tests/helpers/cleanup.js` 兩處定義 PROTECTED 清單，容易 drift
 
 **做法**：
 1. sync-mirror.sh 加 `--dry-run` 選項（先看會動什麼）
 2. sync-mirror.sh 加 `.rsync-filter` 排除測試 CSV
 3. `cleanup-test-orders.sh` 整合 helper（避免重複定義 protected 清單）
 
-**brtclaw 推薦**：做（1-2 小時、低風險）
-**你決定**：______
+**brtclaw 推薦**：做
+**預估**：1-2 小時、低風險
+**實際**：完成、3 commits、npm test 28 套全綠 + lint 0 errors、rsync --exclude-from 驗證 fixture 不會 sync 到 production
+
+---
+
+### 🟢 Session L：API 文件化（已完成 2026-06-29）
+
+**業務問題**：
+`api-server.js` 對外 HTTP API 沒有文件。Hubert 或未來工程師不知道有哪些端點、怎麼呼叫、要帶什麼 request。
+
+**影響**：
+- 改完 API 文件要靠口述 / grep source code
+- Worker 整合要讀 api-server.js 才知道 schema
+- 客戶或外部 debugging 沒對外文件
+
+**做法**：
+1. `openapi.yaml` — OpenAPI 3.0 spec for 5 個 endpoints
+2. `GET /api/docs` Swagger UI 互動式文件（需 auth）
+3. `docs/API_CURL.md` — curl 範例 + e2e 流程 + 常見錯誤對照表
+
+**brtclaw 推薦**：做
+**預估**：1-2 小時、低風險
+**實際**：完成、3 commits（純文件 + 1 個 endpoint）、0 npm 依賴、Swagger UI 從 unpkg CDN
 
 ---
 
