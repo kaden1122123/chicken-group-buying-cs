@@ -1,6 +1,6 @@
 # Phase 1 進度報告
 
-> 最後更新：2026-06-28 20:05（Session G 加入 CI/CD + ESLint + .nvmrc）
+> 最後更新：2026-06-29 00:20（Session D4 完成，9 個 dead config flag 真正生效）
 > 負責人：brtclaw（規劃 + 實作）
 > 最新文檔：[`docs/INDEX.md`](./docs/INDEX.md)
 > 完整規劃：[`docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md`](./docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md)
@@ -8,7 +8,7 @@
 
 ---
 
-## ✅ Session G 完成（2026-06-28 20:05）— CI/CD + ESLint + .nvmrc
+## ✅ Session G 完成（2026-06-28 20:05）— CI/CD + ESLint + .nvmrc + 時區統一
 
 ### 產出
 
@@ -30,6 +30,65 @@
 
 - ⏸ 去 GitHub repo [kaden1122123/chicken-group-buying-cs](https://github.com/kaden1122123/chicken-group-buying-cs) → Settings → Actions → Enable
 - workflow 檔案已 commit，enable 後自動生效
+
+---
+
+## ✅ Session D3 完成（2026-06-28 21:50）— 5 個 hardcode 改讀 config
+
+### 產出
+
+- ✅ **D3-1**：src/rules/paymentRule.js `'1000'` → `config.payment.cash.new_customer_max`
+- ✅ **D3-2**：src/order/orderFormatter.js `'350'` + `'80'` → `config.delivery.minimum_order.side_dish_ntd` + 新增 `config.delivery.delivery_fee_short_fallback`
+- ✅ **D3-3**：src/rules/addressRule.js `'三峽', '鶯歌'` → `config.delivery.areas.allowed`
+- ✅ **D3-4+5**：src/states/awaitingPayment.js 銀行代碼/帳號 + LINE Pay ID → `config.payment.transfer.*` + `config.payment.linepay.line_id`
+- ✅ 新增 `getPaymentConfig()` getter in src/config.js
+
+### 統計
+
+- 4 commits（22c970c / 84a077a / 7793c48 / 60b81b9）+ 1 lint fix（4a56b5f）
+- npm test 21 套全綠
+- check-quality.sh：Hardcode 失敗從 5 → 0
+
+### 業務影響
+
+改 `chicken.yaml` 這 5 個業務規則現在立即生效，不用改 code。
+
+---
+
+## ✅ Session D4 完成（2026-06-29 00:20）— 9 個 dead config flag 真正生效
+
+### 產出
+
+- ✅ **D4-1**：src/config.js 新增 `isFeatureEnabled(path)` + `FEATURE_FLAGS` 常數（含 9 個旗標）
+- ✅ **D4-2**：src/states/awaitingPayment.js 4 個 payment.enabled 檢查
+- ✅ **D4-3**：src/order/csvWriter.js storage.phase1.enabled 檢查（throw on disabled）
+- ✅ **D4-4**：src/handoff/notifier.js handoff.notify_owner.enabled 檢查（return false on disabled）
+- ✅ **D4-5**：src/utils/sanitizer.js security.input_sanitization 檢查（bypass + warn）
+- ✅ 新增 tests/config-feature-flag.test.js（22 套 unit test 之一）
+
+### 統計
+
+- 5 commits（c42211a / 9a5e556 / 2e5b0ea / e4a13a5 / d949e30）
+- npm test 22 套全綠
+- check-quality.sh：Dead config 從 9 → 0
+
+### 業務影響
+
+改 `chicken.yaml` 這 9 個 enabled flag 現在立即生效（暫停某付款方式、關閉 CSV 寫入、暫停通知 Hubert 等）。
+
+### 9 個 Flag 對照
+
+| Flag | 接到哪 | 關閉時行為 |
+|------|--------|-----------|
+| payment.cash.enabled | awaitingPayment.js | 提示「該付款方式暫停」 |
+| payment.transfer.enabled | awaitingPayment.js | 提示「該付款方式暫停」 |
+| payment.jko.enabled | awaitingPayment.js | 提示「該付款方式暫停」 |
+| payment.linepay.enabled | awaitingPayment.js | 提示「該付款方式暫停」 |
+| official.line_pay.enabled | awaitingPayment.js | 同上（雙重檢查）|
+| storage.phase1.enabled | csvWriter.js | throw 錯誤 |
+| storage.phase2.enabled | （未實作，預留）| — |
+| handoff.notify_owner.enabled | notifier.js | 跳過通知（log warn）|
+| security.input_sanitization | sanitizer.js | bypass 消毒（⚠️ log 警告）|
 
 ---
 
