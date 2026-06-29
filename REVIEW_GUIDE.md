@@ -12,7 +12,7 @@
 - ✅ **src/ 角色**：`src/` 是「設計驗證 + 測試對象」，**不是 production runtime**。
   Production 跑 `~/.openclaw/agents/external-user/`（OpenClaw agent）。
 - ✅ **CSV 欄位數**：以 `csvWriter.js` 為準，目前 **28 欄**。
-- ✅ **測試套數**：以 `tests/*.test.js` 為準，目前 **17 套（15 unit + 2 integration）**。
+- ✅ **測試套數**：以 `tests/*.test.js` 為準，目前 **26 套（25 unit + 1 integration）**（2026-06-29 Session H 新增 6 個 helper unit test）。
 
 ---
 
@@ -201,9 +201,10 @@ node tests/integration.test.js
 
 ## 測試總覽
 
-**19 套（17 unit + 2 integration）：**
+**26 套（25 unit + 1 integration，跑在 `npm test`）：**
+- 額外 1 個 integration：`tests/api-server.test.js`（HTTP server 端對端，跑在 `npm run test:api-server`）
 
-### Unit（17 套）
+### Unit（25 套）
 
 1. `tests/address-dynamic-keywords.test.js`
 2. `tests/address-handoff.test.js`
@@ -222,20 +223,47 @@ node tests/integration.test.js
 15. `tests/whitelist.test.js`
 16. `tests/helpers/cleanup.test.js`（Session D D1）
 17. `tests/csv-writer-concurrency.test.js`（Session D D2）
+18. `tests/timezone.test.js`（Session G）
+19. `tests/config-feature-flag.test.js`（Session D4）
+20. `tests/timeUtils.test.js`（Session H H1）
+21. `tests/lineReply.test.js`（Session H H2）
+22. `tests/orderIdGenerator.test.js`（Session H H3）
+23. `tests/orderFormatter.test.js`（Session H H4）
+24. `tests/csvReader.test.js`（Session H H5）
+25. `tests/notificationFormat.test.js`（Session H H6）
 
-### Integration（2 套）
+### Integration（1 套，於 npm test）
 
-18. `tests/api-server.test.js`（HTTP server 端對端）
-19. `tests/integration.test.js`（Cloudflare Worker 攔截邏輯）
+26. `tests/integration.test.js`（Cloudflare Worker 攔截邏輯）
+
+### Integration（1 套，於 `npm run test:api-server`）
+
+- `tests/api-server.test.js`（HTTP server 端對端，需要 port 3457 可用）
 
 ### 全套執行
 
 ```bash
-npm test                              # 19 套 全綠
+npm test                              # 26 套 全綠
 npm run lint                          # 0 errors, 64 warnings
 npm run lint:fix                      # auto-fix 風格問題
 bash scripts/check-quality.sh         # 6 項品質檢查
 ```
+
+### Session H 新增 6 個 Helper Unit Test 對照
+
+| # | 模組 | 測試檔 | 重點 |
+|---|------|--------|------|
+| H1 | `src/utils/timeUtils.js` | `tests/timeUtils.test.js` | 6 函數全覆蓋：getTimeSlot / formatDate / getCurrentOpenDates / isWithinOrderTime / getTodayString / parseDateInput（含邊界：今天/明天/過期/格式錯誤） |
+| H2 | `src/utils/lineReply.js` | `tests/lineReply.test.js` | 4 LINE 回覆格式：textReply / flexReply / quickReply / imageReply（結構正確性） |
+| H3 | `src/order/orderIdGenerator.js` | `tests/orderIdGenerator.test.js` | 訂單 ID 格式：generateOrderId (ORD-YYYYMMDD-XXX) / generatePendingOrderId (PENDING-{ts}) / getMaxSequence（序號遞增） |
+| H4 | `src/order/orderFormatter.js` | `tests/orderFormatter.test.js` | 金額計算：calculatePrice（半隻/整隻/小菜/加購/運費門檻） + formatItemsDisplay / formatOrderSummary / formatOrderDetail |
+| H5 | `src/order/csvReader.js` | `tests/csvReader.test.js` | CSV 讀取：readCSV（JSON 欄位解析）+ 5 查詢函數（getOrderById / getOrdersByDate / getCustomerByPhone / isReturningCustomer / getAllOrders） |
+| H6 | `src/handoff/notificationFormat.js` | `tests/notificationFormat.test.js` | LINE 通知格式：formatLINENotification（基本/缺欄位/JSON字串）+ formatLINENotificationMessage + getHandoffTitle（含未知 type fallback + console.warn） + HANDOFF_TITLES 與 transferRules 同步 |
+
+**已知現象**（H4 commit 記錄，供未來修整參考）：
+- `orderFormatter.calculatePrice` 的 `isWhole` 判斷用傳入 name（cleaned name 已移除「整隻」字眼）→ 整隻雞目前會被算成 1 盒而非 2 盒。
+- 金額用 `priceMap[cleanedName]` 正確，僅 `chicken_count` 失真。
+- 建議：orderFormatter 改讀 `loadProductMenu().items[i].isWhole`（loader.js 已有正確判斷）。
 
 ### CI/CD（GitHub Actions）
 
@@ -273,6 +301,11 @@ bash scripts/check-quality.sh         # 6 項品質檢查
   - 新增 src/ 角色說明（設計驗證+測試對象，非 production runtime）
   - 新增測試總覽、安全機制、設定檔介面、API Server、Worker 整合章節
   - 新增變更歷史
+- **2026-06-29**：Session H 補 6 個 helper unit test
+  - 測試套數：20 → 26（+6 helper unit）
+  - 新增對照表：6 個 helper 模組測試
+  - check-quality.sh：動態計算測試套數（避免硬寫）
+  - 記錄 H4 發現的 `isWhole` 判斷現象（orderFormatter.calculatePrice 對 cleaned name 永遠 false，建議未來修整）
 
 ---
 
