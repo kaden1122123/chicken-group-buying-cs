@@ -51,6 +51,8 @@ const { validatePhone, validateAddress } = require('../src/rules');
 const PORT = parseInt(process.env.PORT || '3001', 10);
 const API_USERNAME = process.env.API_USERNAME || 'api-user';
 const API_PASSWORD = process.env.API_PASSWORD || '';
+// I1：graceful shutdown timeout（毫秒）。超過則強制退出，避免永遠卡住。
+const API_GRACEFUL_TIMEOUT_MS = parseInt(process.env.API_GRACEFUL_TIMEOUT_MS || '10000', 10);
 
 // 路徑
 const ROOT = path.join(__dirname, '..');
@@ -336,10 +338,29 @@ function handleGetOrder(req, res, orderId) {
 
 // ========== 路由 ==========
 
+// I1：graceful shutdown 狀態追蹤
+// 收到 SIGTERM/SIGINT 後：isShuttingDown = true，後續 middleware 拒絕新連線
+let isShuttingDown = false;
+// 追蹤所有活躍 socket，shutdown 時等它們關閉
+const activeSockets = new Set();
+
 const server = http.createServer((req, res) => {
   const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const path = urlObj.pathname;
   const method = req.method;
+
+  // I1：shutting down → 503，避免客戶看到「突然斷線」
+  if (isShuttingDown) {
+    res.writeHead(503, {
+      'Content-Type': 'application/json; charset=utf-8',
+      Connection: 'close',
+    });
+    res.end(JSON.stringify({
+      success: false,
+      error: 'Server is shutting down, please retry later',
+    }));
+    return;
+  }
 
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -398,9 +419,50 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`  GET  /api/orders            → 查詢訂單（需 auth）`);
   console.log(`  GET  /api/orders/:id        → 查單筆（需 auth）`);
   console.log(`  PATCH /api/orders/:id      → 更新訂單（需 auth）`);
+  console.log(`[api-server] Graceful shutdown timeout: ${API_GRACEFUL_TIMEOUT_MS}ms`);
 });
 
-process.on('SIGINT', () => {
-  console.log('\n[api-server] 關閉中...');
-  server.close(() => process.exit(0));
+// I1：追蹤所有 sockets，shutdown 時等待它們斷開
+server.on('connection', (socket) => {
+  activeSockets.add(socket);
+  socket.on('close', () => {
+    activeSockets.delete(socket);
+  });
 });
+
+// I1：graceful shutdown 函式
+// 收到 signal 時：
+// 1. 標記 isShuttingDown（後續 request 回 503）
+// 2. server.close() 停止接受新 connection
+// 3. 等待 activeSockets 全部關閉（in-flight request 完成）
+// 4. 超過 API_GRACEFUL_TIMEOUT_MS 強制退出
+let isGracefulShuttingDown = false;
+function gracefulShutdown(signal) {
+  if (isGracefulShuttingDown) return;
+  isGracefulShuttingDown = true;
+  isShuttingDown = true;
+  const activeCount = activeSockets.size;
+  console.log(
+    `\n[api-server] Received ${signal}, shutting down gracefully `
+    + `(timeout=${API_GRACEFUL_TIMEOUT_MS}ms, active_sockets=${activeCount})`,
+  );
+
+  // 設置強制 timeout 退出
+  const forceExitTimer = setTimeout(() => {
+    console.error(
+      `[api-server] Graceful shutdown timeout (${API_GRACEFUL_TIMEOUT_MS}ms) reached, `
+      + `forcing exit. Remaining sockets: ${activeSockets.size}`,
+    );
+    process.exit(1);
+  }, API_GRACEFUL_TIMEOUT_MS);
+  forceExitTimer.unref();
+
+  // 停止接受新連線，等待現有連線關閉
+  server.close(() => {
+    console.log('[api-server] All connections closed, exiting cleanly.');
+    process.exit(0);
+  });
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
