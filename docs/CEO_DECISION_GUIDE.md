@@ -172,6 +172,32 @@ brtclaw 問決策時，格式：
 
 ---
 
+### 🟢 Session I：api-server + dashboard-server production hardening（已完成 2026-06-29）
+
+**業務問題**：
+`api-server.js` 還沒 production-ready。沒有 graceful shutdown、沒有 CORS 白名單、沒有 rate limiting、沒有 input validation schema。
+`dashboard-server.js` 的 `yaml.dump` 會破壞 yaml 格式（P1-9，例如加不必要的引號、改 key 順序）。
+
+**影響**：
+- production 重啟可能讓客戶 in-flight request 突然斷線
+- 跨域請求會被 Worker 端瀏覽器擋下（dev 環境 `*` 在 prod 有風險）
+- 沒 rate limit → 單一來源 DDoS 可能打爆 api-server
+- 沒 input validation → 任意超長字串 / 任意型別都能寫進 CSV
+- yaml.dump 把檔案讀不出原本格式 → admin 改個 open_dates 整個檔案重洗
+
+**做法**：
+api-server.js 5 個 hardening + dashboard-server.js 1 個 yaml 修整：
+1. graceful shutdown（SIGTERM + 10s timeout + in-flight wait）
+2. CORS 白名單從 `API_CORS_ORIGINS` env 讀（預設關閉）
+3. IP-based rate limit（預設 60 req/min，env 可調）
+4. input validation schema（必填 + 型別 + 長度上限）
+5. yaml 字串 patch 取代 yaml.dump（P1-9）
+
+**brtclaw 推薦**：做（2-3 小時、中風險）
+**實際**：完成、6 commits（I1-I5 + tests）、npm test 連 3 次全綠、lint 0 errors
+
+---
+
 ### 🟢 Session J：雙位置架構強化
 
 **業務問題**：

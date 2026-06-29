@@ -514,3 +514,48 @@ CSV newline 防禦: 4/4 ✅
 - brtclaw 親自實作了核心邏輯（order system、handoff、states、index.js）並修復多處問題
 - 測試檔案已建立並通過核心測試
 - Hubert 填寫了真實的 LINE Bot Token（`.env`）
+---
+
+## ✅ Session I 完成（2026-06-29 11:48）— api-server / dashboard-server production hardening
+
+### 背景
+
+H session 完成後專案已 production-grade（測試 28 套、ESLint 0/0、CI 就緒），但 api-server.js 跟 dashboard-server.js 仍有 5 個 production 風險點。
+
+### 產出
+
+- ✅ **I1 graceful shutdown**（21ab4a0）：api-server 監聽 SIGTERM + 升級 SIGINT，isShuttingDown 旗標 + activeSockets 追蹤，server.close() 等待 in-flight 完成（預設 10s，API_GRACEFUL_TIMEOUT_MS env 可調）
+- ✅ **I2 CORS 白名單**（b164131）：從 `*` 改為讀 `API_CORS_ORIGINS` env（逗號分隔），預設關閉避免 dev 上 prod 風險；OPTIONS preflight 處理
+- ✅ **I3 rate limiting**（626c4c7）：IP-based token bucket（預設 60 req/min，env 可調），背景定時清理過期 bucket，超過回 429 + Retry-After + X-RateLimit-* headers
+- ✅ **I4 input validation**（814ca3e）：schema 驗證（型別 + 長度上限），POST /api/orders 必填 + 字串長度 + 數字有限 + items 陣列結構
+- ✅ **I5 yaml 字串 patch**（4bab208）：取代 yaml.dump 修 P1-9，保留原 yaml 格式（縮排、引號風格、註解、空行）；支援 open_dates / ignored_keywords / delivery 三個 update keys
+- ✅ **Tests**（e0a9197）：tests/api-server-hardening.test.js（I1-I4，378 行）+ tests/dashboard-server-yaml-patch.test.js（I5，245 行），全部整合進 npm test
+
+### 統計
+
+- 6 commits（21ab4a0 / b164131 / 626c4c7 / 814ca3e / 4bab208 / e0a9197）
+- npm test 28 套（25 unit + 3 server-integration hardening）連續 3 次全綠
+- npm run lint 0 errors / 0 warnings
+- 0 個 zombie process（finally 用 detached + kill -pgid 完整清理）
+
+### 環境變數全集（Session I 新增）
+
+| Env | 預設 | 用途 |
+|-----|------|------|
+| `API_GRACEFUL_TIMEOUT_MS` | 10000 | I1 graceful shutdown 強制退出時間 |
+| `API_CORS_ORIGINS` | （空） | I2 CORS 白名單（csv），空 = 關閉 |
+| `API_RATE_LIMIT` | 60 | I3 每 IP 每分鐘最多 request 數 |
+| `API_RATE_LIMIT_WINDOW_MS` | 60000 | I3 rate limit window（毫秒） |
+| `API_INPUT_USER_LINE_NAME_MAX` | 100 | I4 user_line_name 長度上限 |
+| `API_INPUT_ADDRESS_MAX` | 500 | I4 address 長度上限 |
+| `API_INPUT_COMMUNITY_MAX` | 200 | I4 community 長度上限 |
+| `API_INPUT_TIME_SLOT_MAX` | 50 | I4 time_slot 長度上限 |
+| `API_INPUT_PAYMENT_METHOD_MAX` | 50 | I4 payment_method 長度上限 |
+| `API_INPUT_PAYMENT_STATUS_MAX` | 50 | I4 payment_status 長度上限 |
+| `API_INPUT_ORDER_STATUS_MAX` | 50 | I4 order_status 長度上限 |
+| `API_INPUT_CUSTOMER_NOTES_MAX` | 1000 | I4 customer_notes 長度上限 |
+| `API_INPUT_STAFF_NOTES_MAX` | 1000 | I4 staff_notes 長度上限 |
+
+### 待 CEO 動作
+
+無（api-server 可直接進入 production。Hubert 需決定 production 環境的 env 設定）

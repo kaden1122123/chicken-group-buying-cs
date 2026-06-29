@@ -12,7 +12,7 @@
 - ✅ **src/ 角色**：`src/` 是「設計驗證 + 測試對象」，**不是 production runtime**。
   Production 跑 `~/.openclaw/agents/external-user/`（OpenClaw agent）。
 - ✅ **CSV 欄位數**：以 `csvWriter.js` 為準，目前 **28 欄**。
-- ✅ **測試套數**：以 `tests/*.test.js` 為準，目前 **26 套（25 unit + 1 integration）**（2026-06-29 Session H 新增 6 個 helper unit test）。
+- ✅ **測試套數**：以 `tests/*.test.js` 為準，目前 **28 套（25 unit + 3 server-integration hardening）**（2026-06-29 Session I 加 api-server + dashboard-server hardening 測試（共 2 套 spawn server 集成（api-server + dashboard-server）））。
 
 ---
 
