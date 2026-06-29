@@ -16,6 +16,25 @@
 
 const assert = require('assert');
 
+// Mock Date helper（從 tests/date.test.js 移植,沿用同樣風格）
+// 解決 isWithinOrderTime 依賴「現在時間」的時間敏感性測試問題
+const RealDate = Date;
+function mockTime(timeStr) {
+  const mockNow = new RealDate(timeStr).getTime();
+  function MockDate(...args) {
+    if (args.length === 0) return new RealDate(mockNow);
+    return new RealDate(...args);
+  }
+  MockDate.now = () => mockNow;
+  MockDate.parse = RealDate.parse;
+  MockDate.UTC = RealDate.UTC;
+  MockDate.prototype = RealDate.prototype;
+  global.Date = MockDate;
+}
+function restoreTime() {
+  global.Date = RealDate;
+}
+
 console.log('\n=== TimeUtils Tests ===');
 
 const timeUtils = require('../src/utils/timeUtils');
@@ -75,50 +94,62 @@ console.log('  ✓ 回傳陣列（簡化版目前為空陣列）');
 
 console.log(`\n--- 情境 4: isWithinOrderTime 收單時間判斷 ---`);
 
-// 收單時間：配送日的前一天 13:00
+// 收單時間規則：配送日的前一天 13:00
 // cutoff = deliveryDate - 1天 + 13:00
 // isWithinOrderTime 回傳 now < cutoff（true = 還可下單，false = 已過收單）
+//
+// 注意：此情境需 mock 「現在」才能穩定測試（時間敏感）
+// 策略：先建好所有 deliveryDate（用 RealDate），再 mock 固定的「現在」
 
-// 構造「今天 15:00」配送：cutoff = 昨天 13:00，現在 > cutoff → 已過
-const today = new Date();
-today.setHours(15, 0, 0, 0);
-assert.strictEqual(timeUtils.isWithinOrderTime(today), false, '今天 15:00 配送，cutoff = 昨天 13:00 已過（false）');
+// 先建好所有測試用的 deliveryDate（用 RealDate,確保日期是「真實今天 + N 天」）
+const todayDelivery = new RealDate();
+todayDelivery.setHours(15, 0, 0, 0);
+const yesterdayDelivery = new RealDate();
+yesterdayDelivery.setDate(yesterdayDelivery.getDate() - 1);
+yesterdayDelivery.setHours(10, 0, 0, 0);
+const tomorrowAfternoonDelivery = new RealDate();
+tomorrowAfternoonDelivery.setDate(tomorrowAfternoonDelivery.getDate() + 1);
+tomorrowAfternoonDelivery.setHours(14, 0, 0, 0);
+const tomorrowMorningDelivery = new RealDate();
+tomorrowMorningDelivery.setDate(tomorrowMorningDelivery.getDate() + 1);
+tomorrowMorningDelivery.setHours(12, 0, 0, 0);
+const dayAfterTomorrowDelivery = new RealDate();
+dayAfterTomorrowDelivery.setDate(dayAfterTomorrowDelivery.getDate() + 2);
+dayAfterTomorrowDelivery.setHours(10, 0, 0, 0);
+const nextWeekDelivery = new RealDate();
+nextWeekDelivery.setDate(nextWeekDelivery.getDate() + 7);
+nextWeekDelivery.setHours(10, 0, 0, 0);
+
+// Mock「現在」到今天 10:00（所有 cutoff 都還沒過,除了「今天/昨天配送」的）
+const mockTodayStr = new RealDate().toISOString().slice(0, 10);
+mockTime(`${mockTodayStr}T10:00:00+08:00`);
+
+// 「今天 15:00」配送：cutoff = 昨天 13:00，now > cutoff → 已過
+assert.strictEqual(timeUtils.isWithinOrderTime(todayDelivery), false, '今天 15:00 配送已過收單（cutoff = 昨天 13:00）');
 console.log('  ✓ 今天配送已過收單（false）');
 
-// 構造「昨天 10:00」配送：cutoff = 前天 13:00，更早就過了
-const yesterday = new Date();
-yesterday.setDate(yesterday.getDate() - 1);
-yesterday.setHours(10, 0, 0, 0);
-assert.strictEqual(timeUtils.isWithinOrderTime(yesterday), false, '昨天配送已過收單（false）');
+// 「昨天 10:00」配送：cutoff = 前天 13:00，更早就過了
+assert.strictEqual(timeUtils.isWithinOrderTime(yesterdayDelivery), false, '昨天配送已過收單（cutoff = 前天 13:00）');
 console.log('  ✓ 昨天配送已過收單（false）');
 
-// 構造「明天 14:00」配送：cutoff = 明天 13:00，現在 < 明天 13:00 → 還可下單
-const tomorrowAfternoon = new Date();
-tomorrowAfternoon.setDate(tomorrowAfternoon.getDate() + 1);
-tomorrowAfternoon.setHours(14, 0, 0, 0);
-assert.strictEqual(timeUtils.isWithinOrderTime(tomorrowAfternoon), true, '明天 14:00 配送，cutoff = 明天 13:00 還在收單（true）');
-console.log('  ✓ 明天 14:00 配送還在收單（true）');
+// 「明天 14:00」配送：cutoff = 今天 13:00，now (今天 10:00) < today 13:00 → 還可下單
+assert.strictEqual(timeUtils.isWithinOrderTime(tomorrowAfternoonDelivery), true, '明天 14:00 配送在收單時間內（cutoff = 今天 13:00）');
+console.log('  ✓ 明天 14:00 配送在收單時間內（true）');
 
-// 構造「明天 12:00」配送：cutoff = 明天 13:00，還可下單
-const tomorrowMorning = new Date();
-tomorrowMorning.setDate(tomorrowMorning.getDate() + 1);
-tomorrowMorning.setHours(12, 0, 0, 0);
-assert.strictEqual(timeUtils.isWithinOrderTime(tomorrowMorning), true, '明天 12:00 配送在收單時間內（true）');
+// 「明天 12:00」配送：cutoff = 今天 13:00，還可下單
+assert.strictEqual(timeUtils.isWithinOrderTime(tomorrowMorningDelivery), true, '明天 12:00 配送在收單時間內（cutoff = 今天 13:00）');
 console.log('  ✓ 明天 12:00 配送在收單時間內（true）');
 
 // 後天配送：cutoff = 明天 13:00，一定還可下單
-const dayAfterTomorrow = new Date();
-dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
-dayAfterTomorrow.setHours(10, 0, 0, 0);
-assert.strictEqual(timeUtils.isWithinOrderTime(dayAfterTomorrow), true, '後天配送一定在收單時間內（true）');
+assert.strictEqual(timeUtils.isWithinOrderTime(dayAfterTomorrowDelivery), true, '後天配送在收單時間內（cutoff = 明天 13:00）');
 console.log('  ✓ 後天配送在收單時間內（true）');
 
-// 一週後配送：未過
-const nextWeek = new Date();
-nextWeek.setDate(nextWeek.getDate() + 7);
-nextWeek.setHours(10, 0, 0, 0);
-assert.strictEqual(timeUtils.isWithinOrderTime(nextWeek), true, '一週後配送在收單時間內（true）');
+// 一週後配送：cutoff = 6 天後 13:00，還可下單
+assert.strictEqual(timeUtils.isWithinOrderTime(nextWeekDelivery), true, '一週後配送在收單時間內（cutoff = 6 天後 13:00）');
 console.log('  ✓ 一週後配送在收單時間內（true）');
+
+// 情境 4 結束,還原 Date 避免影響後續情境 5/6
+restoreTime();
 
 console.log(`\n--- 情境 5: getTodayString 當天日期 ---`);
 
