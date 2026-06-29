@@ -62,6 +62,20 @@ const API_CORS_ORIGINS = (process.env.API_CORS_ORIGINS || '')
 // I3：IP-based token bucket rate limit
 const API_RATE_LIMIT = parseInt(process.env.API_RATE_LIMIT || '60', 10);
 const API_RATE_LIMIT_WINDOW_MS = parseInt(process.env.API_RATE_LIMIT_WINDOW_MS || '60000', 10);
+// I4：input validation length 上限（程式常數 + env 可改）
+const INPUT_USER_LINE_NAME_MAX = parseInt(process.env.API_INPUT_USER_LINE_NAME_MAX || '100', 10);
+const INPUT_ADDRESS_MAX = parseInt(process.env.API_INPUT_ADDRESS_MAX || '500', 10);
+const INPUT_COMMUNITY_MAX = parseInt(process.env.API_INPUT_COMMUNITY_MAX || '200', 10);
+const INPUT_TIME_SLOT_MAX = parseInt(process.env.API_INPUT_TIME_SLOT_MAX || '50', 10);
+const INPUT_PAYMENT_METHOD_MAX = parseInt(process.env.API_INPUT_PAYMENT_METHOD_MAX || '50', 10);
+const INPUT_PAYMENT_STATUS_MAX = parseInt(process.env.API_INPUT_PAYMENT_STATUS_MAX || '50', 10);
+const INPUT_ORDER_STATUS_MAX = parseInt(process.env.API_INPUT_ORDER_STATUS_MAX || '50', 10);
+const INPUT_CUSTOMER_NOTES_MAX = parseInt(process.env.API_INPUT_CUSTOMER_NOTES_MAX || '1000', 10);
+const INPUT_STAFF_NOTES_MAX = parseInt(process.env.API_INPUT_STAFF_NOTES_MAX || '1000', 10);
+const INPUT_DELIVERY_DATE_MAX = 20; // YYYY-MM-DD
+const INPUT_USER_PHONE_MAX = 30;
+const INPUT_ITEM_NAME_MAX = 100;
+const INPUT_ITEMS_MAX = 100;
 // 每個 IP 一個 bucket，{ count, resetAt } (記憶體 in-memory，不持久化)
 // 重啟 server 會清空（可接受，客戶端正確 retry 即可）
 const rateLimitBuckets = new Map();
@@ -162,6 +176,102 @@ function send404(res) {
 // ========== 業務邏輯 ==========
 
 /**
+ * I4：input schema 驗證（型別 + 長度）
+ * 在 validateOrderData 之前跑，先擋掉明顯錯誤（防禦性）
+ * @param {object} data - order_data
+ * @returns {{valid: boolean, errorMessage?: string}}
+ */
+function validateInputSchema(data) {
+  if (data == null || typeof data !== 'object' || Array.isArray(data)) {
+    return { valid: false, errorMessage: 'order_data 必須是物件' };
+  }
+
+  // string 欄位：型別 + 長度
+  const stringFields = [
+    ['user_line_name', INPUT_USER_LINE_NAME_MAX, true], // required
+    ['user_phone', INPUT_USER_PHONE_MAX, true], // required
+    ['address', INPUT_ADDRESS_MAX, true], // required
+    ['community', INPUT_COMMUNITY_MAX, false], // optional
+    ['delivery_date', INPUT_DELIVERY_DATE_MAX, true], // required
+    ['time_slot', INPUT_TIME_SLOT_MAX, true], // required
+    ['payment_method', INPUT_PAYMENT_METHOD_MAX, false], // optional
+    ['payment_status', INPUT_PAYMENT_STATUS_MAX, false], // optional
+    ['order_status', INPUT_ORDER_STATUS_MAX, false], // optional
+    ['staff_notes', INPUT_STAFF_NOTES_MAX, false], // optional
+    ['customer_notes', INPUT_CUSTOMER_NOTES_MAX, false], // optional
+  ];
+  for (const [key, maxLen] of stringFields) {
+    // 跳過：未提供 / null → 由 validateOrderData 的「缺少必填欄位」檢查統一處理
+    if (data[key] == null) continue;
+    if (typeof data[key] !== 'string') {
+      return { valid: false, errorMessage: `${key} 必須是字串（收到 ${typeof data[key]}）` };
+    }
+    if (data[key].length > maxLen) {
+      return {
+        valid: false,
+        errorMessage: `${key} 長度超過上限 ${maxLen}（目前 ${data[key].length}）`,
+      };
+    }
+  }
+
+  // number 欄位：型別 + 有限數
+  const numberFields = ['subtotal', 'delivery_fee', 'total_amount'];
+  for (const key of numberFields) {
+    if (data[key] == null) continue;
+    if (typeof data[key] !== 'number' || !Number.isFinite(data[key])) {
+      return {
+        valid: false,
+        errorMessage: `${key} 必須是有限數字（收到 ${typeof data[key]}）`,
+      };
+    }
+  }
+  // total_amount 必須 > 0
+  if (data.total_amount != null && data.total_amount <= 0) {
+    return { valid: false, errorMessage: 'total_amount 必須大於 0' };
+  }
+
+  // items 陣列
+  if ('items' in data && data.items != null) {
+    if (!Array.isArray(data.items)) {
+      return { valid: false, errorMessage: 'items 必須是陣列' };
+    }
+    if (data.items.length > INPUT_ITEMS_MAX) {
+      return { valid: false, errorMessage: `items 不能超過 ${INPUT_ITEMS_MAX} 個` };
+    }
+    for (let i = 0; i < data.items.length; i++) {
+      const item = data.items[i];
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        return { valid: false, errorMessage: `items[${i}] 必須是物件` };
+      }
+      if (typeof item.name !== 'string' || item.name.length === 0) {
+        return { valid: false, errorMessage: `items[${i}].name 必須是非空字串` };
+      }
+      if (item.name.length > INPUT_ITEM_NAME_MAX) {
+        return {
+          valid: false,
+          errorMessage: `items[${i}].name 長度超過 ${INPUT_ITEM_NAME_MAX}`,
+        };
+      }
+      if (typeof item.qty !== 'number' || !Number.isInteger(item.qty) || item.qty <= 0) {
+        return {
+          valid: false,
+          errorMessage: `items[${i}].qty 必須是正整數（收到 ${item.qty}）`,
+        };
+      }
+      if ('total' in item && item.total != null
+          && (typeof item.total !== 'number' || !Number.isFinite(item.total))) {
+        return {
+          valid: false,
+          errorMessage: `items[${i}].total 必須是有限數字`,
+        };
+      }
+    }
+  }
+
+  return { valid: true };
+}
+
+/**
  * 驗證訂單資料
  */
 function validateOrderData(data) {
@@ -249,7 +359,13 @@ function handleCreateOrder(req, res) {
       return sendJson(res, 400, { success: false, error: '缺少 order_data' });
     }
 
-    // 驗證
+    // I4: schema 驗證（型別 + 長度）
+    const schemaResult = validateInputSchema(order_data);
+    if (!schemaResult.valid) {
+      return sendJson(res, 400, { success: false, error: schemaResult.errorMessage });
+    }
+
+    // 業務驗證
     const validation = validateOrderData(order_data);
     if (!validation.valid) {
       return sendJson(res, 400, { success: false, error: validation.errorMessage });
