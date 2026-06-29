@@ -53,6 +53,12 @@ const API_USERNAME = process.env.API_USERNAME || 'api-user';
 const API_PASSWORD = process.env.API_PASSWORD || '';
 // I1：graceful shutdown timeout（毫秒）。超過則強制退出，避免永遠卡住。
 const API_GRACEFUL_TIMEOUT_MS = parseInt(process.env.API_GRACEFUL_TIMEOUT_MS || '10000', 10);
+// I2：CORS 白名單（逗號分隔 origin，例如 'https://worker.example.workers.dev,https://admin.example.com'）
+// 預設空字串 → 不附 Access-Control-Allow-Origin（避免 dev `*` 上 prod）
+const API_CORS_ORIGINS = (process.env.API_CORS_ORIGINS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 // 路徑
 const ROOT = path.join(__dirname, '..');
@@ -362,11 +368,17 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // I2：CORS 白名單（從 API_CORS_ORIGINS env 讀，預設關閉）
+  const reqOrigin = req.headers['origin'];
+  if (API_CORS_ORIGINS.length > 0 && API_CORS_ORIGINS.includes(reqOrigin)) {
+    res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Max-Age', '86400');
+  }
   if (method === 'OPTIONS') {
+    // OPTIONS preflight 一律回 204，但 CORS headers 僅在白名單命中時附加
     res.writeHead(204);
     res.end();
     return;
