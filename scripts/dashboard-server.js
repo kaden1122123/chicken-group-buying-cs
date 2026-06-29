@@ -36,10 +36,10 @@ try {
   const config = require('../src/config');
   yaml = {
     load: (s) => config._parseYamlSimple(s),
-    dump: null, // 寫入仍需 js-yaml
   };
-  console.warn('[dashboard-server] js-yaml 未安裝，使用 src/config.js fallback parser（讀取模式）');
+  console.warn('[dashboard-server] js-yaml 未安裝，使用 src/config.js fallback parser');
 }
+// I5：即便 js-yaml 有 dump 也不再使用。改用字串 patch（P1-9 修整），保留原 yaml 格式。
 const _hasYamlDump = yaml && typeof yaml.dump === 'function';
 
 // 環境變數
@@ -214,6 +214,9 @@ function readTenantConfig() {
 
 /**
  * 更新 tenant config（支援 open_dates / ignored_keywords / delivery）
+ *
+ * I5：使用字串 patch（不依賴 yaml.dump），避免 P1-9 - yaml.dump 會加引號、
+ * 改格式（比如換行、引號、key 順序）破壞原 yaml 格式。
  */
 function updateTenantConfig(updates) {
   const current = readTenantConfig();
@@ -233,16 +236,131 @@ function updateTenantConfig(updates) {
     };
   }
 
-  // 寫回 yaml（需 js-yaml 提供 dump）
-  if (!_hasYamlDump) {
-    throw new Error('js-yaml 未安裝，無法寫入 config。請跑 npm install。');
-  }
-  const yamlStr = yaml.dump(current, {
-    lineWidth: 120,
-    noRefs: true,
-  });
-  fs.writeFileSync(TENANT_YAML, yamlStr, 'utf-8');
+  // I5：字串 patch（取代 yaml.dump，保留原檔格式與註解）
+  const original = fs.readFileSync(TENANT_YAML, 'utf-8');
+  const patched = patchYamlContent(original, current);
+  fs.writeFileSync(TENANT_YAML, patched, 'utf-8');
   return current;
+}
+
+// I5：字串 patch — 取代 yaml.dump，保留 yaml 原格式（縮排、引號風格、註解）
+
+/**
+ * 找 top-level `key:` 在 yaml 內容中的行範圍
+ * top-level = 行首無縮排
+ * @returns {{startLine, endLine}|null} 1-indexed，但傳 0-indexed 為 input
+ */
+function findTopLevelBlockRange(lines, key) {
+  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  let startLine = -1;
+  let endLine = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (startLine === -1) {
+      // 找 `key:` 行首無縮排
+      if (new RegExp(`^${escapedKey}:`).test(line)) {
+        startLine = i;
+      }
+    } else {
+      // 已找到起始。現在找下一個 top-level key（下一個非縮排且非空、非註解的行）
+      const trimmed = line.trim();
+      if (trimmed.length === 0 || trimmed.startsWith('#')) continue;
+      const startsWithSpace = line.startsWith(' ') || line.startsWith('\t');
+      if (!startsWithSpace) {
+        // 下一個 top-level key（不包含我們要找的 key 自身）
+        if (!new RegExp(`^${escapedKey}:`).test(line)) {
+          endLine = i;
+          break;
+        }
+      }
+    }
+  }
+  if (startLine === -1) return null;
+  if (endLine === -1) endLine = lines.length;
+  return { startLine, endLine };
+}
+
+/**
+ * 把 YAML 內容中 `${key}:` 開頭的 top-level block 替換為新內容
+ * 用簡單的 list 格式重建（不會破壞其他區段、其他 keys、其他 top-level 註解）
+ */
+function replaceTopLevelBlock(content, key, newBlockLines) {
+  const lines = content.split('\n');
+  const range = findTopLevelBlockRange(lines, key);
+  if (!range) return content;
+  return [
+    ...lines.slice(0, range.startLine),
+    ...newBlockLines,
+    ...lines.slice(range.endLine),
+  ].join('\n');
+}
+
+/**
+ * 把 delivery 物件序列化為完整 yaml block（替換原 delivery 區段）
+ * 支援 hours / minimum_order / delivery_fee_short_fallback / areas
+ */
+function serializeDelivery(delivery) {
+  const lines = ['delivery:'];
+  if (delivery.hours && typeof delivery.hours === 'object') {
+    lines.push('  hours:');
+    for (const [k, v] of Object.entries(delivery.hours)) {
+      lines.push(`    ${k}: "${String(v)}"`);
+    }
+  }
+  if (delivery.minimum_order && typeof delivery.minimum_order === 'object') {
+    lines.push('  minimum_order:');
+    if (typeof delivery.minimum_order.chicken === 'string') {
+      lines.push(`    chicken: "${delivery.minimum_order.chicken}"`);
+    }
+    if (typeof delivery.minimum_order.side_dish_ntd === 'number') {
+      lines.push(`    side_dish_ntd: ${delivery.minimum_order.side_dish_ntd}`);
+    }
+  }
+  if (typeof delivery.delivery_fee_short_fallback === 'number') {
+    lines.push(`  delivery_fee_short_fallback: ${delivery.delivery_fee_short_fallback}`);
+  }
+  if (delivery.areas && typeof delivery.areas === 'object') {
+    lines.push('  areas:');
+    if (Array.isArray(delivery.areas.allowed)) {
+      lines.push('    allowed:');
+      for (const a of delivery.areas.allowed) lines.push(`      - "${a}"`);
+    }
+    if (Array.isArray(delivery.areas.denied)) {
+      lines.push('    denied:');
+      for (const a of delivery.areas.denied) lines.push(`      - "${a}"`);
+    }
+  }
+  return lines;
+}
+
+/**
+ * 把更新後的 config 套用到原 yaml 文字上（保留其他區段、其他 top-level keys、其他註解）
+ */
+function patchYamlContent(original, current) {
+  let content = original;
+  if (Array.isArray(current.open_dates)) {
+    const newBlock = ['open_dates:'];
+    if (current.open_dates.length === 0) {
+      newBlock.push('  []');
+    } else {
+      for (const d of current.open_dates) newBlock.push(`  - "${d}"`);
+    }
+    content = replaceTopLevelBlock(content, 'open_dates', newBlock);
+  }
+  if (Array.isArray(current.ignored_keywords)) {
+    const newBlock = ['ignored_keywords:'];
+    if (current.ignored_keywords.length === 0) {
+      newBlock.push('  []');
+    } else {
+      for (const k of current.ignored_keywords) newBlock.push(`  - "${k}"`);
+    }
+    content = replaceTopLevelBlock(content, 'ignored_keywords', newBlock);
+  }
+  if (current.delivery && typeof current.delivery === 'object') {
+    const newBlock = serializeDelivery(current.delivery);
+    content = replaceTopLevelBlock(content, 'delivery', newBlock);
+  }
+  return content;
 }
 
 // ========== 路由 ==========
