@@ -1,0 +1,475 @@
+openapi: 3.0.3
+info:
+  title: 雞味研究所 LINE 客服 — API Server
+  version: 1.0.0
+  description: |
+    HTTP API for the 雞味研究所 Chicken 客服 system.
+    Sessions A0+ accepts POST /api/orders from Cloudflare Worker (replace polling listener).
+    Dashboard GET /api/orders reads order data.
+
+    **Auth**: HTTP Basic Auth for all endpoints except GET /api/health.
+    Use `Authorization: Basic base64(username:password)` header.
+
+    **CORS**: White-list from API_CORS_ORIGINS env (comma-separated origins).
+    Empty env = CORS disabled (default, safe for production).
+    Pass `Origin: https://your-worker.example.workers.dev` if listed.
+
+    **Rate Limit**: 60 req/min/IP by default (API_RATE_LIMIT env).
+    Exceeding → 429 + Retry-After + X-RateLimit-* headers.
+
+    **Error format**: `{ "success": false, "error": "message" }`.
+    503 with `error: 'Server is shutting down...'` during graceful shutdown.
+
+  contact:
+    name: brt1122
+    url: https://github.com/kaden1122123/chicken-group-buying-cs
+servers:
+  - url: http://localhost:3001
+    description: Local development
+  - url: http://0.0.0.0:3001
+    description: Bind address (production listens on all interfaces)
+
+tags:
+  - name: Health
+    description: 健康檢查（公開）
+  - name: Orders
+    description: 訂單 CRUD（需 auth）
+
+paths:
+  # ===========================
+  # GET /api/health（公開）
+  # ===========================
+  /api/health:
+    get:
+      tags: [Health]
+      summary: 健康檢查（公開，不需 auth）
+      description: |
+        回傳 server 狀態 + tenant + 時間。用於 load balancer health check。
+      security: []
+      responses:
+        '200':
+          description: Server alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  status:
+                    type: string
+                    example: ok
+                  tenant:
+                    type: string
+                    example: chicken
+                  time:
+                    type: string
+                    format: date-time
+                    example: '2026-06-29T11:30:00.000Z'
+
+  # ===========================
+  # POST /api/orders（建立）
+  # ===========================
+  /api/orders:
+    post:
+      tags: [Orders]
+      summary: 建立訂單（從 Worker 取代 polling listener）
+      description: |
+        接受來自 LINE webhook（Worker）的訂單建立請求。
+        需要 HTTP Basic Auth。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [order_data]
+              properties:
+                order_data:
+                  $ref: '#/components/schemas/OrderCreateData'
+                source:
+                  type: string
+                  description: 訂單來源（'worker', 'api', 'integration-test' 等）
+                  example: worker
+      responses:
+        '201':
+          description: 訂單建立成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  order_id:
+                    type: string
+                    example: PENDING-1719700000000
+                  message:
+                    type: string
+                    example: 訂單已建立
+                  order:
+                    $ref: '#/components/schemas/Order'
+        '400':
+          description: 缺少 order_data、欄位缺失、型別錯、超過長度上限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 缺少 / 錯誤的 Basic Auth
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded (default 60 req/min/IP)
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: 幾秒後可重試
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: CSV 寫入失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Server graceful shutdown 中
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    # ===========================
+    # GET /api/orders（查詢列表）
+    # ===========================
+    get:
+      tags: [Orders]
+      summary: 查詢訂單（dashboard 用）
+      description: |
+        支援 `?date=YYYY-MM-DD` 篩選特定日期。
+        不帶 date → 回傳全部訂單。
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: 篩選特定日期（YYYY-MM-DD）
+          example: '2026-06-30'
+      responses:
+        '200':
+          description: 訂單列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  count:
+                    type: integer
+                    example: 5
+                  orders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Order'
+        '401':
+          description: 缺少 / 錯誤的 Basic Auth
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ===========================
+  # GET /api/orders/{id}（查單筆）
+  # ===========================
+  /api/orders/{id}:
+    get:
+      tags: [Orders]
+      summary: 查詢單筆訂單
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 訂單 ID（從 POST /api/orders 回傳的 order_id）
+          example: PENDING-1719700000000
+      responses:
+        '200':
+          description: 訂單存在
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  order:
+                    $ref: '#/components/schemas/Order'
+        '404':
+          description: 找不到此 ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    # ===========================
+    # PATCH /api/orders/{id}（更新）
+    # ===========================
+    patch:
+      tags: [Orders]
+      summary: 更新訂單（付款狀態、配送日期等）
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 訂單 ID
+          example: PENDING-1719700000000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 訂單已更新
+        '400':
+          description: 缺少更新資料
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 找不到此 ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: |
+        HTTP Basic Auth。透過環境變數 API_USERNAME 跟 API_PASSWORD 設定。
+        不設 API_PASSWORD → 全部端點都不需 auth（不安全，僅 dev 用）。
+
+  schemas:
+    OrderCreateData:
+      type: object
+      description: POST /api/orders 的 order_data 內容
+      required:
+        - user_line_name
+        - user_phone
+        - address
+        - delivery_date
+        - time_slot
+        - items
+        - total_amount
+      properties:
+        user_line_name:
+          type: string
+          maxLength: 100
+          description: 客戶 LINE 名稱
+          example: 王小明
+        user_phone:
+          type: string
+          maxLength: 30
+          description: 電話（09 開頭 10 位，最後用 src/rules/phoneRule.js 驗證）
+          example: '0912345678'
+        address:
+          type: string
+          maxLength: 500
+          description: 配送地址（三峽/鶯歌）
+          example: 新北市三峽區學成路100號
+        community:
+          type: string
+          maxLength: 200
+          nullable: true
+          description: 社區/公司（選填）
+        delivery_date:
+          type: string
+          maxLength: 20
+          description: 配送日期（YYYY-MM-DD）
+          example: '2026-06-30'
+        time_slot:
+          type: string
+          maxLength: 50
+          description: 配送時段（上午/下午）
+          example: 上午
+        items:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            required: [name, qty]
+            properties:
+              name:
+                type: string
+                maxLength: 100
+                example: 鹽水雞
+              qty:
+                type: integer
+                minimum: 1
+                example: 1
+              total:
+                type: number
+                nullable: true
+                description: 該品項的小計（選填）
+                example: 380
+        subtotal:
+          type: number
+          nullable: true
+          example: 380
+        delivery_fee:
+          type: number
+          nullable: true
+          example: 0
+        total_amount:
+          type: number
+          minimum: 0.01
+          description: 訂單總金額（必填 > 0）
+          example: 380
+        payment_method:
+          type: string
+          maxLength: 50
+          description: 付款方式
+          example: 轉帳
+        payment_status:
+          type: string
+          maxLength: 50
+          enum: [pending, paid, confirmed]
+          example: pending
+        order_status:
+          type: string
+          maxLength: 50
+          enum: [new, confirmed, preparing, delivered, completed, cancelled]
+          example: confirmed
+        staff_notes:
+          type: string
+          maxLength: 1000
+          nullable: true
+        customer_notes:
+          type: string
+          maxLength: 1000
+          nullable: true
+
+    OrderUpdateRequest:
+      type: object
+      description: PATCH /api/orders/{id} 可更新的欄位（部分）
+      properties:
+        payment_status:
+          type: string
+          enum: [pending, paid, confirmed]
+        payment_method:
+          type: string
+          maxLength: 50
+        order_status:
+          type: string
+          enum: [new, confirmed, preparing, delivered, completed, cancelled]
+        delivery_date:
+          type: string
+          format: date
+          description: 更新時必填（用來定位 CSV 檔案）
+
+    Order:
+      type: object
+      description: 訂單完整資料（CSV 內部欄位）
+      properties:
+        order_id:
+          type: string
+          example: PENDING-1719700000000
+        created_at:
+          type: string
+          format: date-time
+        user_line_name:
+          type: string
+        user_phone:
+          type: string
+        address:
+          type: string
+        community:
+          type: string
+        delivery_date:
+          type: string
+          format: date
+        time_slot:
+          type: string
+        chicken_items:
+          type: object
+          additionalProperties:
+            type: integer
+          description: '雞肉品項 {name: qty}'
+        side_items:
+          type: object
+        extra_items:
+          type: object
+        subtotal:
+          type: number
+        delivery_fee:
+          type: number
+        total_amount:
+          type: number
+        payment_method:
+          type: string
+        payment_status:
+          type: string
+        order_status:
+          type: string
+        staff_notes:
+          type: string
+        customer_notes:
+          type: string
+        source:
+          type: string
+        intent_confirmed:
+          type: boolean
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: '缺少必填欄位: user_phone, address'
