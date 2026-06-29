@@ -601,3 +601,70 @@ Session I 完成 production hardening 後，續做兩個「低風險高 ROI」�
 ### 待 CEO 動作
 
 無（兩個 session 都不需運維動作；J2 .rsync-filter 已生效；L1-L3 文件已就位）
+
+---
+
+## ✅ Sessions K + M 完成（2026-06-29 12:54）— 結構化 logging + Backup 機制
+
+### 背景
+
+Session J + L 完成後，續做兩個低風險 session：K（訊息格式）+ M（災難恢復）。兩個 session 不互相依賴。
+
+### Session K 產出
+
+- ✅ **K1 logger.js + 測試**（99e44e5）：src/utils/logger.js（JSON 輸出、log level、stream 分流、meta 防護）+ tests/logger.test.js 15+ 測試
+- ✅ **K2 替換 src/** （2c983b0）：10 檔、19 處 console.error/warn 改用 logger
+- ✅ **K3 替換 scripts/** （c5435df）：5 檔、72 處
+- ✅ **K3 followup mode 修正**（6d6925f）：還原 executable bit
+
+**新環境變數**：LOG_LEVEL (debug/info/warn/error，預設 info)
+
+### Session M 產出
+
+- ✅ **M1 backup.sh**（acecd3e）：tar.gz 打包 data/orders + knowledge/tenants + config/tenants 到 ~/.backups/chicken/，含 tar -tzf 驗證 + 7天 rotation
+- ✅ **M3 backup_smoke_test.sh**（c87cd87）：5 步煙霧測試（archive 可解、真實訂單包含、排除項驗證、rotation 行為）
+
+### 統計
+
+- **6 commits**（99e44e5 / 2c983b0 / c5435df / 6d6925f / acecd3e / c87cd87）
+- npm test 29 套全綠 / npm run lint 0 errors
+- 0 個 zombie process
+- 0 個新 npm 依賴
+
+### 副產品
+
+- 新檔 `src/utils/logger.js` — 結構化 logging 模組
+- 新檔 `tests/logger.test.js` — 15+ 測試
+- 新檔 `scripts/backup.sh` — 每日備份
+- 新檔 `scripts/backup_smoke_test.sh` — 5 步測試
+- 11 個 src/ + 5 個 scripts/ 改用 logger
+- 測試套數 28 → 29（Session K）
+- 後續 M2 cron 待 Hubert 決定（見下）
+
+### 待 CEO 動作 — M2 crontab 設定
+
+備份需要每日自動執行。Hubert 需決定用哪個排程系統：
+
+**方案 A — OpenClaw cron（推薦）**：
+已在 OpenClaw gateway 內整合。看 session context 決定。
+用我的 cron 工具加（需提供 schedule + payload）：
+
+```js
+cron.add({
+  name: '雞味客服每日 backup',
+  schedule: { kind: 'cron', expr: '0 2 * * *', tz: 'Asia/Taipei' },
+  sessionTarget: 'isolated',
+  payload: { kind: 'agentTurn', message: '跑 bash /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service/scripts/backup.sh 並回報結果' },
+  delivery: { mode: 'announce', channel: 'discord', to: '1512213273846485058' },
+  enabled: true,
+})
+```
+
+**方案 B — 系統 cron**（如果 OpenClaw cron 不可行）：
+```bash
+crontab -e
+# 加：
+0 2 * * * /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service/scripts/backup.sh >> ~/.backups/chicken-cron.log 2>&1
+```
+
+Hubert 選擇後，**我可以幫忙加**（A 或 B 任一）— 但這是運維動作，預設由 Hubert 決定。

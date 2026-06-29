@@ -240,7 +240,7 @@ api-server.js 5 個 hardening + dashboard-server.js 1 個 yaml 修整：
 
 ---
 
-### 🟢 Session K：結構化 logging
+### 🟢 Session K：結構化 logging（已完成 2026-06-29）
 
 **業務問題**：
 程式裡到處 `console.log` / `console.error`，訊息格式不一致。出問題很難找原因。
@@ -253,7 +253,28 @@ api-server.js 5 個 hardening + dashboard-server.js 1 個 yaml 修整：
 建立 `src/utils/logger.js`，提供 `logger.info/warn/error()`，JSON 格式輸出。
 
 **brtclaw 推薦**：做（2 小時、中風險）
-**你決定**：______
+**實際**：完成、4 commits（99e44e5/2c983b0/c5435df/6d6925f）、src/ + scripts/ 共 91 個 console 改用 logger、29 套測試全綠、0 npm 依賴、JSON output 讓 journald/log aggregator 好 parse
+
+---
+
+### 🟢 Session M：Backup 機制（已完成 2026-06-29）
+
+**業務問題**：
+`data/orders/` 與 `knowledge/tenants/` 沒有自動備份。如果磁碟壞掉或誤刪，真實訂單資料（6/13、6/16）會永久消失。
+
+**影響**：
+🟢 低（影響災難恢復）
+
+**做法**：
+新增 `scripts/backup.sh` — tar.gz 打包核心資料到 `~/.backups/chicken/`，配 7 天 rotation。寫 `scripts/backup_smoke_test.sh` 驗證備份邏輯。
+
+**brtclaw 推薦**：做（1 小時、低風險）
+**實際**：完成、2 commits (acecd3e/c87cd87)、backup_smoke_test.sh 5 步測試全綠、crontab 設定命令寫在 PHASE1_PROGRESS（看下記「Hubert 需決策」）
+
+**Hubert 需決策**：
+- 排程方案 A — OpenClaw cron（推薦，與你環境整合）
+- 排程方案 B — 系統 crontab（傳統做法）
+- 預設時間：每天 02:00（避開營業時間）
 
 ---
 
