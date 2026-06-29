@@ -1,10 +1,55 @@
 # Phase 1 進度報告
 
-> 最後更新：2026-06-29 11:00（Session H + ESLint 警告修整完成）
+> 最後更新：2026-06-29 19:35（主位置 Housekeeping 完成 + 文件同步）
 > 負責人：brtclaw（規劃 + 實作）
 > 最新文檔：[`docs/INDEX.md`](./docs/INDEX.md)
 > 完整規劃：[`docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md`](./docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md)
 > **2026-06-26 評估與修整**：見 [docs/TODO_2026-06-26.md](./docs/TODO_2026-06-26.md)
+
+---
+
+## ✅ 主位置 Housekeeping（2026-06-29 19:35）— 5 項修整
+
+Hubert 2026-06-29 17:38 指示修整主位置 production runtime,發現 5 個待修整項目。
+
+### 產出
+
+- ✅ **修整1**:`node scripts/cleanup-test-orders.js` 清掉測試 CSV
+  - 主位置 `data/orders/chicken/2026-06-18.csv` (899 bytes)
+  - 主位置 `data/orders/chicken/2026-06-29.csv` (6681 bytes,包含 6 行 PENDING 訂單,從 `tests/api-server-hardening.test.js` 跑測試時寫入)
+  - 原位置同步清理（剛跑 npm test 又產生測試 CSV）
+  - 真實訂單 `2026-06-13.csv` + `2026-06-16.csv` PROTECTED 機制驗證:md5sum 確認未變
+
+- ✅ **修整2**:`rm config/tenants/test-yaml-patch-i5.yaml`（Session I5 測試 fixture 殘留,485 bytes,2026-06-29 12:57 sync 進主位置但 `.rsync-filter` 後來才排除）
+
+- ✅ **修整3**:`rmdir knowledge/tenants/test-yaml-patch-i5/`（Session I5 測試 fixture 空目錄殘留）
+
+- ✅ **修整4**:`chmod +x scripts/manage-tunnel.sh`（2026-06-16 建立,其他 scripts 都有 +x 但這個漏了）
+
+- ✅ **修整5**:`node scripts/dashboard.js` 重新生成 `dashboard.html`（從 2026-06-15 過時 → 2026-06-29 18:59）
+
+- ✅ rsync from-legacy 後續驗證主位置乾淨
+
+### 統計
+
+- 5 個項目全部完成,純 housekeeping
+- 真實訂單 PROTECTED 機制驗證:md5sum 確認 6/13 + 6/16 內容未變
+- 主位置 `npm test` 29 套全綠
+- 主位置 `data/orders/chicken/` 只剩 6/13 + 6/16（2 個真實訂單）
+
+### 業務影響
+
+- Production runtime dashboard 不會再顯示測試訂單
+- 真實訂單資料保持完整
+- `manage-tunnel.sh` 可以直接執行（之前需 chmod 才跑得起來）
+- `dashboard.html` 反映當前真實訂單狀態（雖然「總營收 NT$0」是因為測試訂單沒設 amount,真實訂單本身已包含在 21 筆裡）
+
+### 經驗教訓（同步更新 MEMORY.md L2 SOP）
+
+- **主位置跑 `npm test` 會產生測試 CSV 殘留**（測試本身需要寫 CSV）
+- **Session 結束時應主動跑 cleanup**,不依賴 rsync 自動清
+- **新 session 開頭也應跑一次**,確認 production runtime 乾淨
+- **加到 `scripts/check-quality.sh` 或建立 OpenClaw cron 定期跑**（下次 session 考慮）
 
 ---
 
