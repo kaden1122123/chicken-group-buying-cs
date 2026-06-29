@@ -1,4 +1,5 @@
 'use strict';
+const logger = require('../src/utils/logger');
 
 /**
  * 雞味研究所 LINE 客服 — 儀表板 Server
@@ -37,7 +38,7 @@ try {
   yaml = {
     load: (s) => config._parseYamlSimple(s),
   };
-  console.warn('[dashboard-server] js-yaml 未安裝，使用 src/config.js fallback parser');
+  logger.warn('[dashboard-server] js-yaml 未安裝，使用 src/config.js fallback parser');
 }
 // I5：即便 js-yaml 有 dump 也不再使用。改用字串 patch（P1-9 修整），保留原 yaml 格式。
 const _hasYamlDump = yaml && typeof yaml.dump === 'function';
@@ -455,23 +456,23 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`[dashboard-server] 啟動於 http://0.0.0.0:${PORT}（同網路/Cloudflare Tunnel 可訪問）`);
-  console.log(`[dashboard-server] Tenant: ${getTenantId()}`);
+  logger.info(`[dashboard-server] 啟動於 http://0.0.0.0:${PORT}（同網路/Cloudflare Tunnel 可訪問）`);
+  logger.info(`[dashboard-server] Tenant: ${getTenantId()}`);
   if (PASSWORD) {
-    console.log(`[dashboard-server] HTTP Basic Auth: ${USERNAME} / ********`);
+    logger.info(`[dashboard-server] HTTP Basic Auth: ${USERNAME} / ********`);
   } else {
-    console.log(`[dashboard-server] ⚠️  未設定 DASHBOARD_PASSWORD — 全部可訪問（不安全）`);
+    logger.info(`[dashboard-server] ⚠️  未設定 DASHBOARD_PASSWORD — 全部可訪問（不安全）`);
   }
-  console.log(`[dashboard-server] 路由：`);
-  console.log(`  GET  /            → 儀表板（公開）`);
-  console.log(`  GET  /admin       → 管理後台（需 auth）`);
-  console.log(`  GET  /api/data    → 訂單資料（需 auth）`);
-  console.log(`  GET  /api/config  → 目前 config（需 auth）`);
-  console.log(`  POST /api/config  → 更新 config（需 auth）`);
+  logger.info(`[dashboard-server] 路由：`);
+  logger.info(`  GET  /            → 儀表板（公開）`);
+  logger.info(`  GET  /admin       → 管理後台（需 auth）`);
+  logger.info(`  GET  /api/data    → 訂單資料（需 auth）`);
+  logger.info(`  GET  /api/config  → 目前 config（需 auth）`);
+  logger.info(`  POST /api/config  → 更新 config（需 auth）`);
 });
 
 // 優雅關閉
 process.on('SIGINT', () => {
-  console.log('\n[dashboard-server] 關閉中...');
+  logger.info('\n[dashboard-server] 關閉中...');
   server.close(() => process.exit(0));
 });

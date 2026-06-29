@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 'use strict';
+const logger = require('../src/utils/logger');
 
 /**
  * cleanup-test-orders.js — Session J3/J4
@@ -28,20 +29,20 @@ const {
 
 const DATA_DIR = getDataDir();
 
-console.log('=== 清理測試訂單 ===');
-console.log(`  Protected (從 tests/helpers/cleanup.js): ${PRODUCTION_DATA_PROTECTED.join(', ')}`);
-console.log(`  Data dir: ${DATA_DIR}`);
-console.log('');
+logger.info('=== 清理測試訂單 ===');
+logger.info(`  Protected (從 tests/helpers/cleanup.js): ${PRODUCTION_DATA_PROTECTED.join(', ')}`);
+logger.info(`  Data dir: ${DATA_DIR}`);
+logger.info('');
 
 if (!fs.existsSync(DATA_DIR)) {
-  console.log(`(資料目錄不存在，跳過)`);
+  logger.info(`(資料目錄不存在，跳過)`);
   process.exit(0);
 }
 
 const before = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.csv'));
-console.log(`--- 處理前 (${before.length} 個 .csv) ---`);
-for (const f of before) console.log(`  ${f}`);
-console.log('');
+logger.info(`--- 處理前 (${before.length} 個 .csv) ---`);
+for (const f of before) logger.info(`  ${f}`);
+logger.info('');
 
 let deleted = 0;
 let kept = 0;
@@ -49,28 +50,28 @@ const protectedSet = new Set(listProtected());
 
 for (const filename of before) {
   if (protectedSet.has(filename)) {
-    console.log(`  保留: ${filename}（真實訂單，git tracked）`);
+    logger.info(`  保留: ${filename}（真實訂單，git tracked）`);
     kept++;
   } else {
     try {
       safeUnlinkCSV(filename, DATA_DIR);
-      console.log(`  刪除: ${filename}（測試訂單）`);
+      logger.info(`  刪除: ${filename}（測試訂單）`);
       deleted++;
     } catch (e) {
-      console.error(`  錯誤: ${filename} - ${e.message}`);
+      logger.error(`  錯誤: ${filename} - ${e.message}`);
     }
   }
 }
 
-console.log('');
-console.log(`=== 結果：保留 ${kept} 個真實訂單，刪除 ${deleted} 個測試 CSV ===`);
-console.log('');
-console.log('=== 處理後 ===');
+logger.info('');
+logger.info(`=== 結果：保留 ${kept} 個真實訂單，刪除 ${deleted} 個測試 CSV ===`);
+logger.info('');
+logger.info('=== 處理後 ===');
 const after = fs.existsSync(DATA_DIR)
   ? fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.csv'))
   : [];
 if (after.length === 0) {
-  console.log('  (空)');
+  logger.info('  (空)');
 } else {
-  for (const f of after) console.log(`  ${f}`);
+  for (const f of after) logger.info(`  ${f}`);
 }

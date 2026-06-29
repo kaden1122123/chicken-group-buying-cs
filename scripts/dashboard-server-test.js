@@ -1,4 +1,5 @@
 'use strict';
+const logger = require('../src/utils/logger');
 
 /**
  * Dashboard Server 整合測試
@@ -14,7 +15,7 @@ const PORT = 3456;
 const USERNAME = 'admin';
 const PASSWORD = 'test123';
 
-console.log('\n=== Dashboard Server Integration Tests ===');
+logger.info('\n=== Dashboard Server Integration Tests ===');
 
 // 啟動 server
 const serverProcess = spawn('node', [path.join(__dirname, 'dashboard-server.js')], {
@@ -78,17 +79,17 @@ async function waitForServer() {
 (async () => {
   try {
     await waitForServer();
-    console.log('  ✓ Server 啟動');
+    logger.info('  ✓ Server 啟動');
 
     // 1. GET / 公開
     const r1 = await httpRequest('/', 'GET');
     assert.ok([200, 500].includes(r1.status), `GET / status: ${r1.status}`);
-    console.log('  ✓ GET / 公開（不需要 auth）');
+    logger.info('  ✓ GET / 公開（不需要 auth）');
 
     // 2. GET /api/data 需 auth
     const r2 = await httpRequest('/api/data', 'GET');
     assert.strictEqual(r2.status, 401, '未認證應該 401');
-    console.log('  ✓ GET /api/data 未認證 → 401');
+    logger.info('  ✓ GET /api/data 未認證 → 401');
 
     // 3. GET /api/data 認證後
     const r3 = await httpRequest('/api/data', 'GET', null, `${USERNAME}:${PASSWORD}`);
@@ -96,14 +97,14 @@ async function waitForServer() {
     const data3 = JSON.parse(r3.body);
     assert.ok(data3.metrics, '應包含 metrics');
     assert.ok(typeof data3.metrics.total_orders === 'number', 'total_orders 應為數字');
-    console.log('  ✓ GET /api/data 認證後 → 200 with metrics');
+    logger.info('  ✓ GET /api/data 認證後 → 200 with metrics');
 
     // 4. GET /api/config 認證後
     const r4 = await httpRequest('/api/config', 'GET', null, `${USERNAME}:${PASSWORD}`);
     assert.strictEqual(r4.status, 200, `GET /api/config status: ${r4.status}`);
     const data4 = JSON.parse(r4.body);
     assert.ok(data4.config, '應包含 config');
-    console.log('  ✓ GET /api/config 認證後 → 200 with config');
+    logger.info('  ✓ GET /api/config 認證後 → 200 with config');
 
     // 5. POST /api/config 更新開團日期
     const newDates = ['2026-07-01', '2026-07-03', '2026-07-06'];
@@ -112,32 +113,32 @@ async function waitForServer() {
     const data5 = JSON.parse(r5.body);
     assert.strictEqual(data5.success, true, 'success 應為 true');
     assert.deepStrictEqual(data5.config.open_dates, newDates, '新日期應一致');
-    console.log('  ✓ POST /api/config 更新開團日期 → 200');
+    logger.info('  ✓ POST /api/config 更新開團日期 → 200');
 
     // 6. 驗證 GET 回來確實是新日期
     const r6 = await httpRequest('/api/config', 'GET', null, `${USERNAME}:${PASSWORD}`);
     const data6 = JSON.parse(r6.body);
     assert.deepStrictEqual(data6.config.open_dates, newDates, 'GET 回來應是新日期');
-    console.log('  ✓ GET /api/config 回來是新日期');
+    logger.info('  ✓ GET /api/config 回來是新日期');
 
     // 7. 復原
     const r7 = await httpRequest('/api/config', 'POST', {
       open_dates: ['2026-06-16', '2026-06-18', '2026-06-23', '2026-06-26'],
     }, `${USERNAME}:${PASSWORD}`);
     assert.strictEqual(r7.status, 200, '復原應該 200');
-    console.log('  ✓ 復原 open_dates 成功');
+    logger.info('  ✓ 復原 open_dates 成功');
 
     // 8. POST /api/config 錯誤密碼
     const r8 = await httpRequest('/api/config', 'GET', null, 'admin:wrong');
     assert.strictEqual(r8.status, 401, '錯誤密碼 → 401');
-    console.log('  ✓ 錯誤密碼 → 401');
+    logger.info('  ✓ 錯誤密碼 → 401');
 
-    console.log('\n========================================');
-    console.log('ALL DASHBOARD SERVER TESTS PASSED ✓');
-    console.log('========================================\n');
+    logger.info('\n========================================');
+    logger.info('ALL DASHBOARD SERVER TESTS PASSED ✓');
+    logger.info('========================================\n');
   } catch (e) {
-    console.error('Test failed:', e.message);
-    console.error('Server output:', serverOutput);
+    logger.error('Test failed:', e.message);
+    logger.error('Server output:', serverOutput);
     process.exit(1);
   } finally {
     serverProcess.kill();

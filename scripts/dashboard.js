@@ -1,4 +1,5 @@
 'use strict';
+const logger = require('../src/utils/logger');
 
 /**
  * 雞肉團購客服 — 儀表板 MVP
@@ -27,12 +28,12 @@ const TENANT = getTenantId();
 const ORDERS_DIR = path.join(__dirname, '..', 'data', 'orders', TENANT);
 const OUTPUT_PATH = path.join(__dirname, '..', 'dashboard.html');
 
-console.log(`[Dashboard] Tenant: ${TENANT}`);
-console.log(`[Dashboard] Orders dir: ${ORDERS_DIR}`);
-console.log(`[Dashboard] Output: ${OUTPUT_PATH}`);
+logger.info(`[Dashboard] Tenant: ${TENANT}`);
+logger.info(`[Dashboard] Orders dir: ${ORDERS_DIR}`);
+logger.info(`[Dashboard] Output: ${OUTPUT_PATH}`);
 
 if (!fs.existsSync(ORDERS_DIR)) {
-  console.error(`[Dashboard] Orders dir not found: ${ORDERS_DIR}`);
+  logger.error(`[Dashboard] Orders dir not found: ${ORDERS_DIR}`);
   process.exit(1);
 }
 
@@ -47,7 +48,7 @@ for (const file of dateFiles) {
   }
 }
 
-console.log(`[Dashboard] Loaded ${allOrders.length} orders from ${dateFiles.length} files`);
+logger.info(`[Dashboard] Loaded ${allOrders.length} orders from ${dateFiles.length} files`);
 
 // 計算指標
 const totalOrders = allOrders.length;
@@ -122,11 +123,11 @@ const html = generateHTML({
 });
 
 fs.writeFileSync(OUTPUT_PATH, html, 'utf8');
-console.log(`[Dashboard] ✅ Generated: ${OUTPUT_PATH}`);
-console.log(`[Dashboard]   總訂單: ${totalOrders}`);
-console.log(`[Dashboard]   總營收: NT$${totalRevenue.toFixed(0)}`);
-console.log(`[Dashboard]   平均客單價: NT$${avgOrder.toFixed(0)}`);
-console.log(`[Dashboard]   唯一客戶數: ${uniquePhones}`);
+logger.info(`[Dashboard] ✅ Generated: ${OUTPUT_PATH}`);
+logger.info(`[Dashboard]   總訂單: ${totalOrders}`);
+logger.info(`[Dashboard]   總營收: NT$${totalRevenue.toFixed(0)}`);
+logger.info(`[Dashboard]   平均客單價: NT$${avgOrder.toFixed(0)}`);
+logger.info(`[Dashboard]   唯一客戶數: ${uniquePhones}`);
 
 function generateHTML(data) {
   const dateLabels = JSON.stringify(Object.keys(data.ordersByDate).sort());

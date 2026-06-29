@@ -1,4 +1,5 @@
 'use strict';
+const logger = require('../src/utils/logger');
 
 /**
  * 雞味研究所 LINE 客服 — API Server
@@ -40,7 +41,7 @@ if (process.env.MOCK_TODAY) {
   MockDate.now = () => mockNow;
   MockDate.prototype = RealDate.prototype;
   global.Date = MockDate;
-  console.log('[api-server] MOCK_TODAY=' + process.env.MOCK_TODAY + ' (測試模式)');
+  logger.info('[api-server] MOCK_TODAY=' + process.env.MOCK_TODAY + ' (測試模式)');
 }
 const { validateDate } = require('../src/rules/dateRule');
 const { validateTimeSlotWithDate } = require('../src/rules/timeSlotRule');
@@ -93,7 +94,7 @@ const rateLimitCleanupTimer = setInterval(() => {
     }
   }
   if (cleaned > 0) {
-    console.log(`[api-server] Rate limit cleanup: removed ${cleaned} expired buckets (size now ${rateLimitBuckets.size})`);
+    logger.info(`[api-server] Rate limit cleanup: removed ${cleaned} expired buckets (size now ${rateLimitBuckets.size})`);
   }
 }, RATE_LIMIT_CLEANUP_INTERVAL_MS);
 rateLimitCleanupTimer.unref();
@@ -635,22 +636,22 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`[api-server] 啟動於 http://0.0.0.0:${PORT}`);
-  console.log(`[api-server] Tenant: ${TENANT}`);
+  logger.info(`[api-server] 啟動於 http://0.0.0.0:${PORT}`);
+  logger.info(`[api-server] Tenant: ${TENANT}`);
   if (API_PASSWORD) {
-    console.log(`[api-server] HTTP Basic Auth: ${API_USERNAME} / ********`);
+    logger.info(`[api-server] HTTP Basic Auth: ${API_USERNAME} / ********`);
   } else {
-    console.log(`[api-server] ⚠️  未設定 API_PASSWORD — 全部可訪問（不安全）`);
+    logger.info(`[api-server] ⚠️  未設定 API_PASSWORD — 全部可訪問（不安全）`);
   }
-  console.log(`[api-server] 端點：`);
-  console.log(`  GET  /api/health            → 健康檢查（公開）`);
-  console.log(`  POST /api/orders            → 建立訂單（需 auth）`);
-  console.log(`  GET  /api/orders            → 查詢訂單（需 auth）`);
-  console.log(`  GET  /api/orders/:id        → 查單筆（需 auth）`);
-  console.log(`  PATCH /api/orders/:id      → 更新訂單（需 auth）`);
-  console.log(`  GET  /api/docs              → Swagger UI（需 auth）`);
-  console.log(`  GET  /api/docs/openapi.yaml → OpenAPI 3.0 spec（需 auth）`);
-  console.log(`[api-server] Graceful shutdown timeout: ${API_GRACEFUL_TIMEOUT_MS}ms`);
+  logger.info(`[api-server] 端點：`);
+  logger.info(`  GET  /api/health            → 健康檢查（公開）`);
+  logger.info(`  POST /api/orders            → 建立訂單（需 auth）`);
+  logger.info(`  GET  /api/orders            → 查詢訂單（需 auth）`);
+  logger.info(`  GET  /api/orders/:id        → 查單筆（需 auth）`);
+  logger.info(`  PATCH /api/orders/:id      → 更新訂單（需 auth）`);
+  logger.info(`  GET  /api/docs              → Swagger UI（需 auth）`);
+  logger.info(`  GET  /api/docs/openapi.yaml → OpenAPI 3.0 spec（需 auth）`);
+  logger.info(`[api-server] Graceful shutdown timeout: ${API_GRACEFUL_TIMEOUT_MS}ms`);
 });
 
 // I1：追蹤所有 sockets，shutdown 時等待它們斷開
@@ -673,14 +674,14 @@ function gracefulShutdown(signal) {
   isGracefulShuttingDown = true;
   isShuttingDown = true;
   const activeCount = activeSockets.size;
-  console.log(
+  logger.info(
     `\n[api-server] Received ${signal}, shutting down gracefully `
     + `(timeout=${API_GRACEFUL_TIMEOUT_MS}ms, active_sockets=${activeCount})`,
   );
 
   // 設置強制 timeout 退出
   const forceExitTimer = setTimeout(() => {
-    console.error(
+    logger.error(
       `[api-server] Graceful shutdown timeout (${API_GRACEFUL_TIMEOUT_MS}ms) reached, `
       + `forcing exit. Remaining sockets: ${activeSockets.size}`,
     );
@@ -690,7 +691,7 @@ function gracefulShutdown(signal) {
 
   // 停止接受新連線，等待現有連線關閉
   server.close(() => {
-    console.log('[api-server] All connections closed, exiting cleanly.');
+    logger.info('[api-server] All connections closed, exiting cleanly.');
     process.exit(0);
   });
 }
