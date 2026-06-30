@@ -77,7 +77,7 @@ function testIgnoredIntercept(input, expected, description) {
   console.log(`  ✓ ${description}: "${input}" → ${expected ? 'BLOCKED' : 'FORWARD'}`);
 }
 
-testIgnoredIntercept('菜單', true, 'Rich menu 菜單');
+// Session Q 2026-06-30 修整：「菜單」已從 ignored_keywords 移除，改由 LLM 接手傳送 3 張圖片。
 testIgnoredIntercept('常見問題', true, 'Rich menu 常見問題');
 testIgnoredIntercept('我要訂購', true, 'Rich menu 我要訂購');
 testIgnoredIntercept('黑羽放山雞介紹', true, 'Keyword reply 黑羽放山雞介紹');
@@ -85,13 +85,17 @@ testIgnoredIntercept('蔥鹽醬介紹', true, 'Keyword reply 蔥鹽醬介紹');
 testIgnoredIntercept('吃法介紹', true, 'Keyword reply 吃法介紹');
 
 // 帶前後空白
-testIgnoredIntercept(' 菜單 ', true, 'with whitespace');
-testIgnoredIntercept('  菜單', true, 'leading whitespace');
+testIgnoredIntercept(' 常見問題 ', true, 'with whitespace');
+testIgnoredIntercept('  常見問題', true, 'leading whitespace');
 
 // 部分包含（不應被攔截）
-testIgnoredIntercept('我要看菜單', false, 'partial - forward to LLM');
-testIgnoredIntercept('菜單給我', false, 'partial - forward to LLM');
-testIgnoredIntercept('菜單xxx', false, 'extra chars - forward to LLM');
+testIgnoredIntercept('我要看常見問題', false, 'partial - forward to LLM');
+testIgnoredIntercept('常見問題給我', false, 'partial - forward to LLM');
+testIgnoredIntercept('常見問題xxx', false, 'extra chars - forward to LLM');
+
+// Session Q：菜單現在 NOT-ignored（由 LLM 接手處理）
+testIgnoredIntercept('菜單', false, '菜單 已改由 LLM 接手（2026-06-30 修整）');
+testIgnoredIntercept('我要看菜單', false, '菜單系列由 LLM 處理');
 
 // 完全無關
 testIgnoredIntercept('你好', false, 'greeting - forward');
@@ -134,10 +138,11 @@ console.log('Payment Keywords Intercept: ALL PASSED ✓');
 // ========== 3. Ignored vs Payment 互不衝突 ==========
 console.log('\n--- Ignored vs Payment Mutual Exclusion ---');
 
-// 「菜單」不應被 payment 攔截
+// 「菜單」應被 LLM 接手（Session Q 2026-06-30 修整後已不在 ignored_keywords）
 const r1 = processEvent('菜單');
-assert.strictEqual(r1.reason, 'ignored_keyword', '菜單 should be ignored, not payment');
-console.log('  ✓ 菜單 → ignored_keyword (NOT payment)');
+assert.strictEqual(r1.reason, null, '菜單 應 forward 給 LLM（2026-06-30 Session Q 修整後）');
+assert.strictEqual(r1.shouldForward, true, '菜單 應 forward 給 LLM');
+console.log('  ✓ 菜單 → forward to LLM (NOT ignored, NOT payment)');
 
 // 「付款」不應被 ignored 攔截
 const r2 = processEvent('付款');
@@ -161,18 +166,18 @@ console.log('\n--- Custom IGNORED_KEYWORDS Override ---');
 
 const customKeywords = ['自訂關鍵字1', '自訂關鍵字2'];
 
-// 預設關鍵字應該被攔截
-const defaultResult = processEvent('菜單');
-assert.strictEqual(defaultResult.reason, 'ignored_keyword', '菜單 with default keywords');
+// Session Q 2026-06-30 修整後：「菜單」不再在預設 ignored_keywords，改用其他預設關鍵字測試
+const defaultResult = processEvent('常見問題');
+assert.strictEqual(defaultResult.reason, 'ignored_keyword', '常見問題 with default keywords');
 
 // 自訂關鍵字
 const customResult = processEvent('自訂關鍵字1', customKeywords);
 assert.strictEqual(customResult.reason, 'ignored_keyword', '自訂關鍵字1 with custom list');
 assert.strictEqual(customResult.shouldForward, false, 'should be blocked');
 
-// 預設關鍵字 + 自訂關鍵字（混合）— 這裡測試自訂清單覆寫後，原本的「菜單」不在清單中
-const mixedResult = processEvent('菜單', customKeywords);
-assert.strictEqual(mixedResult.reason, null, '菜單 with custom-only list should forward');
+// 預設關鍵字 + 自訂關鍵字（混合）— 這裡測試自訂清單覆寫後，原本的「常見問題」不在清單中
+const mixedResult = processEvent('常見問題', customKeywords);
+assert.strictEqual(mixedResult.reason, null, '常見問題 with custom-only list should forward');
 console.log('  ✓ Custom keywords override defaults');
 
 console.log('Custom Override: ALL PASSED ✓');
@@ -213,10 +218,11 @@ if (fs.existsSync(dryRunPath)) {
   const hasFunc = bundle.includes('isIgnoredKeyword') || bundle.includes('getIgnoredKeywords');
 
   assert.ok(hasFunc, 'Bundled Worker should have isIgnoredKeyword/getIgnoredKeywords function');
-  assert.ok(hasMenu, 'Bundled Worker should have 菜單 keyword');
+  // Session Q 2026-06-30 修整：「菜單」已從 ignored_keywords 移除（不應再出現在新 bundle）
+  assert.ok(!hasMenu, 'Bundled Worker should NOT have 菜單 keyword (Session Q 2026-06-30 修整)');
   assert.ok(hasOrder, 'Bundled Worker should have 我要訂購 keyword');
   assert.ok(hasFaq, 'Bundled Worker should have 常見問題 keyword');
-  console.log('  ✓ Production Worker bundle has all 6 keywords');
+  console.log('  ✓ Production Worker bundle has the expected 5 keywords (菜單 已於 Session Q 移除)');
   console.log(`  (Note: re-run \`wrangler deploy --dry-run --outdir=/tmp/wrangler-dryrun2\` to update bundle)`);
 } else {
   console.log('  ⚠  /tmp/wrangler-dryrun2/index.js not found - skipping bundle check');

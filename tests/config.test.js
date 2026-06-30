@@ -38,7 +38,8 @@ console.log(`  ✓ Loaded ${openDates.length} open dates`);
 
 const ignoredKeywords = cfg.getIgnoredKeywords();
 assert.ok(Array.isArray(ignoredKeywords), 'ignoredKeywords should be array');
-assert.ok(ignoredKeywords.includes('菜單'), 'Should include 菜單');
+// Session Q 修整（2026-06-30）：「菜單」從 ignored_keywords 移除，改由 LLM 依新版 main_idea.md 第十一節傳送 3 張菜單圖片。
+assert.ok(!ignoredKeywords.includes('菜單'), '菜單 應已從 ignored_keywords 移除（2026-06-30 Session Q 修整）');
 assert.ok(ignoredKeywords.includes('常見問題'), 'Should include 常見問題');
 assert.ok(ignoredKeywords.includes('我要訂購'), 'Should include 我要訂購');
 assert.ok(ignoredKeywords.includes('黑羽放山雞介紹'), 'Should include 黑羽放山雞介紹');
@@ -58,23 +59,27 @@ function testIgnored(input, expected, description) {
 }
 
 // 100% 完全比對 — 命中
-testIgnored('菜單', true, 'exact match');
+// 「菜單」已從 ignored_keywords 移除（Session Q 2026-06-30），不再作為 exact match 測試案例。
 testIgnored('常見問題', true, 'exact match');
 testIgnored('我要訂購', true, 'exact match');
 testIgnored('黑羽放山雞介紹', true, 'exact match');
 
 // 帶前後空白 → 應該 trim 後命中
-testIgnored(' 菜單 ', true, 'with whitespace');
-testIgnored('  菜單', true, 'leading whitespace');
-testIgnored('菜單  ', true, 'trailing whitespace');
-testIgnored('\t菜單\n', true, 'mixed whitespace');
+testIgnored(' 常見問題 ', true, 'with whitespace');
+testIgnored('  常見問題', true, 'leading whitespace');
+testIgnored('常見問題  ', true, 'trailing whitespace');
+testIgnored('\t常見問題\n', true, 'mixed whitespace');
 
 // 不命中（部分包含）
-testIgnored('我要看菜單', false, 'partial match (substr at end)');
-testIgnored('菜單給我', false, 'partial match (substr at start)');
-testIgnored('給我菜單喔', false, 'partial match (middle)');
-testIgnored('菜單xxx', false, 'extra chars');
-testIgnored('xxx菜單', false, 'extra chars prefix');
+testIgnored('我要看常見問題', false, 'partial match (substr at end)');
+testIgnored('常見問題給我', false, 'partial match (substr at start)');
+testIgnored('給我常見問題喔', false, 'partial match (middle)');
+testIgnored('常見問題xxx', false, 'extra chars');
+testIgnored('xxx常見問題', false, 'extra chars prefix');
+
+// Session Q：菜單現在 NOT-ignored（由 LLM 接手處理）
+testIgnored('菜單', false, '菜單 已被 LLM 接手（2026-06-30 修整）');
+testIgnored('我要看菜單', false, '菜單系列由 LLM 處理');
 
 // 不命中（無關訊息）
 testIgnored('你好', false, 'random greeting');
