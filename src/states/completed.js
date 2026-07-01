@@ -4,7 +4,7 @@ const logger = require('../utils/logger');
 const { STATES } = require('./stateMachine');
 const { textReply } = require('../utils/lineReply');
 const { formatThankYou } = require('../order/orderFormatter');
-const { writeOrder } = require('../order/csvWriter');
+const { writeOrderWithRetry } = require('../order/csvWriter');
 const { generateOrderId } = require('../order/orderIdGenerator');
 
 /**
@@ -62,7 +62,7 @@ function executeCompleted(orderData) {
 
   // 寫入 CSV
   try {
-    writeOrder(finalizedOrder);
+    writeOrderWithRetry(finalizedOrder);
   } catch (e) {
     logger.error('CSV write failed in completed', { err: e.message });
   }

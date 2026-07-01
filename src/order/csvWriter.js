@@ -183,6 +183,77 @@ function writeOrder(orderData) {
 
   return orderData.order_id || '';
 }
+// ──────────────────────────────────────────────────────────
+// Session X4-A：writeOrderWithRetry — _sync_ retry wrapper
+// ──────────────────────────────────────────────────────────
+// 為什麼不是 async：
+// - src/ 內其他 caller（awaitingPayment.js 等）是 sync API
+// - csvWriter 的 proper-lockfile.lockSync 是 sync 版（busy-wait 已內建）
+// - 改 async 會擾到所有 caller，增加風險
+//
+// Retry 設計：
+// - 3 輪 default（可由第二個參數覆寫）
+// - backoff：50ms / 100ms / 150ms（線性递增）
+// - busy-wait 而非 setTimeout（保持 sync 語意）
+// - 失敗時丢原 error（不論召幾輪都重新 throw）
+//
+// 適合什廢時候 retry：
+// - 暫時性 lock 衝突（其他 process 剛釋放）
+// - busy-wait 已超 1 秒仍拿不到 lock 的情況是其次見（CSV 不常高頻）
+const RETRY_BACKOFF_BASE_MS = 50;
+const DEFAULT_MAX_RETRIES = 3;
+
+/**
+ * Sync busy-wait 休眠（不使用 setTimeout 以保持 sync 語意）
+ * @param {number} ms
+ */
+function syncSleep(ms) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) { /* spin */ }
+}
+
+/**
+ * 寫入訂單，支援 retry（Session X4-A）
+ *
+ * @param {object} orderData - 訂單資料
+ * @param {object} [options] - 選項
+ * @param {number} [options.maxRetries=3] - 最大重試次數
+ * @returns {string} - 寫入的 order_id
+ * @throws {Error} 超出最大重試次數後丟出最後一次錯誤
+ */
+function writeOrderWithRetry(orderData, options = {}) {
+  const maxRetries = options.maxRetries || DEFAULT_MAX_RETRIES;
+
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = writeOrder(orderData);
+      if (attempt > 1) {
+        logger.info('[csvWriter] writeOrder succeeded after retry', {
+          attempt,
+          maxRetries,
+        });
+      }
+      return result;
+    } catch (e) {
+      lastError = e;
+      logger.warn('[csvWriter] writeOrder attempt failed', {
+        attempt,
+        maxRetries,
+        err: e.message,
+      });
+
+      if (attempt < maxRetries) {
+        // 線性 backoff：50ms / 100ms / 150ms
+        const backoff = RETRY_BACKOFF_BASE_MS * attempt;
+        syncSleep(backoff);
+      }
+    }
+  }
+
+  // 所有重試都失敗
+  throw new Error(`[csvWriter] writeOrder failed after ${maxRetries} retries: ${lastError ? lastError.message : 'unknown'}`);
+}
 
 /**
  * 更新現有訂單（依 order_id）
@@ -285,9 +356,11 @@ function parseCSVLine(line) {
 
 module.exports = {
   writeOrder,
+  writeOrderWithRetry,
   updateOrder,
   CSV_HEADERS,
   formatField,
   parseCSVLine,
   FILENAME_PATTERN,
 };
+

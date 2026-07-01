@@ -6,7 +6,7 @@ require('../utils/timezone');
 const logger = require('../utils/logger');
 const { STATES, buildCancelResult } = require('./stateMachine');
 const { textReply } = require('../utils/lineReply');
-const { writeOrder } = require('../order/csvWriter');
+const { writeOrderWithRetry } = require('../order/csvWriter');
 const { generateOrderId } = require('../order/orderIdGenerator');
 const { getPaymentConfig, isFeatureEnabled } = require('../config');
 
@@ -74,7 +74,7 @@ function handleAwaitingPayment(userId, message, orderData, context) {
     updatedOrderData.intent_confirmed = true;
 
     try {
-      writeOrder(updatedOrderData);
+      writeOrderWithRetry(updatedOrderData);
     } catch (e) {
       // 寫入失敗仍繼續，但不阻断流程
       logger.error('CSV write failed', { err: e.message });

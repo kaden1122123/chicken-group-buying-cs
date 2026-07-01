@@ -3,7 +3,7 @@
 const logger = require('../utils/logger');
 const { STATES } = require('./stateMachine');
 const { textReply } = require('../utils/lineReply');
-const { writeOrder } = require('../order/csvWriter');
+const { writeOrderWithRetry } = require('../order/csvWriter');
 const { generatePendingOrderId } = require('../order/orderIdGenerator');
 const { shouldTransfer } = require('../handoff/transferRules');
 const { formatLINENotification } = require('../handoff/notificationFormat');
@@ -72,7 +72,7 @@ async function handleHandoff(userId, userMessage, orderData = {}, userProfile = 
 
   // Step 1: 寫入 CSV（安全閘）
   try {
-    writeOrder(handoffOrderData);
+    writeOrderWithRetry(handoffOrderData);
   } catch (e) {
     logger.error('Handoff CSV write failed', { err: e.message });
     handoffOrderData.staff_notes = 'CSV寫入失敗，請人工確認';
@@ -88,7 +88,7 @@ async function handleHandoff(userId, userMessage, orderData = {}, userProfile = 
     logger.error('LINE notification failed', { err: e.message });
     handoffOrderData.staff_notes = 'LINE通知失敗，請人工確認';
     try {
-      writeOrder(handoffOrderData); // 更新 staff_notes
+      writeOrderWithRetry(handoffOrderData); // 更新 staff_notes
     } catch (e2) {
       // ignore
     }

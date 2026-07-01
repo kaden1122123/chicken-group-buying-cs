@@ -22,7 +22,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { getTenantId } = require('../src/config');
-const { writeOrder, updateOrder } = require('../src/order/csvWriter');
+const { writeOrderWithRetry, updateOrder } = require('../src/order/csvWriter');
 const { getOrdersByDate } = require('../src/order/csvReader');
 
 // 決策 4：MOCK_TODAY 環境變數支援，讓測試可以控制「今天」是哪一天
@@ -414,7 +414,7 @@ function handleCreateOrder(req, res) {
 
     // 寫入 CSV
     try {
-      writeOrder(orderRow);
+      writeOrderWithRetry(orderRow);
       sendJson(res, 201, {
         success: true,
         order_id,
