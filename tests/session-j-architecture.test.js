@@ -26,7 +26,7 @@ const syncSource = fs.readFileSync(SYNC_PATH, 'utf8');
 assert.ok(syncSource.includes('--dry-run'), 'sync-mirror.sh 應支援 --dry-run 旗號');
 assert.ok(syncSource.includes('DRY_RUN=true'), 'sync-mirror.sh 應有 DRY_RUN 變數');
 assert.ok(syncSource.includes('RSYNC_FLAGS=(-av --delete)'), 'sync-mirror.sh 應有 RSYNC_FLAGS 起始');
-assert.ok(syncSource.includes("RSYNC_FLAGS+=(-n)"), '--dry-run 時應加 -n flag');
+assert.ok(syncSource.includes('RSYNC_FLAGS+=(-n)'), '--dry-run 時應加 -n flag');
 console.log('  ✓ J1: sync-mirror.sh --dry-run 旗號實作正確');
 
 // ========== J2: .rsync-filter ==========
@@ -52,13 +52,13 @@ const allJsFiles = [
   'scripts/cleanup-test-orders.js',
   'scripts/cleanup-test-orders.sh',
   'tests/helpers/cleanup.js',
-  'src/utils/logger.js',  // random
+  'src/utils/logger.js', // random
   'src/config.js',
   'src/order/csvWriter.js',
 ];
 
 let definitionCount = 0;
-let definitionFiles = [];
+const definitionFiles = [];
 for (const f of allJsFiles) {
   const fullPath = path.join(__dirname, '..', f);
   if (!fs.existsSync(fullPath)) continue;

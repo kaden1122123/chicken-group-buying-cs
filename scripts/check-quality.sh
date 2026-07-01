@@ -82,7 +82,7 @@ cd "$PROJECT_ROOT"
 # ─────────────────────────────────────────
 # 檢查 1: npm test
 # ─────────────────────────────────────────
-section "Check 1/6: npm test"
+section "Check 1/7: npm test"
 
 if npm test > /tmp/npm-test-output.log 2>&1; then
   # 動態計算 npm test 實際跑的測試檔數（數行首的 ▶▶▶ 行數，排除 shell trace）
@@ -96,7 +96,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 2: 0 個 hardcode
 # ─────────────────────────────────────────
-section "Check 2/6: Hardcode 檢查"
+section "Check 2/7: Hardcode 檢查"
 
 # Session D3-6 修整：原 check 只查 5 個特定檔案，造成 src/index.js:151 / src/states/confirming.js:61
 # 的 hardcode 漏網。改為 grep -r 掃描所有 src/，避免「換檔案 hardcode」就檢查不到。
@@ -156,7 +156,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 3: 0 個 dead config
 # ─────────────────────────────────────────
-section "Check 3/6: Dead config 檢查"
+section "Check 3/7: Dead config 檢查"
 
 # 從 CONFIG_VARIABLES_TABLE.md 整理的 dead config 旗標
 # 注意：這些是「應該被讀取」的旗標，目前 src/ 完全沒有讀取它們
@@ -176,7 +176,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 4: 真實訂單仍在
 # ─────────────────────────────────────────
-section "Check 4/6: 真實訂單保護"
+section "Check 4/7: 真實訂單保護"
 
 REAL_ORDERS_DIR="data/orders/chicken"
 MISSING_ORDERS=0
@@ -203,7 +203,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 5: 兩位置 rsync 一致性
 # ─────────────────────────────────────────
-section "Check 5/6: 兩位置 rsync 一致性"
+section "Check 5/7: 兩位置 rsync 一致性"
 
 MAIN_LOCATION="/home/clawuser/.openclaw/workspace-external-user/projects/chicken-group-buying-customer-service"
 
@@ -230,7 +230,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 6: git working tree 狀態
 # ─────────────────────────────────────────
-section "Check 6/6: git working tree"
+section "Check 6/7: git working tree"
 
 cd "$PROJECT_ROOT"
 
@@ -252,6 +252,26 @@ else
 fi
 
 # ─────────────────────────────────────────
+# 檢查 7: ESLint 0 errors（Session G4 修整）
+# ─────────────────────────────────────────
+section "Check 7/7: ESLint 檢查"
+
+# Session G4 修整：本地 check-quality.sh 也跑 lint，與 GitHub Actions 一致防漏網
+# warning 不擋 CI（與 .eslintrc.json "rules" 設計一致）但 error 必擋
+
+if [ -f "package.json" ] && grep -q '"lint"' package.json 2>/dev/null; then
+  if LINT_OUTPUT=$(npm run lint 2>&1); then
+    pass "npm run lint 0 errors（與 GitHub Actions 一致）"
+  else
+    fail "npm run lint 有 errors（push 會被 CI 擋，先修）"
+    echo "$LINT_OUTPUT" | tail -10
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+  fi
+else
+  warn "package.json 無 lint script（Session G 未執行）"
+fi
+
+# ─────────────────────────────────────────
 # 總結
 # ─────────────────────────────────────────
 echo ""
@@ -269,6 +289,7 @@ if [ $FAIL_COUNT -gt 0 ]; then
   echo ""
   echo "修復建議："
   echo "  - npm test 失敗：先修測試"
+  echo "  - npm run lint 有 errors：先跑 npm run lint:fix 看是否能 auto-fix，否則手動修"
   echo "  - hardcode 失敗：依 docs/KNOWN_ISSUES.md F1~F4、Session D3 prompt 修整"
   echo "  - dead config 失敗：依 docs/KNOWN_ISSUES.md W1~W9、Session D4 prompt 修整"
   echo "  - 真實訂單消失：git checkout HEAD -- data/orders/chicken/"
