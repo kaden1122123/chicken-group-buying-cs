@@ -4,6 +4,15 @@
 > **影響**：🔴 高（影響營收）
 > **推薦**：D（純 postback）
 
+> **狀態**：✅ **已完成（2026-06-28）**
+> **決策結果**：
+> - 訂單流程方向：**D 純 postback** → 19:30 修正為 **A 方案**（LLM 純文字 + Hubert 手動建單，因 D 方案 Worker 拿不到 LLM 對話歷史）
+> - api-server 啟動方式：**systemd**
+> **證據文件**：
+> - [docs/NOTES/2026-06-16-issues.md](../../NOTES/2026-06-16-issues.md) — 決策結果段
+> - [docs/architecture/NEW_ORDER_FLOW.md](../../architecture/NEW_ORDER_FLOW.md) v2.1 — A 方案已上線
+> - [docs/CLEANUP_PHASE_2_PLAN.md](../../CLEANUP_PHASE_2_PLAN.md) §三 — Session E ✅ 完成標記
+
 ---
 
 ## Prompt 區段（複製以下到新 session）
