@@ -431,6 +431,68 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // GET /api/logs - Session X3-B：結構化日誌查詢（?date=YYYY-MM-DD&level=warn|error|all）
+  if (url.startsWith('/api/logs') && method === 'GET') {
+    const urlObj = new URL(req.url, `http://${req.headers.host}`);
+    const date = urlObj.searchParams.get('date') || new Date().toISOString().slice(0, 10);
+    const level = urlObj.searchParams.get('level') || 'all';
+    const limit = parseInt(urlObj.searchParams.get('limit') || '100', 10);
+    const safeLimit = Math.min(Math.max(limit, 1), 500);
+
+    const logFilePath = path.join(process.env.LOG_DIR || path.join(__dirname, '..', 'logs'), `${date}.log`);
+    const logs = [];
+    if (fs.existsSync(logFilePath)) {
+      const lines = fs.readFileSync(logFilePath, 'utf8').split('\n').filter((l) => l);
+      for (const line of lines.slice(-safeLimit).reverse()) {
+        try {
+          const entry = JSON.parse(line);
+          if (level === 'all' || entry.level === level) {
+            logs.push(entry);
+          }
+        } catch (e) {
+          // 容忍單行壞檔
+        }
+      }
+    }
+
+    sendJson(res, 200, {
+      date,
+      level,
+      count: logs.length,
+      logs,
+      logFile: logFilePath,
+    });
+    return;
+  }
+
+  // GET /api/log-stats - Session X3-C：错误率計算（最近 N 天）
+  if (url.startsWith('/api/log-stats') && method === 'GET') {
+    const urlObj = new URL(req.url, `http://${req.headers.host}`);
+    const days = parseInt(urlObj.searchParams.get('days') || '7', 10);
+    const safeDays = Math.min(Math.max(days, 1), 30);
+    const logDir = process.env.LOG_DIR || path.join(__dirname, '..', 'logs');
+
+    const stats = [];
+    for (let i = 0; i < safeDays; i++) {
+      const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+      const logPath = path.join(logDir, `${d}.log`);
+      let warn = 0, error = 0;
+      if (fs.existsSync(logPath)) {
+        fs.readFileSync(logPath, 'utf8').split('\n').filter((l) => l).forEach((line) => {
+          try {
+            const entry = JSON.parse(line);
+            if (entry.level === 'warn') warn++;
+            else if (entry.level === 'error') error++;
+          } catch (e) {}
+        });
+      }
+      stats.push({ date: d, warn, error });
+    }
+
+    sendJson(res, 200, { days: safeDays, stats: stats.reverse() });
+    return;
+  }
+
   // GET /api/config - 目前 config
   if (url === '/api/config' && method === 'GET') {
     const config = readTenantConfig();

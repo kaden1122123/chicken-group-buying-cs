@@ -21,9 +21,42 @@
  * - 不破壞既有 console.log 用法，但**生產環境推薦全部改用 logger**
  *
  * 為什麼不用第三方（pino / winston）？雞味客服規模小，多一層依賴不划算。
+ *
+ * Session X3-B 新增：
+ * - 可選寫入日志檔案 daily JSON Lines
+ * - 環境變數 LOG_DIR（預設不寫檔）
+ * - 只寫 warn/error（info/debug 只走 stdout/stderr）
  */
 
+const fs = require('fs');
+const path = require('path');
+
 const LEVEL_MAP = { debug: 10, info: 20, warn: 30, error: 40 };
+
+const LOG_DIR = process.env.LOG_DIR || null;
+let _logFilePathToday = null;
+let _logFileDateToday = null;
+
+function getLogFilePath() {
+  if (!LOG_DIR) return null;
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  if (_logFileDateToday === today && _logFilePathToday) {
+    return _logFilePathToday;
+  }
+  // 改變日期 -> rotate
+  try {
+    if (!fs.existsSync(LOG_DIR)) {
+      fs.mkdirSync(LOG_DIR, { recursive: true });
+    }
+    _logFilePathToday = path.join(LOG_DIR, `${today}.log`);
+    _logFileDateToday = today;
+    return _logFilePathToday;
+  } catch (e) {
+    // 寫檔失敗不該 shutdown，只 return null
+    process.stderr.write(`[logger] log dir not writable: ${e.message}\n`);
+    return null;
+  }
+}
 
 function parseLevel(s) {
   if (typeof s === 'number') return s;
@@ -66,6 +99,19 @@ function emit(level, msg, meta) {
   } else {
     process.stdout.write(line + '\n');
   }
+
+  // Session X3-B：寫入 JSON Lines log file（限 warn/error 才寫，避免 disk pressure）
+  if (level >= 30) {
+    const logFile = getLogFilePath();
+    if (logFile) {
+      try {
+        fs.appendFileSync(logFile, line + '\n', 'utf8');
+      } catch (e) {
+        // 寫檔失敗 log 到 stderr，不規避主流程
+        process.stderr.write(`[logger] file write failed: ${e.message}\n`);
+      }
+    }
+  }
 }
 
 module.exports = {
@@ -78,4 +124,6 @@ module.exports = {
   levelName,
   getThreshold,
   LEVEL_MAP,
+  // Session X3-B：log 路徑
+  getLogFilePath,
 };
