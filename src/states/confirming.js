@@ -3,6 +3,7 @@
 const { STATES, buildCancelResult } = require('./stateMachine');
 const { textReply } = require('../utils/lineReply');
 const { formatCustomerReply } = require('../order/orderFormatter');
+const { getPaymentConfig, isFeatureEnabled } = require('../config');
 
 /**
  * CONFIRMING 狀態處理
@@ -56,9 +57,30 @@ function isModifyIntent(message) {
 // eslint-disable-next-line no-unused-vars
 function handleConfirming(userId, message, orderData, context) {
   if (isConfirmReply(message)) {
+    // Session D3-5：付款方式訊息改為從 config 動態生成
+    // - 銀行帳號 / LINE Pay ID 從 chicken.yaml 讀
+    // - 4 種付款方式依 feature flag 過濾（關閉的不顯示）
+    const paymentConfig = getPaymentConfig();
+    const bankCode = paymentConfig.transfer.bank_code;
+    const bankAccount = paymentConfig.transfer.account;
+    const linepayId = paymentConfig.linepay.line_id;
+    const lines = ['收到！我現在提供付款方式给您：\n', '💳 付款方式說明：\n'];
+    if (isFeatureEnabled('payment.cash.enabled')) {
+      lines.push('現金：送達時現場付款');
+    }
+    if (isFeatureEnabled('payment.transfer.enabled')) {
+      lines.push(`轉帳：銀行代碼${bankCode} / 帳號${bankAccount}`);
+    }
+    if (isFeatureEnabled('payment.linepay.enabled') && isFeatureEnabled('official.line_pay.enabled')) {
+      lines.push(`LINE Pay：請加老闆 LINE（ID：${linepayId}）`);
+    }
+    if (isFeatureEnabled('payment.jko.enabled')) {
+      lines.push('街口支付：請告知，我提供 QR Code');
+    }
+    lines.push('\n請選擇您的付款方式並完成後回覆「已付款」或上傳截圖，謝謝！');
     return {
       action: 'confirmed',
-      reply: textReply('收到！我現在提供付款方式给您：\n\n💳 付款方式說明：\n\n現金：送達時現場付款\n轉帳：銀行代碼007 / 帳號23257030422\nLINE Pay：請加老闆 LINE（ID：Willy0221）\n街口支付：請告知，我提供 QR Code\n\n請選擇您的付款方式並完成後回覆「已付款」或上傳截圖，謝謝！'),
+      reply: textReply(lines.join('\n')),
       newState: STATES.AWAITING_PAYMENT,
       orderData,
       context: { ...context, intent_confirmed: true },
