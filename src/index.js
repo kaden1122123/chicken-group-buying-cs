@@ -20,7 +20,7 @@ const { shouldTransfer } = require('./handoff/transferRules');
 const { textReply } = require('./utils/lineReply');
 const sanitize = require('./utils/sanitizer');
 const { formatCustomerReply } = require('./order/orderFormatter');
-const { isIgnoredKeyword } = require('./config');
+const { isIgnoredKeyword, getPaymentConfig, isFeatureEnabled } = require('./config');
 const { getLineDisplayName } = require('./utils/lineProfileCache');
 const { checkWhitelist } = require('./middleware/whitelist');
 const { guessIntent, loadKnowledgeForIntent } = require('./knowledge/triggers');
@@ -147,8 +147,29 @@ async function handleMessage(userId, message, userProfile = {}) {
 
       if (isConfirmReply(cleanMessage)) {
         transition(userId, 'customer_confirm', {});
+        // Session D3-4：付款方式訊息改為從 config 動態生成
+        // - 銀行帳號 / LINE Pay ID 從 chicken.yaml 讀
+        // - 4 種付款方式依 feature flag 過濾（關閉的不顯示）
+        const paymentConfig = getPaymentConfig();
+        const bankCode = paymentConfig.transfer.bank_code;
+        const bankAccount = paymentConfig.transfer.account;
+        const linepayId = paymentConfig.linepay.line_id;
+        const lines = ['收到！請選擇付款方式：\n', '💳 付款說明：\n'];
+        if (isFeatureEnabled('payment.cash.enabled')) {
+          lines.push('現金：送達時現場付款');
+        }
+        if (isFeatureEnabled('payment.transfer.enabled')) {
+          lines.push(`轉帳：銀行代碼${bankCode} / 帳號${bankAccount}`);
+        }
+        if (isFeatureEnabled('payment.linepay.enabled') && isFeatureEnabled('official.line_pay.enabled')) {
+          lines.push(`LINE Pay：加老闆 LINE（ID：${linepayId}）`);
+        }
+        if (isFeatureEnabled('payment.jko.enabled')) {
+          lines.push('街口：請告知，我提供 QR Code');
+        }
+        lines.push('\n完成後回覆「已付款」或上傳截圖');
         return {
-          reply: textReply('收到！請選擇付款方式：\n\n💳 付款說明：\n\n現金：送達時現場付款\n轉帳：銀行代碼007 / 帳號23257030422\nLINE Pay：加老闆 LINE（ID：Willy0221）\n街口：請告知，我提供 QR Code\n\n完成後回覆「已付款」或上傳截圖'),
+          reply: textReply(lines.join('\n')),
           newState: STATES.AWAITING_PAYMENT,
         };
       }
