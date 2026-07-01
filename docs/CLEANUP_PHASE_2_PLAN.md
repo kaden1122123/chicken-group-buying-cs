@@ -397,27 +397,50 @@
 
 ## 四、Session 優先順序彙總
 
+### Phase 2（已完成，2026-06-29 結案）
+
 | 優先 | Session | 主題 | 估時 | 風險 | 狀態 |
 |------|---------|------|------|------|------|
-| 1 | ~~**E**~~ | ~~業務流程決策~~ | 1-2 小時 | 🔴 高 | ✅ 2026-06-28 完成 |
-| 1.5 | ~~**N**~~ | ~~v2 流程實作（D 純 postback + systemd）~~ | ~~9 小時~~ | 🟡 中 | ✅ 2026-06-28 完成（改 A 方案，30 分鐘） |
-| 1.6 | **O**（待用）| B 方案升級（OpenClaw tool calling）| 4-6 小時 | 🟡 中 | ⏸ 待用（依真實訂單模式決定優先） |
+| 1 | ~~**E**~~ | ~~業務流程決策~~ | 1-2 小時 | 🔴 高 | ✅ 2026-06-28 完成（D → A 修正）|
+| 1.5 | ~~**N**~~ | ~~v2 流程實作 A 方案~~ | ~~9 小時~~ | 🟡 中 | ✅ 2026-06-28 完成 |
+| 1.6 | **O**（待用）| B 方案升級（OpenClaw tool calling）| 4-6 小時 | 🟡 中 | ⏸ 待用 |
 | 1.7 | **P**（待用）| C 方案升級（OpenClaw ↔ Worker KV 同步）| 6-8 小時 | 🟡 中 | ⏸ 待用 |
 | 2 | ~~**F**~~ | ~~文件一致性 + 6/26 決策落地~~ | ~~1.5 小時~~ | 🟢 低 | ✅ 2026-06-28 完成（30 分鐘） |
-| 3 | ~~**G**~~ | ~~CI/CD + 程式碼品質基礎~~ | ~~2-3 小時~~ | 🟡 中 | ✅ 2026-06-28 完成（含 G.1 時區 fix + G.2 時區統一） |
-| 4 | ~~**H**~~ | ~~測試覆蓋率補強~~ | ~~3-4 小時~~ | 🟡 中 | ✅ 2026-06-29 完成（9 commits） |
-| 5 | ~~**I**~~ | ~~安全與 production hardening~~ | ~~2-3 小時~~ | 🟡 中 | ✅ 2026-06-29 完成（6 commits,21ab4a0 / b164131 / 626c4c7 / 814ca3e / 4bab208 / e0a9197） |
+| 3 | ~~**G**~~ | ~~CI/CD + 程式碼品質基礎~~ | ~~2-3 小時~~ | 🟡 中 | ✅ 2026-06-28 完成（含 G.1-G.6） |
+| 4 | ~~**H**~~ | ~~測試覆蓋率補強（6 helper）~~ | ~~3-4 小時~~ | 🟡 中 | ✅ 2026-06-29 完成（9 commits） |
+| 5 | ~~**I**~~ | ~~安全與 production hardening~~ | ~~2-3 小時~~ | 🟡 中 | ✅ 2026-06-29 完成（6 commits）|
 | 6 | ~~**D3**~~ | ~~5 個 hardcode 改讀 config~~ | ~~2-3 小時~~ | 🟡 中 | ✅ 2026-06-28 完成 |
 | 7 | ~~**D4**~~ | ~~9 個 dead config flag 真正生效~~ | ~~2-3 小時~~ | 🟡 中 | ✅ 2026-06-29 完成 |
-| 6 | ~~**J**~~ | ~~雙位置架構強化~~ | ~~1-2 小時~~ | 🟢 低 | ✅ 2026-06-29 完成（3 commits,f6177db / 89ebdf9 / 256183f） |
-| 7 | ~~**K**~~ | ~~監控與 logging~~ | ~~2 小時~~ | 🟡 中 | ✅ 2026-06-29 完成（4 commits,99e44e5 / 2c983b0 / c5435df / 6d6925f） |
-| 8 | ~~**L**~~ | ~~API 文件化~~ | ~~1-2 小時~~ | 🟢 低 | ✅ 2026-06-29 完成（3 commits,7c4e5a1 / 871860f / 0404ce5） |
-| 9 | ~~**M**~~ | ~~Backup 機制~~ | ~~1 小時~~ | 🟢 低 | ✅ 2026-06-29 完成（2 commits,acecd3e / c87cd87 + OpenClaw cron `bd933551`） |
-| **總計** | | | **10-11 小時**（A 方案已上線，B/C 升級待用） | | **完成度：14/16（O/P 升級待用）** |
+| 6 | ~~**J**~~ | ~~雙位置架構強化~~ | ~~1-2 小時~~ | 🟢 低 | ✅ 2026-06-29 完成（3 commits）|
+| 7 | ~~**K**~~ | ~~監控與 logging~~ | ~~2 小時~~ | 🟡 中 | ✅ 2026-06-29 完成（4 commits）|
+| 8 | ~~**L**~~ | ~~API 文件化~~ | ~~1-2 小時~~ | 🟢 低 | ✅ 2026-06-29 完成（3 commits）|
+| 9 | ~~**M**~~ | ~~Backup 機制~~ | ~~1 小時~~ | 🟢 低 | ✅ 2026-06-29 完成（2 commits）|
 
-**建議執行順序**：E ✅ → N ✅ → F ✅ → G ✅ → D3 ✅ → D4 ✅ → H ✅ → I ✅ → J ✅ → K ✅ → L ✅ → M ✅（O/P 升級 session 依真實訂單模式決定）
+### Phase 2 補強（2026-06-30 ~ 2026-07-01 完成）
 
-**完成統計（2026-06-29 12:54 全部完成）**：25 commits,測試 30 套全綠 + lint 0 errors,真實訂單保護 ✅,OpenClaw cron 已設定每日備份。
+| Session | 主題 | 估時 | 風險 | 狀態 |
+|---------|------|------|------|------|
+| **Q** | 客戶實測 4 大問題（菜單 hardcode、confirming.js、check-quality.sh 盲點、dashboard watchdog）| 1 小時 | 🟢 低 | ✅ 2026-06-30 完成 |
+| **D3-4/5** | 修 src/index.js + src/states/confirming.js CONFIRMING handler 動態生成 | 2 hr | 🟢 低 | ✅ 2026-07-01 完成 |
+| **D3-6** | 擴展 check-quality.sh hardcode 檢查為 grep -r 全 src/ | 30 min | 🟢 低 | ✅ 2026-07-01 完成 |
+| **D4-7** | storage.phase2.enabled stub 防誤啟用 | 30 min | 🟢 低 | ✅ 2026-07-01 完成 |
+| **J5** | Session J regression test 守住 4 改動 | 30 min | 🟢 低 | ✅ 2026-07-01 完成 |
+| **G4** | check-quality.sh ESLint gate 與 GitHub Actions 一致 | 30 min | 🟢 低 | ✅ 2026-07-01 完成 |
+
+### Phase 3 待執行（2026-07-01 完整系統掃描衍生，1 個工作天內可完成）
+
+> **背景**：2026-07-01 完整 codebase audit 識別 10+ 個 gap。新增 sessions 對應 business impact 與效益，已建立 `SESSION_*_PROMPT.md` 供未來逐個執行。
+
+| 優先 | Session | 主題 | 估時 | 風險 | 狀態 | Prompt |
+|------|---------|------|------|------|------|--------|
+| 1 | **X2** | 11 個 SESSION prompt 缺狀態欄統一補 | 30 min | 🟢 低 | ⏳ 待執行 | `SESSION_X2_PROMPT.md` |
+| 2 | **H8** | 補 13 個 src/ 模組專屬單元測試（states/handoff/rules/triggers/whitelist/sanitizer）| 1.5-2 hr | 🔴 高 | ⏳ 待執行 | `SESSION_H8_PROMPT.md` |
+| 3 | **X1** | 生產 prompt 版本管理 + CHANGELOG + verify-kb-sources | 1 hr | 🟢 低 | ⏳ 待執行 | `SESSION_X1_PROMPT.md` |
+| 4 | **X4** | csvWriter retry 機制 + trigger 結果 cache | 1.5 hr | 🟢 低 | ⏳ 待執行 | `SESSION_X4_PROMPT.md` |
+| 5 | **X3** | dashboard 觀察工具（recent-orders + log panel + 錯誤率 widget）| 1-1.5 hr | 🟡 中 | ⏳ 待執行 | `SESSION_X3_PROMPT.md` |
+| 6 | **X5** | Worker + api-server 健康檢查端點 + watchdog 延伸 | 1 hr | 🟢 低 | ⏳ 待執行 | `SESSION_X5_PROMPT.md` |
+
+**Phase 3 總計**：6-7 小時，1 個工作天內可完成。
 
 ---
 
@@ -447,10 +470,11 @@
 - **2026-06-28**：建立本檔（Session A-D 完成後）
 - **2026-06-29 12:54**：H/I/J/L/K/M 全部完成標記（Session M 備份 cron 設定完成後）
 - **2026-06-29 16:50**：Housekeeping（本檔修整）
-  - §四 table 全部 session 標記完成狀態（H/I/J/K/L/M）
-  - 補上對應 commit hash 方便 audit
-  - 補上「完成度：14/16（O/P 升級待用）」統計
-  - 對齊 PHASE1_PROGRESS.md Sessions J/L/K/M 完成段
+- **2026-07-01 11:25**：完整系統掃描後重大更新
+  - 拆分「Phase 2 已完成」「Phase 2 補強」「Phase 3 待執行」三段
+  - 新增 Phase 3 的 6 個 sessions（H8 + X1-X5）
+  - 每個新 session 對應到 `SESSION_H8_PROMPT.md` / `SESSION_X{1..5}_PROMPT.md`
+  - 反映 Q / D3-6 / D4-7 / J5 / G4 等補強 session
 
 ---
 

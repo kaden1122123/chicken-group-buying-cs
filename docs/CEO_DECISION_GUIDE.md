@@ -175,6 +175,138 @@ brtclaw 問決策時，格式：
 
 ---
 
+### 🔴 Session H8：補 13 個 src/ 模組專屬單元測試（2026-07-01 完整系統掃描衍生）
+
+**業務問題**：
+完整系統掃描（2026-07-01）發現除 Session H 已覆蓋的 6 個 helper 外，還有 13 個 src/ 模組沒有專屬單元測試：
+
+- `src/states/{idle,awaitingPayment,completed}.js`（3 個 state handler）
+- `src/handoff/transferRules.js`（14 觸發條件只測 3 個）
+- `src/rules/*.js`（8 個 rule 只在 bundle test）
+- `src/knowledge/triggers.js`
+- `src/middleware/whitelist.js`
+- `src/utils/{sanitizer,lineProfileCache}.js`
+
+**影響**：
+- 「客戶可能拿到錯誤金額」（rules）
+- 「客戶可能誤觸轉真人」（transferRules 11 個 trigger 未測）
+- 「客戶可能被當新客」（csvReader 是 H 範圍）
+- 改壞了現有測試抓不到
+
+**做法**：
+- H8-A：3 個 state 模組
+- H8-B：handoff/transferRules 14 觸發條件
+- H8-C：8 個 rules/* 拆出獨立 test
+- H8-D：knowledge + middleware + utils
+
+**brtclaw 推薦**：做（1.5-2 小時、中風險、高 ROI）
+**你決定**：______
+
+**詳見**：[`SESSION_H8_PROMPT.md`](./handoff/sessions/SESSION_H8_PROMPT.md)
+
+---
+
+### 🟡 Session X1：生產 prompt 版本管理 + CHANGELOG（2026-07-01 衍生）
+
+**業務問題**：
+5 個版本管理問題：
+1. `docs/production-prompt/` 兩個版本並存沒當前標記
+2. 沒 `latest` symlink，新接手不知讀哪個
+3. 沒 `CHANGELOG.md`，commit hash 對應 prompt 變更需手動查
+4. sandbox 與本機端點 sync 機制不明
+5. KB single-source-of-truth 沒自動驗證
+
+**影響**：
+接手者浪費時間找當前 prompt 版本；commit 後 sync 易失憶
+
+**做法**：4 個低風險改動（1 hr）
+- X1-A：加 `latest` symlink + SUMMARY 索引
+- X1-B：建立 `CHANGELOG.md` 回溯從 Session A 起
+- X1-C：sandbox sync SOP 寫進 ENGINEERING_HANDBOOK
+- X1-D：KB single-source-of-truth 驗證腳本
+
+**brtclaw 推薦**：做（1 小時、低風險）
+**你決定**：______
+
+**詳見**：[`SESSION_X1_PROMPT.md`](./handoff/sessions/SESSION_X1_PROMPT.md)
+
+---
+
+### 🟢 Session X2：SESSION prompt 狀態欄統一（2026-07-01 衍生，便宜）
+
+**業務問題**：
+11 個 `SESSION_*_PROMPT.md` 缺狀態欄，打開 prompt 看到「⏸ 待執行」誤以為沒做過（其實已完成）。
+
+**影響**：接手者易混淆（cosmetic 但便宜）
+
+**做法**：批次補 11 個 prompt 狀態欄，對齊 `CEO_GUIDE.md` 表格
+
+**brtclaw 推薦**：做（30 分鐘、超低風險）
+**你決定**：______
+
+**詳見**：[`SESSION_X2_PROMPT.md`](./handoff/sessions/SESSION_X2_PROMPT.md)
+
+---
+
+### 🟡 Session X3：觀察工具增強（dashboard 加 log/錯誤率 panel）（2026-07-01 衍生）
+
+**業務問題**：
+dashboard 只看訂單。故障排查要翻 logs/ 目錄。比讀檔案慢且看不到錯誤率趨勢。
+
+**影響**：故障排查效率低
+
+**做法**：3 個改動（1-1.5 hr）
+- X3-A：`GET /api/recent-orders` 端點
+- X3-B：結構化日誌查詢 `GET /api/logs`
+- X3-C：錯誤率趨勢 widget（Chart.js）
+
+**brtclaw 推薦**：做（1-1.5 小時、低-中風險）
+**你決定**：______
+
+**詳見**：[`SESSION_X3_PROMPT.md`](./handoff/sessions/SESSION_X3_PROMPT.md)
+
+---
+
+### 🟢 Session X4：csvWriter retry + trigger cache（2026-07-01 衍生）
+
+**業務問題**：
+2 個小漏洞：
+1. `csvWriter`：偶發 lock 衝突會掉訂單（無 retry）
+2. `triggers`：每次 LLM 觸發重讀 KB，浪費 IO
+
+**影響**：偶發失敗 + 多餘 IO load
+
+**做法**：2 個改動（1.5 hr）
+- X4-A：csvWriter retry with backoff
+- X4-B：trigger 結果 30 秒 TTL cache
+
+**brtclaw 推薦**：做（1.5 小時、低風險）
+**你決定**：______
+
+**詳見**：[`SESSION_X4_PROMPT.md`](./handoff/sessions/SESSION_X4_PROMPT.md)
+
+---
+
+### 🟢 Session X5：Worker + api-server 健康檢查端點 + watchdog 延伸（2026-07-01 衍生）
+
+**業務問題**：
+- 3 個 service（Worker / api-server / dashboard）無統一健康端點
+- watchdog 只看 dashboard port 3000，不知 Worker / api-server 是否活著
+
+**影響**：故障察覺依賴個別看 log，無法統一
+
+**做法**：3 個改動（1 hr）
+- X5-A：`GET /healthz` 統一健康端點（公開）
+- X5-B：watchdog 改用 /healthz
+- X5-C：api-server background 啟動 SOP + `scripts/start-api-server.sh`
+
+**brtclaw 推薦**：做（1 小時、低風險）
+**你決定**：______
+
+**詳見**：[`SESSION_X5_PROMPT.md`](./handoff/sessions/SESSION_X5_PROMPT.md)
+
+---
+
 ### 🟢 Session I：api-server + dashboard-server production hardening（已完成 2026-06-29）
 
 **業務問題**：
