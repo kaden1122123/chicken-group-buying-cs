@@ -264,6 +264,51 @@ npm run lint:fix
 npm run lint
 ```
 
+### 6.7 api-server background 啟動（SOP，Session X5-C 新增）
+
+> **背景**：api-server 不能用 `openclaw exec` 保持 background（exec 結束會 kill child）
+> **需求**：偶爾需要 api-server 長期跑（如 X5-C 的健康檢查 ping）
+> **狀態**：Ticket demand-based（自動由 watchdog / user 手動）
+
+#### 如何 background 啟動 api-server
+
+```bash
+# 1. SSH 到主位置
+cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service
+
+# 2. nohup + setsid + disown：3 重防護避免 exec 結束殺掉 child
+nohup setsid env PORT=3001 \
+  LOG_DIR=$HOME/.openclaw/api-server-logs \
+  node scripts/api-server.js > /tmp/api-server.log 2>&1 < /dev/null &
+disown
+
+# 3. 驗證 alive
+sleep 2
+curl -s http://localhost:3001/healthz | head -5
+```
+
+#### 化為可重複 SOP（未來可變成 systemd / cron）
+
+或者：加 cron job（跳過）：
+
+```bash
+# /home/clawuser/openclaw-workspace/others/.scripts/api-server-background.sh
+```
+
+未來選項：
+- **systemd service**（推薦） — 重啟策略、logging 整合
+- **tmux session** — 適合 manual / dev
+- **PM2** — multi-process management
+
+#### 驗證 Production healthz
+
+```bash
+# dashboard 的 /healthz 会 ping api-server
+curl http://localhost:3000/healthz
+```
+
+参考：scripts/api-server.js 有 graceful shutdown 信號處理（SIGTERM/SIGINT）。
+
 ---
 
 ## 七、品質檢查（自動化）
