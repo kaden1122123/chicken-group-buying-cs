@@ -95,29 +95,69 @@ function listKnowledgeFiles() {
 }
 
 /**
- * 根據 intent 讀取並合併所有相關知識庫檔案內容
+ * 根據 intent 讀取並合併所有相關知識庫檔案內容（30 秒 TTL 快取）
  * @param {string} intent
  * @returns {string} - 合併後的知識庫內容
  */
 function loadKnowledgeForIntent(intent) {
-  const files = getKBFilesForIntent(intent);
-  if (files.length === 0) return '';
-
-  const contents = files.map((f) => readKBFile(f)).filter((c) => c.length > 0);
-  return contents.join('\n\n---\n\n');
+  return cachedLoadKnowledge(`intent:${intent}`, () => {
+    const files = getKBFilesForIntent(intent);
+    if (files.length === 0) return '';
+    const contents = files.map((f) => readKBFile(f)).filter((c) => c.length > 0);
+    return contents.join('\n\n---\n\n');
+  });
 }
 
 /**
- * 根據 state 讀取並合併所有相關知識庫檔案內容
+ * 根據 state 讀取並合併所有相關知識庫檔案內容（30 秒 TTL 快取）
  * @param {string} state
  * @returns {string}
  */
 function loadKnowledgeForState(state) {
-  const files = getKBFilesForState(state);
-  if (files.length === 0) return '';
+  return cachedLoadKnowledge(`state:${state}`, () => {
+    const files = getKBFilesForState(state);
+    if (files.length === 0) return '';
+    const contents = files.map((f) => readKBFile(f)).filter((c) => c.length > 0);
+    return contents.join('\n\n---\n\n');
+  });
+}
 
-  const contents = files.map((f) => readKBFile(f)).filter((c) => c.length > 0);
-  return contents.join('\n\n---\n\n');
+// ────────────────────────────────────────────────────────────
+// Session X4-B：KB 讀取結果快取（30 秒 TTL）
+// ────────────────────────────────────────────────────────────
+// 目的：避免 LLM 每次觸發都重讀 KB 檔案（隱藏 high freq IO）
+// 設計：Map<key, { result, expiresAt }>，預設 30 秒 TTL（環境變數可覆寫）
+// 失效：chicken.yaml 變更時可手動 invalidate（自然 TTL 過期為 fallback）
+
+const KB_CACHE_TTL_MS = parseInt(process.env.KNOWLEDGE_CACHE_TTL_MS, 10) || 30 * 1000;
+const knowledgeCache = new Map();
+
+/**
+ * 清空 KB 快取（Session X4-B）
+ * 用途：chicken.yaml 變更時手動清，避免讀到 stale 資料
+ */
+function clearKnowledgeCache() {
+  knowledgeCache.clear();
+}
+
+/**
+ * 帶快取的 KB loader（內部 helper）
+ * @param {string} key - 快取鍵
+ * @param {function} loader - 實際讀 KB 函數
+ * @returns {*}
+ */
+function cachedLoadKnowledge(key, loader) {
+  const cached = knowledgeCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.result;
+  }
+
+  const result = loader();
+  knowledgeCache.set(key, {
+    result,
+    expiresAt: Date.now() + KB_CACHE_TTL_MS,
+  });
+  return result;
 }
 
 module.exports = {
@@ -130,4 +170,6 @@ module.exports = {
   listKnowledgeFiles,
   INTENT_KB_MAP,
   STATE_KB_MAP,
+  // Session X4-B：快取相關
+  clearKnowledgeCache,
 };
