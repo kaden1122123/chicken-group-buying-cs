@@ -1,10 +1,42 @@
 # Phase 1 進度報告
 
-> 最後更新：2026-06-29 19:35（主位置 Housekeeping 完成 + 文件同步）
+> 最後更新：2026-07-01 10:55（Session J regression test + Session F 文件一致性）
 > 負責人：brtclaw（規劃 + 實作）
 > 最新文檔：[`docs/INDEX.md`](./docs/INDEX.md)
 > 完整規劃：[`docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md`](./docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md)
 > **2026-06-26 評估與修整**：見 [docs/TODO_2026-06-26.md](./docs/TODO_2026-06-26.md)
+
+---
+
+## ✅ Session J + Session F（2026-07-01 10:55）— J 完整度測試 + F 文件一致性
+
+### Session J（雙位置架構強化）
+
+J 1-4 改動已在先前 session 完成（sync-mirror --dry-run、.rsync-filter、PRODUCTION_DATA_PROTECTED 單一來源、cleanup-test-orders 用 helper）。
+本次新增 **Session J regression test**（`tests/session-j-architecture.test.js`）守住 4 改動：
+
+| 守門項 | 說明 |
+|--------|------|
+| J1 | sync-mirror.sh 應支援 `--dry-run` 旗號（DRY_RUN=true + RSYNC_FLAGS+=(-n)）|
+| J2 | `.rsync-filter` 應存在 + sync-mirror.sh 應 `--exclude-from` |
+| J3 | `PRODUCTION_DATA_PROTECTED` 只能在 `tests/helpers/cleanup.js` 定義（單一來源）|
+| J4 | `cleanup-test-orders.{js,sh}` 應 require helper，不能內嵌 PROTECTED array |
+
+### Session F（文件一致性 + 6/26 audit 落地）
+
+F 1、2、3、4、5、6 改動中需要做的：
+- **F1**：docs/INDEX.md 測試套數 29→32（+J regression 套）
+- **F2**：本檔最後更新 + Session J/F entry
+- F3：api-server.test.js MOCK_TODAY ✅ 已 done（先前 session）
+- F4：cognee placeholder 驗證 ✅（scripts/cognee_import.py 不存在；MEMORY.md 是 cross-reference 正確）
+- F5：knowledge/learned/README.md ✅ 已 done（1517 bytes）
+- F6：knowledge/tenants/chicken/INDEX.md ✅ 已 done（3206 bytes）
+
+### 統計（2026-07-01 Session F 後）
+
+- 主位置 `npm test` **32 套**全綠（Session J regression test 新增）
+- `docs/INDEX.md`：32 套 unit + 1 套 integration（共 33 套）
+- 真實訂單 PROTECTED：6/13 + 6/16 完整
 
 ---
 
