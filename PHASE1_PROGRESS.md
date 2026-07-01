@@ -8,44 +8,51 @@
 
 ---
 
-## 🚧 Phase 3 待執行 sessions（2026-07-01 完整系統掃描衍生）
+## ✅ Phase 3 全部 6 sessions 完成（2026-07-01 11:48~12:40 共 ~3.5 小時）
 
 ### 背景
 
-2026-07-01 完整 codebase audit 識別 10+ 個 gap。新增 6 個待執行 sessions 對應業務影響：
+2026-07-01 完整 codebase audit 識別 10+ 個 gap。新增 6 個 sessions 並**全部完成**。
 
-| Session | 業務問題 | 優先 | 估時 | 狀態 | Prompt |
-|---------|----------|------|------|------|--------|
-| **X2** | 11 個 SESSION prompt 缺狀態欄統一 | 🟢 低 | 30 min | ⏳ 待執行 | [`SESSION_X2_PROMPT.md`](./docs/handoff/sessions/SESSION_X2_PROMPT.md) |
-| **H8** | 13 個 src/ 模組無專屬測試 | 🔴 高 | 1.5-2 hr | ⏳ 待執行 | [`SESSION_H8_PROMPT.md`](./docs/handoff/sessions/SESSION_H8_PROMPT.md) |
-| **X1** | 生產 prompt 版本管理 + CHANGELOG | 🟡 中 | 1 hr | ⏳ 待執行 | [`SESSION_X1_PROMPT.md`](./docs/handoff/sessions/SESSION_X1_PROMPT.md) |
-| **X4** | csvWriter retry + trigger cache | 🟢 低 | 1.5 hr | ⏳ 待執行 | [`SESSION_X4_PROMPT.md`](./docs/handoff/sessions/SESSION_X4_PROMPT.md) |
-| **X3** | dashboard 觀察工具增強 | 🟡 中 | 1-1.5 hr | ⏳ 待執行 | [`SESSION_X3_PROMPT.md`](./docs/handoff/sessions/SESSION_X3_PROMPT.md) |
-| **X5** | Worker + api-server 健康檢查 | 🟢 低 | 1 hr | ⏳ 待執行 | [`SESSION_X5_PROMPT.md`](./docs/handoff/sessions/SESSION_X5_PROMPT.md) |
+### 執行結果
 
-**Phase 3 總計**：6-7 小時，1 個工作天內可完成
+| Session | 業務問題 | 優先 | 估時 | 狀態 | 實際 commits | Commit hash |
+|---------|----------|------|------|------|--------------|-----------|
+| **X2** | 11 個 SESSION prompt 狀態欄統一 | 🟢 低 | 30 min | ✅ 已完成 | 1 | `37681b6` |
+| **H8** | 13 個 src/ 模組專屬測試 | 🔴 高 | 1.5-2 hr | ✅ 已完成 | 4 | `658c9a5` / `f2f1015` / `a8c766a` / `37b7e00` |
+| **X1** | 生產 prompt 版本管理 + CHANGELOG | 🟡 中 | 1 hr | ✅ 已完成 | 4 | `c6e2c89` / `06d7a36` / `9a8e79b` / `3cd7e1f` |
+| **X4** | csvWriter retry + trigger cache | 🟢 低 | 1.5 hr | ✅ 已完成 | 2 | `1c05b40` / `f398c37` |
+| **X3** | dashboard 觀察工具增強 | 🟡 中 | 1-1.5 hr | ✅ 已完成 | 3 | `bb87319` / `1269722` / `ff6462a` |
+| **X5** | Worker + api-server 健康檢查 | 🟢 低 | 1 hr | ✅ 已完成 | 3 | `fb77a7e` / `4811708` / `4d4570c` |
 
-### 推薦執行順序（投資報酬排序）
+**Phase 3 總計**：~3.5 小時完成，6 sessions、17 commits。
 
-```
-1. X2（30 min, 🟢 低）- 順手修 11 個 prompt
-2. H8（1.5-2 hr, 🔴 高）- 高 ROI，補測試守住 13 個 module
-3. X1（1 hr, 🟡 中）- 版本管理，解決接手混淆
-4. X4（1.5 hr, 🟢 低）- retry 機制 + IO cache
-5. X3（1-1.5 hr, 🟡 中）- 觀察工具
-6. X5（1 hr, 🟢 低）- 健康檢查統一端點
-```
+### 業務成果
 
-**為何這順序**：
-- X2 便宜 30 min，先清掉接手的 cosmetic 問題
-- H8 高 ROI，補關鍵模組測試
-- X1 解決版本追溯問題
-- X4 補 reliability 漏洞
-- X3/X5 是 incremental 改進
+- 📈 測試套數：32 → 47（+47%）
+- 📈 新增 unit test cases：~250+
+- 🆕 新增 API：GET /api/recent-orders、GET /api/logs、GET /api/log-stats、GET /healthz、GET /log-panel
+- 🆕 新增工具：scripts/verify-kb-sources.js、csvWriter.writeOrderWithRetry、triggers cache 30 秒 TTL
+- 🆕 新增 docs：docs/production-prompt/latest symlink + SUMMARY.md、CHANGELOG.md、6.6/6.7 SOPs
+- 🆕 觀察面板：scripts/log-panel.html（Chart.js CDN）
+
+### 發現的 Known Issues（已文檔化，未修整）
+
+1. **`Payment_confirm_keywords` 大小寫敏感**（paying "OK" 不匹配 "ok"）— H8-A 發現
+2. **`src/states/completed.js` executeCompleted 引用不存在 `formatThankYou`** — dead code（grep 全 codebase 無 caller）— H8-A 發現
+3. **`src/handoff/transferRules.js` quickMatch(null) 會 throw TypeError** — H8-B 發現
+4. **`shouldTransfer` 金額>3000 優先於 keyword 觸發**（設計已文檔化）— H8-B 發現
 
 ### Phase 3 與 Phase 2 補強的關係
 
-Phase 2 補強（Q / D3-6 / D4-7 / J5 / G4）已完成；Phase 3 是新建議，與 Phase 2 補強不重疊。
+Phase 2 補強（Q / D3-6 / D4-7 / J5 / G4）已完成；Phase 3 完成，与 Phase 2 不重疊。
+
+### 未來可選 Sessions（未進 Phase 3，因為不在 audit 範圍）
+
+- **O** (B 方案升級) — OpenClaw agent 加 tool calling
+- **P** (C 方案升級) — OpenClaw ↔ Worker KV 同步
+
+二者均為改動 LLM agent 架構的 strategic 決定，需 Hubert 評估是否必要。
 
 ### 待用 sessions（升級觸發才用）
 
