@@ -134,6 +134,15 @@ function writeOrder(orderData) {
   if (!isFeatureEnabled('storage.phase1.enabled')) {
     throw new Error('[csvWriter] storage.phase1.enabled = false，CSV 寫入已關閉。請檢查 chicken.yaml 設定。');
   }
+  // Session D4-7：storage.phase2.enabled flag 檢查
+  // Phase 2 = Google Sheets 寫入（未實作）。若雞味老闆不小心在 yaml 設為 enabled = true，
+  // 應以明確錯誤告知「此功能未實作」，避免以為有啟用但實際沒作用。
+  if (isFeatureEnabled('storage.phase2.enabled')) {
+    throw new Error(
+      '[csvWriter] storage.phase2.enabled = true，但 Phase 2（Google Sheets 寫入）尚未實作。\n' +
+      '請檢查 chicken.yaml：storage.phase2.enabled 應設為 false，或等待 Phase 2 實作。',
+    );
+  }
   ensureDataDir();
 
   const dateStr = orderData.delivery_date || formatDate(new Date());
