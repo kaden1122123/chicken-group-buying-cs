@@ -196,6 +196,59 @@ npm test
 npm run lint
 ```
 
+### 6.6 Prompt 版本變更 → Sandbox / LLM Agent 同步（SOP，Session X1-C 新增）
+
+> **觸發**：修改了 `docs/production-prompt/2026-06-28/main_idea.md` 或 SOUL.md
+> **目的**：確保 sandbox 端點與 production LLM agent 同步到最新 prompt
+
+#### 架構
+- **生產 LLM agent**：`~/.openclaw/agents/external-user/`
+- **sandbox**：`/home/clawuser/.openclaw/workspace-external-user/`
+- **本倉庫 source**：`docs/production-prompt/2026-06-28/`（透過 `latest` symlink）
+
+#### 同步流向
+
+| 方向 | 機制 | 腳本 |
+|------|------|------|
+| Sandbox → LLM agent | symlink（已完成） | 已設定 `~/.openclaw/agents/external-user/knowledge` → sandbox knowledge |
+| 本倉庫 → Sandbox | 手動 rsync | 驗證腳本未寫，未來可加 `scripts/prompt-sync.sh` |
+| 反向（prompt 變更） | §6.6 下方流程 | 3 步驟 |
+
+#### Prompt 變更 SOP
+
+1. **修改 source**：
+   - 改 `docs/production-prompt/2026-06-28/main_idea.md`（當前 latest 版本）
+   - 或新建版本 `docs/production-prompt/YYYY-MM-DD/` 並切換 `latest` symlink
+
+2. **驗證**：
+   ```bash
+   bash scripts/check-quality.sh   # Check 8 / 8 verify-kb-sources（X1-D 補）
+   ```
+
+3. **同步到 sandbox**（待寫腳本，未來 X 系列）：
+   - 手動：`rsync -av docs/production-prompt/latest/main_idea.md ~/.openclaw/workspace-external-user/knowledge/`
+   - 驗證 sandbox：`cat ~/.openclaw/workspace-external-user/knowledge/main_idea.md | head -5` 對齊 source
+
+4. **同步 LLM agent**（透過 symlink 自動）：
+   - LLM agent 讀 `~/.openclaw/agents/external-user/knowledge/main_idea.md`
+   - 若是 symlink 到 sandbox，sandbox 同步完即生效
+   - 若不是 symlink，手動：`cp sandbox/knowledge/main_idea.md ~/.openclaw/agents/external-user/knowledge/`
+
+5. **更新 CHANGELOG + SUMMARY.md**：
+   - `CHANGELOG.md` 加版本條目
+   - `docs/production-prompt/SUMMARY.md` 變更歷史段加一行
+
+6. **Commit**：
+   - `git add -A` + commit + push
+
+#### 注意事項
+
+- ⚠️ **沙箱 production prompt 與 src/ 邏輯需同步**：若 main_idea.md 改了處理流程，src/ 也要改對應邏輯，並寫 unit test 守住
+- ⚠️ **不直接改 sandbox**：所有 prompt 變更走本倉庫，sandbox 只是鏡像
+- ⚠️ **LLM agent 重啟**：若修改了 SOUL.md，可能需要重啟 agent
+
+---
+
 ### 6.5 修 lint 違規
 
 ```bash
