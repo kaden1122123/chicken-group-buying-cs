@@ -142,11 +142,29 @@ function getAllOrders() {
   return allOrders;
 }
 
+/**
+ * 取得最近 N 筆訂單（Session X3-A）
+ * 按 created_at 降序，預設 20 筆
+ * @param {number} [limit=20]
+ * @returns {Array<object>}
+ */
+function getRecentOrders(limit = 20) {
+  const all = getAllOrders();
+  // 按 created_at 降序排序（ISO 字串可字典序排序）
+  all.sort((a, b) => {
+    const aTime = a.created_at || '';
+    const bTime = b.created_at || '';
+    return bTime.localeCompare(aTime);
+  });
+  return all.slice(0, limit);
+}
+
 module.exports = {
   getOrderById,
   getOrdersByDate,
   getCustomerByPhone,
   isReturningCustomer,
   getAllOrders,
+  getRecentOrders, // Session X3-A
   readCSV,
 };

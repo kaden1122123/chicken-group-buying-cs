@@ -25,7 +25,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { getTenantId } = require('../src/config');
-const { getOrdersByDate } = require('../src/order/csvReader');
+const { getOrdersByDate, getRecentOrders } = require('../src/order/csvReader');
 
 // P1-8：js-yaml fallback。Production 環境遺漏 npm install 時不會 crash。
 // 讀取優先用 js-yaml，失敗時用 src/config.js 的 _parseYamlSimple。
@@ -418,6 +418,16 @@ const server = http.createServer(async (req, res) => {
       metrics,
       recent_orders: orders.slice(-20).reverse(),
     });
+    return;
+  }
+
+  // GET /api/recent-orders - Session X3-A：最近 N 筆訂單（limit 預設 20）
+  if (url.startsWith('/api/recent-orders') && method === 'GET') {
+    const urlObj = new URL(req.url, `http://${req.headers.host}`);
+    const limit = parseInt(urlObj.searchParams.get('limit') || '20', 10);
+    const safeLimit = Math.min(Math.max(limit, 1), 100); // 限 1-100
+    const recent = getRecentOrders(safeLimit);
+    sendJson(res, 200, { tenant: getTenantId(), count: recent.length, orders: recent });
     return;
   }
 
