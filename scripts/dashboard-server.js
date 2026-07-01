@@ -513,6 +513,19 @@ const server = http.createServer(async (req, res) => {
   }
 
   // GET /admin - 管理員後台
+  // GET /log-panel - Session X3-C：Log Panel + 錯誤率儀表板
+  if (url === '/log-panel' || url.startsWith('/log-panel?')) {
+    const panelPath = path.join(__dirname, 'log-panel.html');
+    if (fs.existsSync(panelPath)) {
+      const content = fs.readFileSync(panelPath, 'utf8');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(content);
+    } else {
+      send404(res);
+    }
+    return;
+  }
+
   if (url === '/admin' || url.startsWith('/admin?')) {
     if (!fs.existsSync(ADMIN_HTML)) {
       sendJson(res, 404, { error: 'admin.html 尚未建立' });

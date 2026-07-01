@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>雞味客服 — Log Panel (X3-C)</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; margin: 20px; background: #f5f5f5; }
+    h1 { color: #333; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .filters { display: flex; gap: 12px; align-items: center; }
+    select, input, button { padding: 8px 12px; border-radius: 4px; border: 1px solid #ddd; font-size: 14px; }
+    button { background: #4CAF50; color: white; border: none; cursor: pointer; }
+    button:hover { background: #45a049; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+    th { background: #f8f8f8; font-weight: 600; }
+    .level-error { color: #d32f2f; font-weight: bold; }
+    .level-warn { color: #f57c00; }
+    .level-info { color: #1976d2; }
+    .stat-box { display: inline-block; padding: 12px 20px; margin-right: 12px; background: #f0f8ff; border-radius: 4px; }
+    .stat-box .num { font-size: 24px; font-weight: bold; color: #1976d2; }
+    .stat-box .label { color: #666; font-size: 12px; }
+    canvas { max-width: 100%; }
+    pre { background: #f5f5f5; padding: 8px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+  </style>
+  <!-- Session X3-C：Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 雞味客服 — Log Panel & 錯誤率儀表板</h1>
+    <p style="color: #666;">Session X3-B + X3-C — 觀察工具（取代 SSH + 翻 log 檔案）</p>
+
+    <!-- ========== Error Rate Chart (X3-C) ========== -->
+    <div class="card">
+      <h2>📈 錯誤率趨勢（最近 N 天）</h2>
+      <div class="filters">
+        <label>天數：</label>
+        <select id="stat-days">
+          <option value="7" selected>7 天</option>
+          <option value="14">14 天</option>
+          <option value="30">30 天</option>
+        </select>
+        <button onclick="loadStats()">重新整理</button>
+      </div>
+      <canvas id="stats-chart" height="80"></canvas>
+      <div id="stats-summary" style="margin-top: 12px;"></div>
+    </div>
+
+    <!-- ========== Log Viewer (X3-B) ========== -->
+    <div class="card">
+      <h2>📜 結構化日誌查詢</h2>
+      <div class="filters">
+        <label>日期：</label>
+        <input type="date" id="log-date">
+        <label>Level：</label>
+        <select id="log-level">
+          <option value="all" selected>全部</option>
+          <option value="error">error</option>
+          <option value="warn">warn</option>
+        </select>
+        <label>筆數：</label>
+        <select id="log-limit">
+          <option value="50">50</option>
+          <option value="100" selected>100</option>
+          <option value="500">500</option>
+        </select>
+        <button onclick="loadLogs()">查詢</button>
+      </div>
+      <div id="log-summary" style="margin-top: 12px;"></div>
+      <table id="log-table">
+        <thead>
+          <tr>
+            <th style="width: 130px;">時間</th>
+            <th style="width: 60px;">Level</th>
+            <th style="width: 130px;">訊息</th>
+            <th>Meta</th>
+          </tr>
+        </thead>
+        <tbody id="log-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // ─── Auth: 沿用 Basic Auth（瀏覽器會自動處理 first request） ───
+    const USERNAME = prompt('請輸入帳號（Basic Auth）:') || 'admin';
+    const PASSWORD = prompt('請輸入密碼:') || '';
+
+    const authHeader = 'Basic ' + btoa(`${USERNAME}:${PASSWORD}`);
+
+    async function apiGet(path) {
+      const res = await fetch(path, { headers: { 'Authorization': authHeader } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }
+
+    // 預設日期為今天
+    document.getElementById('log-date').value = new Date().toISOString().slice(0, 10);
+
+    let statsChart = null;
+
+    async function loadStats() {
+      const days = document.getElementById('stat-days').value;
+      try {
+        const data = await apiGet(`/api/log-stats?days=${days}`);
+        renderStatsChart(data);
+        renderStatsSummary(data);
+      } catch (e) {
+        document.getElementById('stats-summary').innerHTML =
+          `<p style="color: #d32f2f;">❌ 載入失敗：${e.message}</p>`;
+      }
+    }
+
+    function renderStatsChart(data) {
+      const labels = data.stats.map((s) => s.date);
+      const warns = data.stats.map((s) => s.warn);
+      const errors = data.stats.map((s) => s.error);
+
+      if (statsChart) statsChart.destroy();
+
+      const ctx = document.getElementById('stats-chart').getContext('2d');
+      statsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Error', data: errors, borderColor: '#d32f2f', backgroundColor: 'rgba(211,47,47,0.1)', tension: 0.3 },
+            { label: 'Warn', data: warns, borderColor: '#f57c00', backgroundColor: 'rgba(245,124,0,0.1)', tension: 0.3 },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'top' } },
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+        },
+      });
+    }
+
+    function renderStatsSummary(data) {
+      const totalError = data.stats.reduce((sum, s) => sum + s.error, 0);
+      const totalWarn = data.stats.reduce((sum, s) => sum + s.warn, 0);
+      const peak = data.stats.reduce((max, s) => Math.max(max, s.error + s.warn), 0);
+      const peakDay = data.stats.find((s) => s.error + s.warn === peak);
+
+      document.getElementById('stats-summary').innerHTML = `
+        <div class="stat-box">
+          <div class="num">${totalError}</div>
+          <div class="label">錯誤總數（${data.days} 天）</div>
+        </div>
+        <div class="stat-box">
+          <div class="num">${totalWarn}</div>
+          <div class="label">警告總數</div>
+        </div>
+        <div class="stat-box">
+          <div class="num">${peak}</div>
+          <div class="label">單日高峰（${peakDay ? peakDay.date : 'N/A'}）</div>
+        </div>
+      `;
+    }
+
+    async function loadLogs() {
+      const date = document.getElementById('log-date').value;
+      const level = document.getElementById('log-level').value;
+      const limit = document.getElementById('log-limit').value;
+      try {
+        const data = await apiGet(`/api/logs?date=${date}&level=${level}&limit=${limit}`);
+        renderLogs(data);
+      } catch (e) {
+        document.getElementById('log-summary').innerHTML =
+          `<p style="color: #d32f2f;">❌ 載入失敗：${e.message}</p>`;
+      }
+    }
+
+    function renderLogs(data) {
+      document.getElementById('log-summary').innerHTML = `
+        <p><strong>${data.date}</strong> level=<code>${data.level}</code>
+        ，共 <strong>${data.count}</strong> 筆（log 檔：<code>${data.logFile}</code>）</p>
+      `;
+
+      const tbody = document.getElementById('log-tbody');
+      if (data.logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">無資料</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.logs.map((log) => {
+        const metaKeys = Object.keys(log).filter((k) => !['timestamp', 'level', 'msg'].includes(k));
+        const metaJson = metaKeys.length > 0
+          ? JSON.stringify(Object.fromEntries(metaKeys.map((k) => [k, log[k]])), null, 0)
+          : '';
+        return `
+          <tr>
+            <td>${log.timestamp}</td>
+            <td class="level-${log.level}">${log.level}</td>
+            <td>${escapeHtml(log.msg || '')}</td>
+            <td><pre style="margin: 0;">${escapeHtml(metaJson)}</pre></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      }[c]));
+    }
+
+    // ─── 啟動 ───
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStats();
+      loadLogs();
+    });
+  </script>
+</body>
+</html>
