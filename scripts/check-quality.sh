@@ -98,41 +98,59 @@ fi
 # ─────────────────────────────────────────
 section "Check 2/6: Hardcode 檢查"
 
-# 從 CONFIG_VARIABLES_TABLE.md 整理的 hardcode 清單
+# Session D3-6 修整：原 check 只查 5 個特定檔案，造成 src/index.js:151 / src/states/confirming.js:61
+# 的 hardcode 漏網。改為 grep -r 掃描所有 src/，避免「換檔案 hardcode」就檢查不到。
+#
+# 採用「具體值」檢查（23257030422、Willy0221、'三峽','鶯歌'），不用太泛的「> 1000」
+# — 後者會誤判「旁邊的 1000ms timeout」、「cache TTL = 1000」等不相關程式碼。
+#
+# 排除 src/config.js（yaml 範例或測試數值會在該檔出現，但不視為 hardcode）。
+
 HARDCODES_FOUND=0
 
-# 檢查 paymentRule.js cash max
-if grep -q "totalAmount > 1000" src/rules/paymentRule.js 2>/dev/null; then
-  fail "src/rules/paymentRule.js hardcode '1000' (應讀 payment.cash.new_customer_max)"
+# 銀行帳號 23257030422 — 應從 chicken.yaml 的 payment.transfer.account 讀
+if grep -rE "23257030422" src/ --include="*.js" 2>/dev/null | grep -v "src/config.js" > /dev/null; then
+  echo ""
+  echo -e "${RED}✗ src/ 仍有 hardcode 銀行帳號 23257030422（應讀 payment.transfer.account）${NC}"
+  grep -rnE "23257030422" src/ --include="*.js" 2>/dev/null | grep -v "src/config.js" | head -5
   HARDCODES_FOUND=$((HARDCODES_FOUND + 1))
 fi
 
-# 檢查 orderFormatter.js side dish minimum
-if grep -q "sideSubtotal >= 350" src/order/orderFormatter.js 2>/dev/null; then
-  fail "src/order/orderFormatter.js hardcode '350' (應讀 delivery.minimum_order.side_dish_ntd)"
+# LINE Pay ID Willy0221 — 應從 chicken.yaml 的 payment.linepay.line_id 讀
+if grep -rE "Willy0221" src/ --include="*.js" 2>/dev/null | grep -v "src/config.js" > /dev/null; then
+  echo ""
+  echo -e "${RED}✗ src/ 仍有 hardcode LINE Pay ID Willy0221（應讀 payment.linepay.line_id）${NC}"
+  grep -rnE "Willy0221" src/ --include="*.js" 2>/dev/null | grep -v "src/config.js" | head -5
   HARDCODES_FOUND=$((HARDCODES_FOUND + 1))
 fi
 
-# 檢查 addressRule.js 三峽鶯歌 fallback
-if grep -q "'三峽', '鶯歌'" src/rules/addressRule.js 2>/dev/null; then
-  fail "src/rules/addressRule.js hardcode ['三峽','鶯歌'] (應讀 delivery.areas.allowed)"
+# 配送範圍 ['三峽','鶯歌'] — 應從 chicken.yaml 的 delivery.areas.allowed 讀
+if grep -rE "'三峽'.*'鶯歌'|'鶯歌'.*'三峽'" src/ --include="*.js" 2>/dev/null | grep -v "src/config.js" > /dev/null; then
+  echo ""
+  echo -e "${RED}✗ src/ 仍有 hardcode 配送範圍 fallback（應讀 delivery.areas.allowed）${NC}"
+  grep -rnE "'三峽'.*'鶯歌'|'鶯歌'.*'三峽'" src/ --include="*.js" 2>/dev/null | grep -v "src/config.js" | head -5
   HARDCODES_FOUND=$((HARDCODES_FOUND + 1))
 fi
 
-# 檢查 awaitingPayment.js LINE Pay ID
-if grep -q "Willy0221" src/states/awaitingPayment.js 2>/dev/null; then
-  fail "src/states/awaitingPayment.js hardcode 'Willy0221' (應讀 payment.linepay.line_id)"
+# 現金上限 totalAmount > 1000 — 應從 chicken.yaml 的 payment.cash.new_customer_max 讀
+# 只匹配「totalAmount > 1000」這類型比對，不會誤判其他 1000
+if grep -rE "totalAmount > 1000" src/ --include="*.js" 2>/dev/null > /dev/null; then
+  echo ""
+  echo -e "${RED}✗ src/ 仍有 hardcode 'totalAmount > 1000'（應讀 payment.cash.new_customer_max）${NC}"
+  grep -rnE "totalAmount > 1000" src/ --include="*.js" 2>/dev/null | head -5
   HARDCODES_FOUND=$((HARDCODES_FOUND + 1))
 fi
 
-# 檢查 awaitingPayment.js 銀行帳號
-if grep -q "23257030422" src/states/awaitingPayment.js 2>/dev/null; then
-  fail "src/states/awaitingPayment.js hardcode '23257030422' (應讀 payment.transfer.account)"
+# 小菜免運門檻 sideSubtotal >= 350 — 應從 chicken.yaml 的 delivery.minimum_order.side_dish_ntd 讀
+if grep -rE "sideSubtotal >= 350" src/ --include="*.js" 2>/dev/null > /dev/null; then
+  echo ""
+  echo -e "${RED}✗ src/ 仍有 hardcode 'sideSubtotal >= 350'（應讀 delivery.minimum_order.side_dish_ntd）${NC}"
+  grep -rnE "sideSubtotal >= 350" src/ --include="*.js" 2>/dev/null | head -5
   HARDCODES_FOUND=$((HARDCODES_FOUND + 1))
 fi
 
 if [ $HARDCODES_FOUND -eq 0 ]; then
-  pass "0 個已知 hardcode"
+  pass "0 個已知 hardcode (grep -r 全 src/ 掃描)"
 fi
 
 # ─────────────────────────────────────────
