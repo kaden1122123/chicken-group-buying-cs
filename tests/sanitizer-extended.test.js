@@ -83,7 +83,7 @@ const whitespaceTests = [
 ];
 whitespaceTests.forEach(({ input, desc, expectedCompacted }) => {
   const result = sanitize(input);
-  const hasMultiSpace = /  /.test(result) || /\r|\n|\t/.test(result);
+  const hasMultiSpace = / {2}/.test(result) || /\r|\n|\t/.test(result);
   if (expectedCompacted) {
     check(`「${desc}」被收尾為單空格`, !hasMultiSpace, `got: ${JSON.stringify(result)}`);
   } else {

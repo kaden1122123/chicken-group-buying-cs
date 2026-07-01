@@ -99,7 +99,7 @@ const baseOrder = {
   address: '台北市測試區測試路1號',
   delivery_date: TEST_DATE,
   time_slot: '上午',
-  chicken_items: { '鹽水雞': 1 },
+  chicken_items: { 鹽水雞: 1 },
   chicken_count: 1,
   side_count: 0,
   total_boxes: 1,

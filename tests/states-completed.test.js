@@ -99,7 +99,7 @@ try {
   const r = executeCompleted({
     user_line_name: 'H8測試',
     delivery_date: '2099-12-31',
-    chicken_items: { '鹽水雞': 1 },
+    chicken_items: { 鹽水雞: 1 },
   });
   check('executeCompleted 已被修好（無 throw）', false, '應 throw 但沒 throw — bug 已修，請更新 test');
 } catch (e) {
