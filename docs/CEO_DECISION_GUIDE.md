@@ -114,7 +114,7 @@ brtclaw 問決策時，格式：
 
 ---
 
-### 🟡 Session F：文件一致性 + 6/26 audit 剩餘決策落地
+### ✅ Session F：文件一致性 + 6/26 audit 剩餘決策落地 — 已完成 2026-07-01
 
 **業務問題**：
 有些文件寫的東西跟實際狀況對不上（例如 `INDEX.md` 寫「11 套測試」但實際 19 套）。
@@ -137,7 +137,7 @@ brtclaw 問決策時，格式：
 
 ---
 
-### 🟡 Session G：CI/CD + ESLint + .nvmrc
+### ✅ Session G：CI/CD + ESLint + .nvmrc — 已完成 2026-06-28 + 2026-07-01 (G4 lint gate)
 
 **業務問題**：
 - 沒有自動化測試（每次 push 要手動跑 `npm test`）
