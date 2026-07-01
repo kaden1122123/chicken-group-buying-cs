@@ -89,6 +89,70 @@ function checkAuth(req, res) {
 }
 
 /**
+ * Session X5：ping api-server（localhost:3001）
+ * 回傳 'up' 或 'down: <reason>'
+ */
+function pingApiServer() {
+  const apiPort = process.env.API_SERVER_PORT || '3001';
+  return new Promise((resolve) => {
+    const req2 = http.request(
+      {
+        hostname: '127.0.0.1',
+        port: parseInt(apiPort, 10),
+        path: '/healthz',
+        method: 'GET',
+        timeout: 2000,
+      },
+      (res2) => {
+        if (res2.statusCode >= 200 && res2.statusCode < 400) {
+          resolve('up');
+        } else {
+          resolve(`down: status ${res2.statusCode}`);
+        }
+        res2.resume();
+      },
+    );
+    req2.on('error', (e) => resolve(`down: ${e.code || e.message}`));
+    req2.on('timeout', () => {
+      req2.destroy();
+      resolve('down: timeout');
+    });
+    req2.end();
+  });
+}
+
+/**
+ * Session X5：ping Cloudflare Worker
+ * GET https://external-user-line-security.kaden1122123.workers.dev/webhook
+ * 失敗不報錯，只回應 down: reason
+ */
+function pingWorker() {
+  return new Promise((resolve) => {
+    const workerUrl = process.env.WORKER_HEALTH_URL
+      || 'https://external-user-line-security.kaden1122123.workers.dev/';
+    const lib = workerUrl.startsWith('https') ? require('https') : require('http');
+    const req2 = lib.request(
+      workerUrl,
+      { method: 'GET', timeout: 3000 },
+      (res2) => {
+        if (res2.statusCode >= 200 && res2.statusCode < 400) {
+          resolve('up');
+        } else {
+          resolve(`down: status ${res2.statusCode}`);
+        }
+        res2.resume();
+      },
+    );
+    req2.on('error', (e) => resolve(`down: ${e.code || e.message}`));
+    req2.on('timeout', () => {
+      req2.destroy();
+      resolve('down: timeout');
+    });
+    req2.end();
+  });
+}
+
+/**
  * 解析 POST body（application/json 或 application/x-www-form-urlencoded）
  */
 function parseBody(req) {
@@ -406,6 +470,26 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // GET /healthz - Session X5：統一健康檢查端點（**公開**，不需 auth）
+  // 用於 watchdog / Dashboard 連線檢查 / 外部監控
+  if (url === '/healthz' && method === 'GET') {
+    const apiServerStatus = await pingApiServer();
+    const workerStatus = await pingWorker();
+    const services = {
+      dashboard: 'up', // 這個請求能走動表示 dashboard 自己 up
+      api_server: apiServerStatus,
+      worker: workerStatus,
+    };
+    const allUp = Object.values(services).every((s) => s === 'up');
+    sendJson(res, allUp ? 200 : 503, {
+      status: allUp ? 'ok' : 'degraded',
+      services,
+      uptime_seconds: Math.floor(process.uptime()),
+      timestamp: new Date().toISOString(),
+    });
+    return;
+  }
+
   // 需 auth 的路由
   if (!checkAuth(req, res)) return;
 
@@ -513,6 +597,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // GET /admin - 管理員後台
+
   // GET /log-panel - Session X3-C：Log Panel + 錯誤率儀表板
   if (url === '/log-panel' || url.startsWith('/log-panel?')) {
     const panelPath = path.join(__dirname, 'log-panel.html');
