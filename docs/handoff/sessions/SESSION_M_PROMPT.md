@@ -3,6 +3,9 @@
 > **業務問題（CEO 視角）**：`data/orders/` 與 `knowledge/tenants/` 沒有自動備份。如果磁碟壞掉或誤刪，真實訂單資料（6/13、6/16）會永久消失。
 > **影響**：🟢 低（影響災難恢復）
 > **推薦**：做（1 小時、低風險）
+> **狀態**：✅ 已完成（K+M backup 已上線）
+> **證據**：`scripts/backup.sh` + `scripts/backup_smoke_test.sh` + cron job 已建立
+> **涵蓋改動**：M1~M3（backup 腳本 + smoke test + 排程驗證）
 
 ---
 

@@ -3,6 +3,9 @@
 > **業務問題（CEO 視角）**：`scripts/sync-mirror.sh` 沒有 dry-run，沒看就 sync 可能誤刪主位置的真實資料。`cleanup-test-orders.sh` 與 `tests/helpers/cleanup.js` 都有 PROTECTED 清單，兩處定義容易 drift。
 > **影響**：🟢 低（影響操作安全性）
 > **推薦**：做（1-2 小時、低風險）
+> **狀態**：✅ 已完成（2026-06-29 改動 + 2026-07-01 regression test）
+> **證據**：1 commit `1803bf5` (regression test) + pre-existing 2026-06-29 sync-mirror/.rsync-filter
+> **涵蓋改動**：J1~J4（sync-mirror --dry-run、.rsync-filter、PROTECTED 單一來源、cleanup helper 統一）
 
 ---
 

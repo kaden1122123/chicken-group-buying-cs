@@ -3,6 +3,9 @@
 > **業務問題（CEO 視角）**：6 個重要輔助模組（金額計算、訂單 ID、訂單讀取、時間處理、訊息格式）沒有專屬 unit test。如果有人改壞了，現有測試抓不到，客戶可能拿到錯誤金額或錯誤訊息。
 > **影響**：🟡 中（影響品質）
 > **推薦**：做（3-4 小時、中風險）
+> **狀態**：⏳ 待執行
+> **觸發**：與 Session H8 同期進行（範圍擴充為 13 模組，已建立 SESSION_H8_PROMPT.md）
+> **範圍**：6 個 helper（timeUtils / lineReply / orderIdGenerator / orderFormatter / csvReader / notificationFormat）
 
 ---
 

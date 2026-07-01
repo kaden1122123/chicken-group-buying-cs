@@ -2,8 +2,9 @@
 
 > **建立時間**：2026-06-30 10:46
 > **觸發**：Hubert 2026-06-30 10:46 實測真實 LINE 帳號,發現 4 個問題
-> **狀態**：⏸ 待執行
+> **狀態**：✅ 已完成（2026-07-01）
 > **優先**：🔴 高(影響 production runtime)
+> **證據**：2 commits `4e2376f` (菜單從 ignored_keywords 移除), `2d4c90f` (dashboard watchdog cron job)
 
 ---
 

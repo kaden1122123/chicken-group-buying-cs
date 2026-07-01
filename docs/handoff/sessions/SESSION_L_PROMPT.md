@@ -3,6 +3,9 @@
 > **業務問題（CEO 視角）**：`api-server.js` 對外 HTTP API 沒有文件。Hubert 或未來工程師不知道有哪些端點、怎麼呼叫。
 > **影響**：🟢 低（影響協作）
 > **推薦**：做（1-2 小時、低風險）
+> **狀態**：⏸ 待用
+> **觸發**：升級時 — `openapi.yaml` 已寫，待需要 OpenAPI SDK 或外部串接時才需要更完整文件
+> **涵蓋**：api-server HTTP 端點列表、auth、request/response schema
 
 ---
 

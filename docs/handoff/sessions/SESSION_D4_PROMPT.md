@@ -3,6 +3,9 @@
 > **業務問題（CEO 視角）**：雞味客服 `chicken.yaml` 有 9 個「啟用/未啟用」開關，但程式永遠當啟用處理。你以為某功能已關閉（看 config 寫 false），實際是開的。想暫停某付款方式、改 config 沒用，要工程師改 code。
 > **影響**：🔴 高（影響控制能力）
 > **推薦**：做
+> **狀態**：✅ 已完成（2026-07-01）
+> **證據**：1 commit `06fea37` (D4-7 storage.phase2.enabled stub) + pre-existing multi-commit
+> **涵蓋改動**：D4-1~D4-7（storage.phase2 stub 防誤啟用未實作功能）
 
 ---
 

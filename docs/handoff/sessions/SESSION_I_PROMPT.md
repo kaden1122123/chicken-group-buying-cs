@@ -3,6 +3,9 @@
 > **業務問題（CEO 視角）**：`api-server.js` 還沒 production-ready。沒有 graceful shutdown、沒有 CORS、沒有 rate limiting、沒有 input validation。dashboard-server 的 yaml.dump 已知會破壞格式（P1-9）。
 > **影響**：🟡 中（production 風險）
 > **推薦**：做（2-3 小時、中風險）
+> **狀態**：⏸ 待用
+> **觸發**：升級時 — api-server 需要進入 production runtime 才用（LLM 訂單成立時觸發）
+> **涵蓋**：graceful shutdown / CORS / rate limiting / input validation / yaml.dump 格式保護
 
 ---
 
