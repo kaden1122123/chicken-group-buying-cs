@@ -40,7 +40,7 @@
 
 | Session | 觸發 | 狀態 |
 |---------|------|------|
-| **I** | api-server hardening（api-server 還沒 production 用，待 LLM 訂單成立時才需要）| ⏸ 待用 |
+| **I** | api-server hardening（api-server 還沒 production 用，待 LLM 訂單成立時才需要）| ⏸ 待用升級觸發（**已完成** 2026-06-29 11:48，6 commits I1-I6） |
 | **L** | API 文件化（openapi.yaml 已寫，待需要 OpenAPI SDK 才用）| ⏸ 待用 |
 | **M** | Backup 機制（✅ 已完成 + 排程）| ✅ 已完成 |
 | **O** | OpenClaw agent B 方案升級（4-6 小時）— 待用 | ⏸ 待用 |
@@ -177,12 +177,12 @@ docs/handoff/sessions/
 | **F** | ✅ | `7330217`, `b374955`（2026-07-01）|
 | **G** | ✅ | `475416d` (G4 lint gate) + pre-existing 2026-06-28 |
 | **J** | ✅ | `1803bf5` (regression test) + pre-existing 2026-06-29 |
-| **Q** | 客戶實測 4 個 production bug（菜單圖片 / memory 路徑 / 回覆卡住 / Dashboard 未啟動） | 🔴 高 | 2-3 小時 | 🟡 部分完成（Q1+Q4 partial；Q2 + Q3 未處理） |
+| **Q** | 客戶實測 4 個 production bug（菜單圖片 / memory 路徑 / 回覆卡住 / Dashboard 未啟動） | 🔴 高 | 2-3 小時 | 🟡 部分完成（Q1 ✅ / Q2 ✅ / Q3 ✅ 結論收斂 / Q4 🟡 watchdog cron OK，背景啟動 SOP 未正式化） |
 | **H** | 6 個 helper 沒有 unit test | 🟡 中 | 3-4 小時 | ✅ 已完成（與 H8 合併，2026-07-01） |
 | **H8** | 完整系統掃描 13 個 src/ 模組無專屬測試 | 🔴 高 | 1.5-2 小時 | ✅ 已完成（2026-07-01，共 4 commits） |
 | K | ⏳ 待執行 | — |
 | X1~X5 | ⏳ 待執行 | —（session prompts 已建立於 `SESSION_X{1..5}_PROMPT.md`）|
-| I / L / M | ⏸ 待用或已完成 | M ✅、I/L 待升級時用 |
+| I / L / M | ⏸ 待用或已完成 | I ✅ (2026-06-29)、L 待升級時用、M ✅ |
 | O / P | ⏸ 待用（升級觸發）| — |
 
 ---

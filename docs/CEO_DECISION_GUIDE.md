@@ -405,15 +405,17 @@ Hubert 2026-06-30 10:46 實測真實 LINE 帳號，發現 4 個 production bug�
 
 **brtclaw 推薦**：做（2-3 小時、🔴 高優先）
 
-**實際狀態**（2026-07-03 狀態 review）：
+**實際狀態**（2026-07-03 結論收斂 + drift 修整）：
 - ✅ Q1：菜單從 ignored_keywords 移除（commit `4e2376f`）
-- ⏳ Q2：**未處理** memory 路徑錯誤
-- ⏳ Q3：**未處理** 回覆卡住原因調査
+- ✅ Q2：memory 路徑（2026-06-30 修整已完成，純文件 drift）— `~/.openclaw/workspace-external-user/AGENTS.md` 第 60-73 行已標註使用 `/workspace/memory/`；`main_idea.md` 已是 symlink
+- ✅ Q3：回覆卡住（結論收斂：不是 bug）— session `65bdbccd` 顯示 LLM 全部 `stopReason: stop` 立即回應，「卡住」是 LINE 平台體驗問題
 - 🟡 Q4：dashboard watchdog cron job 加了（`2d4c90f`），但「首次啟動 SOP」未正式化（X5-C §6.7 涵蓋類似情境）
 
-**下次 session 動 Session Q2 + Q3**：估 1.5 hr
-- Q2: AGENTS.md 改路徑或 symlink `workspace-external-user/memory` → `agents/external-user/memory`
-- Q3: 查 Worker → OpenClaw Gateway → LLM → LINE pipeline（監控 reply token expiry）
+**為何 Q2/Q3 標記 ✅**：原本被視為「未處理」實際上是程式碼已完成但狀態欄沒對齊（文件 drift）。Hubert 2026-07-03 13:05 詢問時 brtclaw 誠實回報並驗證。
+
+**剩餘優化項（Q4 背景啟動 SOP 正式化）**：估 30 分鐘
+- 不需獨立 session，可在下次「文件一致性收尾」順手補
+- 或下次需要 dashboard 自動重啟時一起處理
 
 ---
 

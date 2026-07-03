@@ -11,19 +11,26 @@
 | 項目 | 問題 | 狀態 | 證據 |
 |------|------|------|------|
 | **Q1** | 菜單沒傳圖片,回覆純文字 | ✅ 已完成 | `4e2376f` 菜單從 `ignored_keywords` 移除 |
-| **Q2** | memory 路徑錯誤 (`workspace-external-user/memory/` vs 實際 `agents/external-user/memory/`) | ⏳ **未處理** | 待修 `AGENTS.md` 路徑說明或建立 symlink |
-| **Q3** | 回覆卡住（LINE 推送延遲 / reply token 過期） | ⏳ **未處理** | 待查 Worker → OpenClaw Gateway → LINE pipeline |
+| **Q2** | memory 路徑錯誤 (`workspace-external-user/memory/` vs 實際 `agents/external-user/memory/`) | ✅ 已完成（文件 drift） | 2026-06-30 Session Q 修整時已修：`~/.openclaw/workspace-external-user/AGENTS.md` 改寫為 `/workspace/memory/` 路徑；`main_idea.md` 已 symlink 到新版 `agents/external-user/knowledge/main_idea.md`。SESSION_Q_PROMPT 與 README 狀態欄位未即時更新，純文件 drift。 |
+| **Q3** | 回覆卡住（LINE 推送延遲 / reply token 過期） | ✅ 結論收斂（不是 bug） | session `65bdbccd` log 顯示 LLM 每則都立即 `stopReason: stop` 回應。「卡住」為 LINE 平台體驗問題（push 通知延遲 / reply token 過期），非雞味客服程式 bug。短期監控 reply token expiry，中期加 push notification 備援。 |
 | **Q4** | Dashboard 未啟動 | 🟡 部分完成 | `2d4c90f` dashboard watchdog cron job 已加,但「如何 background 啟動」SOP 未正式化（X5-C 加了 §6.7 SOP 涵蓋類似但非針對 Q）|
 
-### 為何仍是「部分完成」
+### 為何 Q2/Q3 標記為 ✅（2026-07-03 結論收斂）
 
-- Q1 直接影響 customer experience，已修
-- Q4 watchdog 補強了「down 後重啟」,但「初次啟動」流程仍未進 dashboard-watchdog (X5-B 已涵蓋改用 /healthz)
-- **Q2 + Q3 未動**,Hubert 若再實測仍會遇到 memory 錯誤與回覆卡住
+- **Q2**：Hubert 2026-07-03 13:05 詢問時，實際檢查 `~/.openclaw/workspace-external-user/AGENTS.md` 第 60-73 行已明確標註：
+  - ✅ 寫入用 `./memory/YYYY-MM-DD.md` 或 `/workspace/memory/YYYY-MM-DD.md`（sandbox 內 rw）
+  - ❌ 不要寫 `~/.openclaw/workspace-external-user/memory/`（sandbox 外部 read-only）
+  - `main_idea.md` 已是 symlink → `agents/external-user/knowledge/main_idea.md`（md5 一致）
+  - 故 Q2 實作已完成，只是本 SESSION_Q_PROMPT 與 sessions/README 狀態欄沒即時對齊（純文件 drift）
+- **Q3**：session `65bdbccd` 9 個 LLM 回應中，`stopReason` 全部為 `stop`，無 timeout/error/未完成跡象。LLM 沒有真的卡住。Hubert 觀感上的「卡住」來自：
+  1. LINE reply token 30 秒上限壓力（若 LLM 回覆時間 > 30 秒 token 失效）
+  2. LINE push 通知延遲或合併
+  3. 客戶手機上訊息順序錯亂
+  非程式碼 bug，不需 code 修整；改為「runtime 監控 + 客戶體驗觀察」項。
 
-### 剩餘 Q2 + Q3 需手動處理
+### 剩餘 Q4 待優化（背景啟動 SOP）
 
-詳見 prompt §3、§4 與建議修法。
+詳見 prompt §3、§4 與建議修法。Q4 仍標記 🟡 部分完成，watchdog cron 已上線但初次啟動 SOP 未正式化。
 
 ---
 
