@@ -2,9 +2,28 @@
 
 > **建立時間**：2026-06-30 10:46
 > **觸發**：Hubert 2026-06-30 10:46 實測真實 LINE 帳號,發現 4 個問題
-> **狀態**：✅ 已完成（2026-07-01）
-> **優先**：🔴 高(影響 production runtime)
-> **證據**：2 commits `4e2376f` (菜單從 ignored_keywords 移除), `2d4c90f` (dashboard watchdog cron job)
+> **狀態**：🟡 **部分完成**（4 個子題中 2 個完成 / 2 個未處理）
+> **優先**：🔴 高（剩餘 Q2 + Q3 仍影響 production runtime）
+> **最後更新**：2026-07-03（Session 結束文件 drift 修整）
+
+### 子題狀態
+
+| 項目 | 問題 | 狀態 | 證據 |
+|------|------|------|------|
+| **Q1** | 菜單沒傳圖片,回覆純文字 | ✅ 已完成 | `4e2376f` 菜單從 `ignored_keywords` 移除 |
+| **Q2** | memory 路徑錯誤 (`workspace-external-user/memory/` vs 實際 `agents/external-user/memory/`) | ⏳ **未處理** | 待修 `AGENTS.md` 路徑說明或建立 symlink |
+| **Q3** | 回覆卡住（LINE 推送延遲 / reply token 過期） | ⏳ **未處理** | 待查 Worker → OpenClaw Gateway → LINE pipeline |
+| **Q4** | Dashboard 未啟動 | 🟡 部分完成 | `2d4c90f` dashboard watchdog cron job 已加,但「如何 background 啟動」SOP 未正式化（X5-C 加了 §6.7 SOP 涵蓋類似但非針對 Q）|
+
+### 為何仍是「部分完成」
+
+- Q1 直接影響 customer experience，已修
+- Q4 watchdog 補強了「down 後重啟」,但「初次啟動」流程仍未進 dashboard-watchdog (X5-B 已涵蓋改用 /healthz)
+- **Q2 + Q3 未動**,Hubert 若再實測仍會遇到 memory 錯誤與回覆卡住
+
+### 剩餘 Q2 + Q3 需手動處理
+
+詳見 prompt §3、§4 與建議修法。
 
 ---
 

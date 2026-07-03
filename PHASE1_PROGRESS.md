@@ -1,6 +1,6 @@
 # Phase 1 進度報告
 
-> 最後更新：2026-07-01 12:40（Phase 3 全部 6 sessions 完成：X2/H8/X1/X4/X3/X5）
+> 最後更新：2026-07-03 11:48（狀態檔 drift 修整 + Q/K 狀態對齊）
 > 負責人：brtclaw（規劃 + 實作）
 > 最新文檔：[`docs/INDEX.md`](./docs/INDEX.md)
 > 完整規劃：[`docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md`](./docs/archive/REVIEW_2026-06-14_FINAL_PLAN.md)
@@ -46,6 +46,72 @@
 ### Phase 3 與 Phase 2 補強的關係
 
 Phase 2 補強（Q / D3-6 / D4-7 / J5 / G4）已完成；Phase 3 完成，与 Phase 2 不重疊。
+
+---
+
+## 🟡 Session Q 狀態 drift 修整（2026-07-03）
+
+**Hubert 11:48 status review 發現**：
+
+Q 看似「✅ 已完成（2026-07-01）」（見 §Phase 2 補強 Q 表），實際僅子題部分完成：
+
+| 子題 | 問題 | 狀態 | commit |
+|------|------|------|--------|
+| Q1 | 菜單沒傳圖片 | ✅ | `4e2376f`（菜單從 ignored_keywords 移除）|
+| Q2 | memory 路徑錯誤（workspace-external-user vs agents/external-user） | ⏳ 未處理 | — |
+| Q3 | 回覆卡住（LINE 推送延遲 / reply token）| ⏳ 未處理 | — |
+| Q4 | Dashboard 未啟動 | 🟡 partial | `2d4c90f`（watchdog cron）+ X5-C §6.7 SOP（類似情境）|
+
+**下次 session 動 Session Q2/Q3 修整**（估 1.5 hr），其他 Q 子題已備齊 SOP。
+
+---
+
+## ✅ Session K 狀態對齊（2026-07-03）
+
+**Hubert 11:48 status review 發現**：
+
+K prompt header 仍標「⏳ 待執行」，但實際 K1-K4 + K3 followup 共 4 commits 已完成（2026-06-29）：
+
+| 子題 | commit |
+|------|--------|
+| K1 logger.js + 15 tests | `99e44e5` |
+| K2 替換 src/ 10 檔 | `2c983b0` |
+| K3 替換 scripts/ 5 檔 | `c5435df` |
+| K3 followup executable bit | `6d6925f` |
+| K4 LOG_LEVEL env var | `99e44e5` |
+
+**修正內容**：
+- `SESSION_K_PROMPT.md` header：⏳ → ✅ + 完整 commit 證據
+- `docs/handoff/sessions/README.md` K row：⏳ → ✅ 已完成
+- `docs/CEO_DECISION_GUIDE.md` 早已 ✅，無需改
+
+---
+
+## 🎯 剩餘 Sessions 排序（2026-07-03 status review）
+
+### 🔴 最優先
+
+**Session Q（Q2 + Q3 補完）** — 1.5 hr
+- Q2: memory 路徑修 `AGENTS.md` 或建立 symlink
+- Q3: 查 Worker → OpenClaw Gateway → LINE pipeline
+- prompt 已在 `docs/handoff/sessions/SESSION_Q_PROMPT.md`
+
+### 🟢 已完成
+
+K (logger)、H (helper tests, 與 H8 合併)、H8 (13 模組測試) — 不需再動
+
+### ⏸ 待用
+
+I（api-server hardening）、L（API 文件化）、O（B 方案升級）、P（C 方案升級）— 觸發條件成立才動
+
+### 🟢 中長期 nice-to-have
+
+- 6/26 audit 剩餘 P1-2/P1-4/P2-4（2-3 hr）
+- E2E 整合測試（4-6 hr）
+- husky / pre-commit（1 hr）
+- staging environment（4-8 hr）
+- Sentry error tracking（2 hr）
+- 備份雙跑原因追查（5 min）
 
 ### 未來可選 Sessions（未進 Phase 3，因為不在 audit 範圍）
 

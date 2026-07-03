@@ -392,6 +392,31 @@ api-server.js 5 個 hardening + dashboard-server.js 1 個 yaml 修整：
 
 ---
 
+### 🟡 Session Q：客戶實測 4 個 production bug 修整（**部分完成**）
+
+**業務問題**：
+Hubert 2026-06-30 10:46 實測真實 LINE 帳號，發現 4 個 production bug。
+
+**影響**：
+- 🔴 客戶問「菜單」沒傳圖片（LINE 平台 fallback 純文字菜單）
+- 🟡 `~/.openclaw/workspace-external-user/memory/` 路徑錯誤（AGENTS.md 與實際位置不一致）
+- 🟡 回覆卡住（LINE 推送延遲 / reply token 過期）
+- 🔵 Dashboard 未啟動（要手動 `node scripts/dashboard-server.js`）
+
+**brtclaw 推薦**：做（2-3 小時、🔴 高優先）
+
+**實際狀態**（2026-07-03 狀態 review）：
+- ✅ Q1：菜單從 ignored_keywords 移除（commit `4e2376f`）
+- ⏳ Q2：**未處理** memory 路徑錯誤
+- ⏳ Q3：**未處理** 回覆卡住原因調査
+- 🟡 Q4：dashboard watchdog cron job 加了（`2d4c90f`），但「首次啟動 SOP」未正式化（X5-C §6.7 涵蓋類似情境）
+
+**下次 session 動 Session Q2 + Q3**：估 1.5 hr
+- Q2: AGENTS.md 改路徑或 symlink `workspace-external-user/memory` → `agents/external-user/memory`
+- Q3: 查 Worker → OpenClaw Gateway → LLM → LINE pipeline（監控 reply token expiry）
+
+---
+
 ### 🟢 Session M：Backup 機制（已完成 2026-06-29）
 
 **業務問題**：

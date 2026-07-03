@@ -3,8 +3,27 @@
 > **業務問題（CEO 視角）**：程式裡到處 `console.log` / `console.error`，訊息格式不一致。出問題很難 grep、沒辦法依「嚴重程度」過濾。
 > **影響**：🟡 中（影響除錯效率）
 > **推薦**：做（2 小時、中風險）
-> **狀態**：⏳ 待執行
-> **觸發**：除錯需求增加時；X3 dashboard log panel 需要 logger 結構化基礎
+> **狀態**：✅ **已完成（2026-06-29）**
+> **證據**：4 commits `99e44e5` (K1 logger.js)、`2c983b0` (K2 src/)、`c5435df` (K3 scripts/)、`6d6925f` (K3 followup)
+> **最後更新**：2026-07-03（Session 結束文件 drift 修整）
+
+### 子題狀態
+
+| 項目 | 改動 | commit |
+|------|------|--------|
+| **K1** | 新增 `src/utils/logger.js` + 15+ 測試（JSON 輸出 + log level + stream 分流 + meta 防護） | `99e44e5` |
+| **K2** | 替換 src/ 10 檔、共 19 處 console.* → logger.* | `2c983b0` |
+| **K3** | 替換 scripts/ 5 檔、共 72 處 console.* → logger.* | `c5435df` |
+| **K3 followup** | 還原 executable bit（cleanup-test-orders.js + dashboard-server-test.js） | `6d6925f` |
+| **K4** | LOG_LEVEL 環境變數（K1 已實作） | `99e44e5` |
+
+**新環境變數**：`LOG_LEVEL=debug|info|warn|error`（預設 info）
+**新檔**：`src/utils/logger.js`、`tests/logger.test.js`
+
+### 後續 X3-B 延伸
+
+Phase 3 X3-B 加了 `LOG_DIR` 環境變數（讓 warn/error 寫入 daily JSON Lines）— 是 Session K 的補完延伸。
+Phase 3 X3-C 加了 `/api/logs` + `/api/log-stats` 與 `log-panel.html` — 是 Session K 的可觀察化。
 
 ---
 
