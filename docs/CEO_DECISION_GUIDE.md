@@ -159,7 +159,7 @@ brtclaw 問決策時，格式：
 
 ---
 
-### 🟡 Session H：6 個 helper 補 unit test
+### ✅ Session H：6 個 helper 補 unit test（與 H8 合併完成 2026-07-01）
 
 **業務問題**：
 6 個重要的輔助模組（金額計算、訂單 ID 產生、訂單讀取、時間處理、訊息格式）**完全沒有專屬 unit test**。如果有人改壞了，現有測試抓不到。
@@ -170,8 +170,7 @@ brtclaw 問決策時，格式：
 
 **做法**：為這 6 個模組補 50+ 個 unit test
 
-**brtclaw 推薦**：做（3-4 小時、中風險）
-**你決定**：______
+**brtclaw 推薦**：✅ 已完成（與 Session H8 合併執行，2026-07-01）
 
 ---
 
@@ -206,7 +205,7 @@ brtclaw 問決策時，格式：
 
 ---
 
-### 🟡 Session X1：生產 prompt 版本管理 + CHANGELOG（2026-07-01 衍生）
+### ✅ Session X1：生產 prompt 版本管理 + CHANGELOG（已完成 2026-07-01，4 commits）
 
 **業務問題**：
 5 個版本管理問題：
@@ -220,19 +219,18 @@ brtclaw 問決策時，格式：
 接手者浪費時間找當前 prompt 版本；commit 後 sync 易失憶
 
 **做法**：4 個低風險改動（1 hr）
-- X1-A：加 `latest` symlink + SUMMARY 索引
-- X1-B：建立 `CHANGELOG.md` 回溯從 Session A 起
-- X1-C：sandbox sync SOP 寫進 ENGINEERING_HANDBOOK
-- X1-D：KB single-source-of-truth 驗證腳本
+- ✅ X1-A：加 `latest` symlink + SUMMARY 索引（`c6e2c89`）
+- ✅ X1-B：建立 `CHANGELOG.md` 回溯從 Session A 起（`06d7a36`）
+- ✅ X1-C：sandbox sync SOP 寫進 ENGINEERING_HANDBOOK（`9a8e79b`）
+- ✅ X1-D：KB single-source-of-truth 驗證腳本（`3cd7e1f`）
 
-**brtclaw 推薦**：做（1 小時、低風險）
-**你決定**：______
+**brtclaw 推薦**：✅ 已完成
 
 **詳見**：[`SESSION_X1_PROMPT.md`](./handoff/sessions/SESSION_X1_PROMPT.md)
 
 ---
 
-### 🟢 Session X2：SESSION prompt 狀態欄統一（2026-07-01 衍生，便宜）
+### ✅ Session X2：SESSION prompt 狀態欄統一（2026-07-01 衍生，便宜）（已完成 2026-07-01）
 
 **業務問題**：
 11 個 `SESSION_*_PROMPT.md` 缺狀態欄，打開 prompt 看到「⏸ 待執行」誤以為沒做過（其實已完成）。
@@ -241,14 +239,13 @@ brtclaw 問決策時，格式：
 
 **做法**：批次補 11 個 prompt 狀態欄，對齊 `CEO_GUIDE.md` 表格
 
-**brtclaw 推薦**：做（30 分鐘、超低風險）
-**你決定**：______
+**brtclaw 推薦**：✅ 已完成（11 個 SESSION prompt 狀態欄補齊）
 
 **詳見**：[`SESSION_X2_PROMPT.md`](./handoff/sessions/SESSION_X2_PROMPT.md)
 
 ---
 
-### 🟡 Session X3：觀察工具增強（dashboard 加 log/錯誤率 panel）（2026-07-01 衍生）
+### ✅ Session X3：觀察工具增強（dashboard 加 log/錯誤率 panel）（已完成 2026-07-01，3 commits）
 
 **業務問題**：
 dashboard 只看訂單。故障排查要翻 logs/ 目錄。比讀檔案慢且看不到錯誤率趨勢。
@@ -256,12 +253,11 @@ dashboard 只看訂單。故障排查要翻 logs/ 目錄。比讀檔案慢且看
 **影響**：故障排查效率低
 
 **做法**：3 個改動（1-1.5 hr）
-- X3-A：`GET /api/recent-orders` 端點
-- X3-B：結構化日誌查詢 `GET /api/logs`
-- X3-C：錯誤率趨勢 widget（Chart.js）
+- ✅ X3-A：`GET /api/recent-orders` 端點（`bb87319`）
+- ✅ X3-B：結構化日誌查詢 `GET /api/logs`（`1269722`）
+- ✅ X3-C：錯誤率趨勢 widget（Chart.js）（`ff6462a`）
 
-**brtclaw 推薦**：做（1-1.5 小時、低-中風險）
-**你決定**：______
+**brtclaw 推薦**：✅ 已完成
 
 **詳見**：[`SESSION_X3_PROMPT.md`](./handoff/sessions/SESSION_X3_PROMPT.md)
 
@@ -296,12 +292,11 @@ dashboard 只看訂單。故障排查要翻 logs/ 目錄。比讀檔案慢且看
 **影響**：故障察覺依賴個別看 log，無法統一
 
 **做法**：3 個改動（1 hr）
-- X5-A：`GET /healthz` 統一健康端點（公開）
-- X5-B：watchdog 改用 /healthz
-- X5-C：api-server background 啟動 SOP + `scripts/start-api-server.sh`
+- ✅ X5-A：`GET /healthz` 統一健康端點（`fb77a7e`）
+- ✅ X5-B：watchdog 改用 /healthz（`4811708`）
+- ✅ X5-C：api-server background 啟動 SOP 寫進 ENGINEERING_HANDBOOK §6.7（`4d4570c`）
 
-**brtclaw 推薦**：做（1 小時、低風險）
-**你決定**：______
+**brtclaw 推薦**：✅ 已完成（無獨立 `start-api-server.sh`，SOP 內化）
 
 **詳見**：[`SESSION_X5_PROMPT.md`](./handoff/sessions/SESSION_X5_PROMPT.md)
 

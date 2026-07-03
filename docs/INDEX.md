@@ -81,7 +81,7 @@ chicken-group-buying-customer-service/
 │   ├── states/
 │   ├── handoff/
 │   └── utils/
-├── tests/                        # 47 套 unit + 1 套 integration（共 48 套,2026-07-01 含 Session H8 phase 3）
+├── tests/                        # 48 套 unit + 1 套 integration（共 49 套，2026-07-03 含 Phase 3 全部 sessions）
 │   ├── rules.test.js                       # 34+ 案例
 │   ├── states.test.js                      # 狀態機轉換
 │   ├── handoff.test.js                     # 14 種觸發條件
@@ -103,7 +103,12 @@ chicken-group-buying-customer-service/
 │   ├── parse-items-dedup.test.js           # 解析品項去重
 │   ├── api-server.test.js                  # API server 整合測試（含 MOCK_TODAY）
 │   ├── logger.test.js                      # 結構化 logging (Session K)
-│   └── ...（完整 47 套 unit test，詳見 REVIEW_GUIDE.md，2026-07-01 Session H8/X4 phase 3）
+│   ├── csv-writer-retry.test.js            # csvWriter retry (Session X4)
+│   ├── triggers-cache.test.js              # triggers TTL cache (Session X4)
+│   ├── session-j-architecture.test.js      # J regression test
+│   ├── d3-payment-options-dynamic.test.js  # Session D3
+│   ├── d4-phase2-stub.test.js              # Session D4 Phase 2
+│   └── ...（完整 48 套 unit test，詳見 REVIEW_GUIDE.md，2026-07-03 對齊）
 ├── scripts/
 │   ├── api-server.js               # HTTP API（+ /api/docs Swagger UI · Session L）
 │   ├── dashboard.js                # 儀表板生成器

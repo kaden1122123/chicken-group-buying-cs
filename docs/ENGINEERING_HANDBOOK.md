@@ -211,7 +211,7 @@ npm run lint
 | 方向 | 機制 | 腳本 |
 |------|------|------|
 | Sandbox → LLM agent | symlink（已完成） | 已設定 `~/.openclaw/agents/external-user/knowledge` → sandbox knowledge |
-| 本倉庫 → Sandbox | 手動 rsync | 驗證腳本未寫，未來可加 `scripts/prompt-sync.sh` |
+| 本倉庫 → Sandbox | 手動 rsync | 由 `scripts/sync-mirror.sh to-legacy` 負責（含 prompt KB） |
 | 反向（prompt 變更） | §6.6 下方流程 | 3 步驟 |
 
 #### Prompt 變更 SOP
@@ -289,16 +289,13 @@ curl -s http://localhost:3001/healthz | head -5
 
 #### 化為可重複 SOP（未來可變成 systemd / cron）
 
-或者：加 cron job（跳過）：
-
-```bash
-# /home/clawuser/openclaw-workspace/others/.scripts/api-server-background.sh
-```
+**當前做法**：`scripts/dashboard-watchdog.sh` + openclaw cron job `36d2ca19` 雞味客服 dashboard watchdog（每 10 分鐘自動重啟 dashboard）。api-server 暫無 background SOP，使用 `setsid nohup` 手動啟動（見下方範例）。
 
 未來選項：
 - **systemd service**（推薦） — 重啟策略、logging 整合
 - **tmux session** — 適合 manual / dev
 - **PM2** — multi-process management
+- **openclaw cron agentTurn** — Session X5 已建立雞味客服 dashboard watchdog 模式，可複製套用至 api-server
 
 #### 驗證 Production healthz
 

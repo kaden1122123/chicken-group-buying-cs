@@ -2,7 +2,7 @@
 
 > 快速審查 Phase 1 實作品
 > 維護者：brtclaw
-> 更新時間：2026-06-27（Session B B2 重寫）
+> 更新時間：2026-07-03（Hubert 17:18 drift 修整 + 49 套對齊）
 > Single Source of Truth：`src/order/csvWriter.js` 第 17-44 行 `CSV_HEADERS`
 
 ---
@@ -12,10 +12,15 @@
 - ✅ **src/ 角色**：`src/` 是「設計驗證 + 測試對象」，**不是 production runtime**。
   Production 跑 `~/.openclaw/agents/external-user/`（OpenClaw agent）。
 - ✅ **CSV 欄位數**：以 `csvWriter.js` 為準，目前 **28 欄**。
-- ✅ **測試套數**：以 `tests/*.test.js` + `scripts/dashboard-server-test.js` 為準，目前 **30 套（29 unit + 1 integration）**
+- ✅ **測試套數**：以 `tests/*.test.js` + `scripts/dashboard-server-test.js` 為準，目前 **49 套（48 unit + 1 integration）**
   - 2026-06-29 Session I 加 api-server-hardening.test.js + dashboard-server-yaml-patch.test.js（2 套 unit）
   - 2026-06-29 Session K 加 logger.test.js（15+ 測試 unit）
+  - 2026-07-01 Session H8 補 13 個 src/ 模組專屬測試（4 commits）
+  - 2026-07-01 Session X1/X3/X4/X5 各 1-2 套測試
+  - 2026-07-01 Session J 加 session-j-architecture regression test
+  - 2026-07-01 Session D3/D4 加 d3-payment-options-dynamic.test.js + d4-phase2-stub.test.js（2 套 unit）
   - 整合測試：`scripts/dashboard-server-test.js`（CSV 讀取 + dashboard server 啟動驗證,跑在 `npm run test:all`）
+  - **驗證指令**：`ls tests/*.test.js | wc -l` 應輸出 48
 
 ---
 
@@ -73,19 +78,21 @@ node tests/handoff-customer-reply.test.js
 
 ---
 
-### ✅ 3. 狀態機（6 個狀態）
+### ✅ 3. 狀態機（7 個 state value，6 個獨立檔案）
 
 ```
 IDLE → AWAITING_INFO → CONFIRMING → AWAITING_PAYMENT → COMPLETED
-                  ↓                      ↓
-              REASK_INFO          HUMAN_HANDOFF
+        ↓                                    ↓
+        REASK_INFO                       HUMAN_HANDOFF
 ```
 
-| 狀態 | 檔案 | 職責 |
+**注意**：REASK_INFO 是 state **value**，不是獨立檔案。驗證失敗時由 `stateMachine.js` 的 REASK_INFO case 處理，不需要專屬檔案。
+
+| State / 檔案 | 檔案 | 職責 |
 |------|------|------|
 | IDLE | `src/states/idle.js` | 偵測訂購意圖 |
 | AWAITING_INFO | `src/states/awaitingInfo.js` | 收集欄位 + 驗證 |
-| REASK_INFO | `src/states/reaskInfo.js` | 驗證失敗重問 |
+| REASK_INFO | （由 `awaitingInfo.js` + `stateMachine.js` 共同處理）| 驗證失敗時的 state value |
 | CONFIRMING | `src/states/confirming.js` | 展示摘要 + 確認 |
 | AWAITING_PAYMENT | `src/states/awaitingPayment.js` | 等付款證明 |
 | HUMAN_HANDOFF | `src/states/handoff.js` | 安全閘：寫 CSV → 回覆 → 通知 |
@@ -202,13 +209,15 @@ node tests/integration.test.js
 
 ---
 
-## 測試總覽
+## 測試總覽（2026-07-03 對齊 49 套）
 
-**26 套（25 unit + 1 integration，跑在 `npm test`）：**
-- 額外 1 個 integration：`tests/api-server.test.js`（HTTP server 端對端，跑在 `npm run test:api-server`）
+**當前套數（`npm test` 跑）：48 unit + 1 integration = 49 套（與 `ls tests/*.test.js | wc -l` 輸出一致）**
 
-### Unit（25 套）
+> 1976-06-22 時只有 25 套 + 1 套 integration，下面保留歷史列表供參（標記為「歷史累積」），新讀者請以上方當前套數為準。完整套數清單見 `docs/INDEX.md`。
 
+### Unit 全套（48 套。30 套為原始+歷史 + 18 套為後續 6 個 sessions 新增）
+
+**歷史 25 套**（Phase 1 + Phase 2）
 1. `tests/address-dynamic-keywords.test.js`
 2. `tests/address-handoff.test.js`
 3. `tests/community-field.test.js`
@@ -235,11 +244,32 @@ node tests/integration.test.js
 24. `tests/csvReader.test.js`（Session H H5）
 25. `tests/notificationFormat.test.js`（Session H H6）
 
-### Integration（1 套，於 npm test）
-
+**Phase 3 新增 23 套**（X1~X5、H8、J、L、M、K）
 26. `tests/integration.test.js`（Cloudflare Worker 攔截邏輯）
+27. `tests/dashboard-server-yaml-patch.test.js`（Session I5）
+28. `tests/api-server-hardening.test.js`（Session I6）
+29. `tests/logger.test.js`（Session K）
+30. `tests/csv-writer-retry.test.js`（Session X4-A）
+31. `tests/triggers-cache.test.js`（Session X4-B）
+32. `tests/session-j-architecture.test.js`（Session J regression）
+33. `tests/states-idle.test.js`（Session H8-A）
+34. `tests/states-awaitingPayment.test.js`（Session H8-A）
+35. `tests/states-completed.test.js`（Session H8-A）
+36. `tests/rules-phone.test.js`（Session H8-C 拆分）
+37. `tests/rules-address.test.js`（Session H8-C 拆分）
+38. `tests/rules-menu.test.js`（Session H8-C 拆分）
+39. `tests/rules-date.test.js`（Session H8-C 拆分）
+40. `tests/rules-timeSlot.test.js`（Session H8-C 拆分）
+41. `tests/rules-payment.test.js`（Session H8-C 拆分）
+42. `tests/rules-price.test.js`（Session H8-C 拆分）
+43. `tests/rules-index.test.js`（Session H8-C 拆分）
+44. `tests/triggers.test.js`（Session H8-B 補充）
+45. `tests/lineProfileCache.test.js`（Session H8-D）
+46. `tests/sanitizer-extended.test.js`（Session H8-D）
+47. `tests/d3-payment-options-dynamic.test.js`（Session D3）
+48. `tests/d4-phase2-stub.test.js`（Session D4 Phase 2）
 
-### Integration（1 套，於 `npm run test:api-server`）
+### Integration（額外 1 套，於 `npm run test:api-server`）
 
 - `tests/api-server.test.js`（HTTP server 端對端，需要 port 3457 可用）
 
@@ -250,11 +280,12 @@ node tests/integration.test.js
 ### 全套執行
 
 ```bash
-npm test                              # 29 套 unit 全綠（2026-06-29 Session I/K 後）
-npm run test:all                      # 30 套全綠（含 1 套 integration）
-npm run lint                          # 0 errors, 0 warnings（2026-06-29 修整）
+npm test                              # 48 套 unit 全綠（2026-07-03）
+npm run test:all                      # 48 套 unit + dashboard-server-test.js 全綠（49 套）
+npm run lint                          # 0 errors, 0 warnings
 npm run lint:fix                      # auto-fix 風格問題
-bash scripts/check-quality.sh         # 6 項品質檢查
+bash scripts/check-quality.sh         # 8 項品質檢查（6 + X1-D verify-kb-sources + X3-C log panel）
+ls tests/*.test.js | wc -l            # 驗證指令：輸出應為 48
 ```
 
 ### Session H 新增 6 個 Helper Unit Test 對照
