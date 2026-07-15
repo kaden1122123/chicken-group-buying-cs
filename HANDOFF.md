@@ -80,6 +80,12 @@
 ## 5. ⚠️ 待修整項目（依緊急度排序）
 
 ### 緊急（30 分鐘內）
+- [ ] **Worker 404 未修**：dashboard-server.js 內寫死 Worker URL = https://external-user-line-security.kaden1122123.workers.dev/，ping /healthz 回 404
+  - dashboard.healthz 會一直 degraded
+  - 修法二選一：
+    a. 部署該 Worker（Hubert 進 Cloudflare dashboard 部署）；或
+    b. 改 dashboard WORKER_HEALTH_URL 環境變數指向可達到的 health endpoint
+  - 注意：**不會擋 line bot 對話**，只是 healthz 狀態
 - [x] Dashboard PASSWORD_FILE fallback（本次完成，待 commit）
 - [ ] **清理 89 個 leaked cloudflared processes**：`pkill -9 cloudflared` 即可清理
 - [ ] **Manual Test Plan 11 步驟**（從 LINE bot 測試開始）— 見 [reference note]

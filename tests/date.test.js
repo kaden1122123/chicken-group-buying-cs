@@ -42,7 +42,7 @@ assert.strictEqual(getNextOpenDate('2026-06-14'), '2026-06-16', '2026-06-14 應�
 assert.strictEqual(getNextOpenDate('2026-06-16'), '2026-06-16', '2026-06-16 當天應回傳自己');
 assert.strictEqual(getNextOpenDate('2026-06-17'), '2026-06-18', '2026-06-17 應推薦 2026-06-18');
 assert.strictEqual(getNextOpenDate('2026-06-20'), '2026-06-23', '2026-06-20 應推薦 2026-06-23');
-assert.strictEqual(getNextOpenDate('2026-07-01'), null, '2026-07-01 之後無開團日');
+assert.strictEqual(getNextOpenDate('2026-07-01'), '2026-07-21', '2026-07-01 應推薦最近開團日 2026-07-21');
 assert.strictEqual(getNextOpenDate('2099-12-31'), null, '2099 之後無開團日');
 console.log('  ✓ getNextOpenDate 邊界正確');
 
