@@ -121,14 +121,21 @@ function checkAuth(req, res) {
  */
 function pingApiServer() {
   const apiPort = process.env.API_SERVER_PORT || '3001';
+  // Session X5-B（2026-07-15 修）：dashboard ping 用正確路徑（api-server 公開端點是 /api/health 不是 /healthz）
+  // 順便加 Basic auth 給 api-server 用（api-server checkAuth 設為 true if API_PASSWORD 為空 → 但有密碼時需要 auth）
+  const apiUser = process.env.API_USERNAME || 'api-user';
+  const apiPwd = process.env.API_PASSWORD || (process.env.API_PASSWORD_FILE ? require('fs').readFileSync(process.env.API_PASSWORD_FILE, 'utf8').trim() : '');
+
   return new Promise((resolve) => {
+    const auth = apiPwd ? Buffer.from(`${apiUser}:${apiPwd}`).toString('base64') : null;
     const req2 = http.request(
       {
         hostname: '127.0.0.1',
         port: parseInt(apiPort, 10),
-        path: '/healthz',
+        path: '/api/health',
         method: 'GET',
         timeout: 2000,
+        headers: auth ? { Authorization: `Basic ${auth}` } : {},
       },
       (res2) => {
         if (res2.statusCode >= 200 && res2.statusCode < 400) {

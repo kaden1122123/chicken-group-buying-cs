@@ -1,0 +1,26 @@
+# Test fixture for I5 yaml patch
+# 這個檔頭註解要完整保留
+
+open_dates:
+  - "2026-07-29"
+  - "2026-07-31"
+
+# 保留這段區塊註解 - open_dates 跟 ignored_keywords 中間
+
+ignored_keywords:
+  - 菜單
+  - FAQ
+
+delivery:
+  hours:
+    am: "10:00~12:00"
+    pm: "16:00~18:00"
+  minimum_order:
+    chicken: "半隻 NT$380 起"
+  areas:
+    allowed:
+      - "三鶯"
+  delivery_fee_short_fallback: 80
+
+# 這個區段不該被破壞
+brand_name: test_brand

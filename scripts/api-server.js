@@ -51,7 +51,21 @@ const { validatePhone, validateAddress } = require('../src/rules');
 // 環境變數
 const PORT = parseInt(process.env.PORT || '3001', 10);
 const API_USERNAME = process.env.API_USERNAME || 'api-user';
-const API_PASSWORD = process.env.API_PASSWORD || '';
+let API_PASSWORD = process.env.API_PASSWORD || '';
+// 支援 API_PASSWORD_FILE：避免密碼出現在 process.env 或命令列
+// 觸發場景：OpenClaw exec 會自動 redact process.env 密碼字面值
+// 與 dashboard-server.js 同步 Pattern (2026-07-15)
+if (process.env.API_PASSWORD_FILE) {
+  try {
+    const trimmed = require('fs').readFileSync(process.env.API_PASSWORD_FILE, 'utf8').trim();
+    if (trimmed) {
+      API_PASSWORD = trimmed;
+      logger.info(`[api-server] Password loaded from ${process.env.API_PASSWORD_FILE} (${API_PASSWORD.length} chars)`);
+    }
+  } catch (e) {
+    // 檔案不存在就繼續 fallback
+  }
+}
 // I1：graceful shutdown timeout（毫秒）。超過則強制退出，避免永遠卡住。
 const API_GRACEFUL_TIMEOUT_MS = parseInt(process.env.API_GRACEFUL_TIMEOUT_MS || '10000', 10);
 // I2：CORS 白名單（逗號分隔 origin，例如 'https://worker.example.workers.dev,https://admin.example.com'）
@@ -602,8 +616,9 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 公開：GET /api/health
-  if (path === '/api/health' && method === 'GET') {
+  // 公開：GET /api/health（也支援 /healthz 給 dashboard /healthz ping）
+  // 2026-07-15：加 /healthz alias 讓 dashboard ping 走得到
+  if ((path === '/api/health' || path === '/healthz') && method === 'GET') {
     return sendJson(res, 200, { success: true, status: 'ok', tenant: TENANT, time: new Date().toISOString() });
   }
 
