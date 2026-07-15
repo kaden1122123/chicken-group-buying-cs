@@ -53,7 +53,10 @@ const FIXTURE_CONTENT =
   'brand_name: test_brand\n';
 
 const USERNAME = 'admin';
-const PASSWORD = '***';
+// 密碼從檔案讀（與 dashboard-server.js 同 SSoT：XDG secrets → /tmp fallback）
+// 不 hardcode 字串避免 OpenClaw exec 自動 redact 成 '***' 造成 test fail
+const PASSWORD_FILE = process.env.DASHBOARD_PASSWORD_FILE || '/home/clawuser/.config/chicken/secrets/dashboard-pwd';
+const PASSWORD = fs.readFileSync(PASSWORD_FILE, 'utf8').trim();
 
 console.log('\n=== Dashboard Server YAML Patch Tests (Session I5) ===');
 
