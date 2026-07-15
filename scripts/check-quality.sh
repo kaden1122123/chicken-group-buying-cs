@@ -84,7 +84,7 @@ cd "$PROJECT_ROOT"
 # ─────────────────────────────────────────
 # 檢查 1: npm test
 # ─────────────────────────────────────────
-section "Check 1/9: npm test"
+section "Check 1/10: npm test"
 
 if npm test > /tmp/npm-test-output.log 2>&1; then
   # 動態計算 npm test 實際跑的測試檔數（數行首的 ▶▶▶ 行數，排除 shell trace）
@@ -98,7 +98,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 2: 0 個 hardcode
 # ─────────────────────────────────────────
-section "Check 2/9: Hardcode 檢查"
+section "Check 2/10: Hardcode 檢查"
 
 # Session D3-6 修整：原 check 只查 5 個特定檔案，造成 src/index.js:151 / src/states/confirming.js:61
 # 的 hardcode 漏網。改為 grep -r 掃描所有 src/，避免「換檔案 hardcode」就檢查不到。
@@ -158,7 +158,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 3: 0 個 dead config
 # ─────────────────────────────────────────
-section "Check 3/9: Dead config 檢查"
+section "Check 3/10: Dead config 檢查"
 
 # 從 CONFIG_VARIABLES_TABLE.md 整理的 dead config 旗標
 # 注意：這些是「應該被讀取」的旗標，目前 src/ 完全沒有讀取它們
@@ -178,7 +178,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 4: 真實訂單仍在
 # ─────────────────────────────────────────
-section "Check 4/9: 真實訂單保護"
+section "Check 4/10: 真實訂單保護"
 
 REAL_ORDERS_DIR="data/orders/chicken"
 MISSING_ORDERS=0
@@ -205,7 +205,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 5: 兩位置 rsync 一致性
 # ─────────────────────────────────────────
-section "Check 5/9: 兩位置 rsync 一致性"
+section "Check 5/10: 兩位置 rsync 一致性"
 
 MAIN_LOCATION="/home/clawuser/.openclaw/workspace-external-user/projects/chicken-group-buying-customer-service"
 
@@ -232,7 +232,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 6: git working tree 狀態
 # ─────────────────────────────────────────
-section "Check 6/9: git working tree"
+section "Check 6/10: git working tree"
 
 cd "$PROJECT_ROOT"
 
@@ -256,7 +256,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 7: ESLint 0 errors（Session G4 修整）
 # ─────────────────────────────────────────
-section "Check 7/9: ESLint 檢查"
+section "Check 7/10: ESLint 檢查"
 
 # Session G4 修整：本地 check-quality.sh 也跑 lint，與 GitHub Actions 一致防漏網
 # warning 不擋 CI（與 .eslintrc.json "rules" 設計一致）但 error 必擋
@@ -281,7 +281,7 @@ fi
 # 範圍：12 個 KB 檔存在/非空/不重複/與 INDEX.md 一致/無 legacy duplicate
 # 詳見：scripts/verify-kb-sources.js 內 4 個 sub-checks
 # ─────────────────────────────────────────
-section "Check 8/9: KB Source of Truth 驗證"
+section "Check 8/10: KB Source of Truth 驗證"
 
 if [ -f "scripts/verify-kb-sources.js" ]; then
   if node scripts/verify-kb-sources.js > /tmp/verify-kb-output.log 2>&1; then
@@ -302,7 +302,7 @@ fi
 # 範圍：mtime + missing top-level keys + 檔案存在性
 # 詳見：docs/adr/0003-config-legacy-fallback.md v2 §補充
 # ─────────────────────────────────────────
-section "Check 9/9: config.yaml drift 預防"
+section "Check 9/10: config.yaml drift 預防"
 
 CHICKEN_CONFIG="$PROJECT_ROOT/config/tenants/chicken.yaml"
 LEGACY_CONFIG="$PROJECT_ROOT/config.yaml"
@@ -335,6 +335,56 @@ else
 
   if [ "$DRIFT_FOUND" -eq 0 ]; then
     pass "config.yaml 與 chicken.yaml mtime + keys 皆同步"
+  fi
+fi
+
+# ─────────────────────────────────────────
+
+# ─────────────────────────────────────────
+# 檢查 10: 雙位置關鍵檔案 md5 一致（防 dual-location confusion）
+# 背景：Session J 雙位置架構（dev 本倉庫 = source of truth；main production = sync mirror）
+#       sync-mirror.sh 負責單向同步 dev → main；本 check 自動驗證漂移
+# 觸發：每次 commit / pre-merge 自動跑
+# 依據：SSoT (Single Source of Truth) + Git mirror pattern — 編輯永遠在 dev，main 自動同步
+# 詳見：docs/production-prompt/2026-07-03/CHANGELOG.md §2 雙位置對齊
+# ─────────────────────────────────────────
+section "Check 10/10: 雙位置關鍵檔案 md5 一致"
+
+DEV_REPO="$PROJECT_ROOT"
+MAIN_LOC="/home/clawuser/.openclaw/workspace-external-user/projects/chicken-group-buying-customer-service"
+
+if [ ! -d "$MAIN_LOC" ]; then
+  pass "main (production 鏡像位置) 不存在（跳過 — 單機環境）"
+else
+  DRIFT_FILES=()
+
+  # 7 個 critical runtime files — sync-mirror.sh 應同步這些
+  for f in scripts/dashboard-server.js scripts/api-server.js \
+           scripts/cleanup-test-orders.js scripts/check-quality.sh \
+           src/order/csvWriter.js src/order/csvReader.js \
+           src/utils/logger.js; do
+    if [ ! -f "$MAIN_LOC/$f" ]; then
+      DRIFT_FILES+=("MISSING main: $f")
+      continue
+    fi
+    DEV_MD5=$(md5sum "$DEV_REPO/$f" 2>/dev/null | awk '{print $1}')
+    MAIN_MD5=$(md5sum "$MAIN_LOC/$f" 2>/dev/null | awk '{print $1}')
+    if [ -z "$DEV_MD5" ] || [ "$DEV_MD5" != "$MAIN_MD5" ]; then
+      DRIFT_FILES+=("DRIFT: $f")
+    fi
+  done
+
+  if [ ${#DRIFT_FILES[@]} -gt 0 ]; then
+    warn "dev (本倉庫) vs main (production) md5 漂移："
+    for f in "${DRIFT_FILES[@]}"; do
+      echo "    $f"
+    done
+    echo ""
+    echo "  修法（單向同步 main ← dev）："
+    echo "    bash scripts/sync-mirror.sh from-legacy"
+    echo "  未來預防：永遠在 dev 編輯；main 只用 sync 接收"
+  else
+    pass "7 個關鍵 runtime 檔案雙位置 md5 同步（防止 dual-location confusion）"
   fi
 fi
 

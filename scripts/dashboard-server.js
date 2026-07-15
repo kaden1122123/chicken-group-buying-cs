@@ -46,7 +46,23 @@ const _hasYamlDump = yaml && typeof yaml.dump === 'function';
 // 環境變數
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const USERNAME = process.env.DASHBOARD_USERNAME || 'admin';
-const PASSWORD = process.env.DASHBOARD_PASSWORD || '';
+let PASSWORD = process.env.DASHBOARD_PASSWORD || '';
+// 支援 DASHBOARD_PASSWORD_FILE：避免密碼出現在 process env 或命令列
+// 觸發場景：OpenClaw exec 會自動 redact process.env 中的密碼字面值，導致實際密碼只剩 "***"
+// 修法：寫到檔案（mode 600），dashboard 直接讀取檔案內容
+if (process.env.DASHBOARD_PASSWORD_FILE) {
+  try {
+    const fileContent = require('fs').readFileSync(process.env.DASHBOARD_PASSWORD_FILE, 'utf8');
+    PASSWORD = fileContent.trim();
+    if (!PASSWORD) {
+      logger.warn('[dashboard-server] DASHBOARD_PASSWORD_FILE 為空，所有 auth 將失敗');
+    } else {
+      logger.info(`[dashboard-server] Password loaded from ${process.env.DASHBOARD_PASSWORD_FILE} (${PASSWORD.length} chars)`);
+    }
+  } catch (e) {
+    logger.error(`[dashboard-server] 讀取 DASHBOARD_PASSWORD_FILE 失敗: ${e.message}`);
+  }
+}
 
 // 路徑
 const ROOT = path.join(__dirname, '..');
