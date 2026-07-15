@@ -56,8 +56,8 @@ let PASSWORD = process.env.DASHBOARD_PASSWORD || '';
 //          加 /tmp/dash-pwd fallback 讓三種啟動方式（手動 nohup / manage-tunnel.sh / watchdog）都能找到密碼。
 const PASSWORD_FILE_SOURCES = [
   process.env.DASHBOARD_PASSWORD_FILE,
-  '/home/clawuser/.config/chicken/secrets/dashboard-pwd',  // XDG 標準位置（reboot-safe）
-  '/tmp/dash-pwd',                                          // legacy fallback
+  '/home/clawuser/.config/chicken/secrets/dashboard-pwd', // XDG 標準位置（reboot-safe）
+  '/tmp/dash-pwd', // legacy fallback
 ];
 for (const filePath of PASSWORD_FILE_SOURCES) {
   if (!filePath) continue;

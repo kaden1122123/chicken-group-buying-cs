@@ -236,8 +236,8 @@ const JKO_QR_CODE_URL = process.env.JKO_QR_CODE_URL || '';
 // 2026-07-16 加（Hubert 22:35 報告的 P1 修法：手動加 token 不被 redact）
 const TOKEN_FILE_SOURCES = [
   process.env.LINE_BOT_TOKEN_FILE,
-  '/home/clawuser/.config/chicken/secrets/line-bot-token',  // XDG 標準位置（reboot-safe）
-  '/tmp/line-bot-token',                                       // legacy fallback
+  '/home/clawuser/.config/chicken/secrets/line-bot-token', // XDG 標準位置（reboot-safe）
+  '/tmp/line-bot-token', // legacy fallback
 ];
 if (!LINE_BOT_TOKEN) {
   for (const filePath of TOKEN_FILE_SOURCES) {
