@@ -1,7 +1,39 @@
-# 雞味客服專案 — 系統目錄與檔案清單（2026-07-16）
+# 雞味客服專案 — 系統目錄與檔案清單
 
-> **用途**：未來 session 接手雞味客服工作時，第一份讀的文檔。包含所有路徑、檔案用途、3 層位置架構。
-> **最後更新**：2026-07-16 03:00（commit `953da66` 之後）
+> **最後更新**：2026-07-16 06:30（commit d4b0d23 之後）
+
+## 🎯 用途（Purpose）
+
+此檔是**雞味客服專案的系統地圖**。功能目的：
+1. 讓接手者**快速找到任何檔案**（不用 `find` 整個 codebase）
+2. 標明**每個檔案的角色**（不只是路徑，還有「為什麼存在」）
+3. 區分**3 層位置架構**（dev repo / main mirror / production runtime）
+4. 給非開發者（Hubert）**快速 reference**「哪個檔負責什麼」
+5. 防止**未來 session 重複考古**（已整理的東西不需要再整理）
+
+## 👥 讀者（Audience）
+
+- **接手工作的 brtclaw session**（首要）
+- **Hubert**（老闆）— 想知道「改某功能要動哪個檔」
+- **未來 audit 的人** — 了解系統邊界
+
+## 🛠 怎麼用（How to Use）
+
+**找檔案**：用 grep -n 在對應的「### 3.x」段找路徑
+**改檔案**：永遠改 dev repo 根（path # 1），不要改 main mirror 或 production runtime
+**確認加密密碼**：看 §2「服務 port 與登入資訊」表
+**確認 cron jobs**：看 §4
+
+## 📚 參考的 Best Practices
+
+| 來源 | 應用 |
+|------|------|
+| [session-handoff skill](https://github.com/softaworks/agent-toolkit) | **Zero ambiguity** — 每個檔案要有 purpose 說明 |
+| [Project Handover Templates](https://plane.so/blog/what-is-a-project-handover-steps-checklist-and-best-practices) | **Structured transfer** — 分門別類、表格化 |
+
+---
+
+
 
 ---
 

@@ -1,8 +1,50 @@
 # Session Handoff — 雞味客服專案
 
-> 此檔為當前 production 狀態摘要 + 未完成修整清單
-> **最後更新**：2026-07-16 03:00 session（commit 953da66 之後；加 src/config.js LINE_BOT_TOKEN_FILE 支援、docs/PROJECT_INVENTORY.md、docs/handoff/sessions/SESSION_NEXT_PROMPT.md）
-> **用法**：未來 session 接手時先讀此檔 + PROJECT_INVENTORY.md + SESSION_NEXT_PROMPT.md（10 分鐘內可進入狀況）
+> **最後更新**：2026-07-16 06:30 session（commit d4b0d23 之後；XDG secrets 持久化 + 文檔 best practices 強化）
+
+## 🎯 用途（Purpose）
+
+此檔是**雞味客服專案的 session 交接手冊**。功能目的：
+1. 讓新 session 在 **10 分鐘內進入狀況**（不需要重新探索 codebase）
+2. 避免**新 agent 重複踩雷**（文件列出已知問題與已做修整）
+3. 確保**知識不隨 session 結束而消失**（commit history + 這個 handoff 持久化）
+4. 提供**清楚的下一步**（pending work 有優先度 + 估時）
+5. 防止 **dual-location 編輯**（3 層 enforcement 設計）
+
+## 👥 讀者（Audience）
+
+- **接手工作的 brtclaw session**（首要讀者）
+- **Hubert**（老闆）偶爾查看（驗證系統狀態）
+- **未來 audit 的工程師**（理解設計決策）
+
+## 🛠 怎麼用（How to Use）
+
+**接手 session 第一件事**（5 步）：
+1. 讀本檔 §1（當前狀態）+ §5（待辦清單）
+2. 讀 `docs/PROJECT_INVENTORY.md`（完整系統地圖）
+3. 讀 `docs/handoff/sessions/SESSION_NEXT_PROMPT.md`（新 session 開局 prompt）
+4. 跑 `bash scripts/check-quality.sh` 確認環境
+5. 跟 Hubert 確認從哪個 P0/P1 開始
+
+**結束 session 最後一件事**：
+1. 跑 `bash scripts/check-quality.sh` 確認 10 checks 全綠
+2. 更新本檔「變更歷史」+ 必要時 §5 待辦
+3. 寫當日 `memory/YYYY-MM-DD.md`（總結今天做了什麼）
+4. 跑 `bash scripts/sync-mirror.sh from-legacy` 同步 main 鏡像
+
+## 📚 參考的 Best Practices
+
+| 來源 | 應用到本檔的原則 |
+|------|---------------|
+| [/handoff Skill](https://www.aihero.dev/skills-handoff) | Context compaction — 精簡但完整 |
+| [Context Rot in AI Agents](https://www.mindstudio.ai/blog/context-rot-ai-agents-session-handoff-fix) | Session handoff 修 context window 膨脹 |
+| [AI Agent Handoff (XTrace)](https://xtrace.ai/blog/ai-agent-context-handoff) | 傳遞 context + state + responsibility |
+| [session-handoff skill](https://github.com/softaworks/agent-toolkit) | **Zero ambiguity** — 不留模糊空間 |
+| [Project Handover Templates (plane.so)](https://plane.so/blog/what-is-a-project-handover-steps-checklist-and-best-practices) | **Structured transfer** of: responsibilities + deliverables + documentation + decisions + working context |
+
+---
+
+
 
 ---
 

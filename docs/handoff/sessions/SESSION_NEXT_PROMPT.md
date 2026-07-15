@@ -1,9 +1,51 @@
-# 下個 Session Prompt（2026-07-16 03:30 之後接手雞味客服工作的 agent）
+# 下個 Session Prompt（2026-07-16 06:30 之後接手雞味客服工作的 agent）
 
-> **給誰看**：未來被指派接雞味客服專案的 brtclaw session
-> **用途**：這是「開局 prompt」，可直接貼到 Discord / OpenClaw 開新 session
-> **作者**：2026-07-16 03:00 session（commit `953da66` 之後）
-> **TL;DR**：Hubert 昨晚 22:35 問了 9 個問題，目前 1 個修好（檔案位置告訴他了），剩下 8 個是 feature 提案。今天進度先做 LINE_BOT_TOKEN_FILE 修整 + 補完剩下 6 個修整 + 開始 B 方案（dashboard 自動更新）規劃。
+> **作者**：2026-07-16 06:30 session（commit d4b0d23 之後；XDG secrets 持久化 + best practices 強化）
+> **TL;DR**：Hubert 06:22 提醒「保證 handoff 文件都有完整敘述功能目的」，已強化本檔。接手 session 必讀。
+
+## 🎯 用途（Purpose）
+
+此 prompt 是**新 session 開局 prompt**。功能目的：
+1. 讓接手 agent **10 分鐘內進入狀況**（不用重新探索 codebase）
+2. 給**完整、開局可跑**的指令（不需要再查文檔）
+3. 列出**待修整 + 優先度**（避免 agent 漏做或做錯順序）
+4. 標明**踩雷紀錄**（省去重複 debug）
+5. 提醒**3 層 enforcement**（避免 agent 編錯位置）
+
+## 👥 讀者（Audience）
+
+- **接手雞味客服的 brtclaw session**（首要）
+- **Hubert**（手動開新 session 給 brtclaw 時可貼此 prompt）
+
+## 🛠 何時使用（When to Use）
+
+- 接手雞味客服專案（無論是因為 session timeout、Hubert 開新 session、或其他原因）
+- 距上次 session 超過 24 小時（context 可能已 drift）
+- 接手後**第一步**就是跑下方「開局指令」5 步
+
+## 🏁 結束時應該做什麼（End-of-Session Checklist）
+
+1. 跑 `bash scripts/check-quality.sh` 確認 10 checks 全綠
+2. 跑 `npm test` 確認 47 套全綠
+3. git add + commit + push（按 §I-1 SOP）
+4. 跑 `bash scripts/sync-mirror.sh from-legacy` 同步 main
+5. 更新 `HANDOFF.md`（§8 變更歷史 + 必要時 §5 待辦）
+6. 寫當日 `memory/YYYY-MM-DD.md`（總結）
+7. 若有 Layer 1 變更，跑 `bash scripts/main-enforce-readonly.sh` 確認 chmod 555 恢復
+
+## 📚 參考的 Best Practices
+
+| 來源 | 應用 |
+|------|------|
+| [/handoff Skill](https://www.aihero.dev/skills-handoff) | Context compaction — 精簡 |
+| [Context Rot in AI Agents](https://www.mindstudio.ai/blog/context-rot-ai-agents-session-handoff-fix) | Session handoff 修 context 膨脹 |
+| [AI Agent Handoff (XTrace)](https://xtrace.ai/blog/ai-agent-context-handoff) | 傳遞 context + state + responsibility |
+| [session-handoff skill (softaworks)](https://github.com/softaworks/agent-toolkit) | **Zero ambiguity** |
+| [Project Handover Templates (plane.so)](https://plane.so/blog/what-is-a-project-handover-steps-checklist-and-best-practices) | **Structured transfer** |
+
+---
+
+
 
 ---
 
