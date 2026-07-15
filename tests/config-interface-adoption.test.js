@@ -123,12 +123,33 @@ assert.strictEqual(typeof notifier.notifyHubert, 'function');
 console.log('  ✓ notifyHubert 函數存在');
 
 (async () => {
-  // 沒設 token 時應該 skip
-  const r = await notifier.notifyHubert('test message');
+  // ─── 4a. 沒設 token 時 notifyHubert 應 skip (return false) ───
+  // Module isolation：環境有 XDG secrets token，要切到「沒 token」場景驗證
+  // 簡單覆寫 LINE_BOT_TOKEN_FILE 不夠 — config.js 有 3 個 file source fallback (XDG > /tmp)，
+  // 任何路徑空字串或不存在都會 fallthrough 到下一個，最後還是讀到真實 token。
+  // 修法：直接 inject fake config Module 到 require.cache，notifier 用 fake config 載入，
+  //       getLineBotToken() 返回 '' → 觸發 notifier.js line 36 `if (!lineToken) return false`。
+  const Module = require('module');
+  const configPath = require.resolve('../src/config');
+  const notifierPath = require.resolve('../src/handoff/notifier');
+  const fakeConfig = new Module(configPath);
+  fakeConfig.filename = configPath;
+  fakeConfig.loaded = true;
+  fakeConfig.exports = {
+    getLineBotToken: () => '',
+    getNotifyOwnerUserId: () => 'Uf56650056d35626deb64165926a26182',
+    isFeatureEnabled: () => true, // feature enabled, 但 token 是空字串 → line 36 觸發
+  };
+  delete require.cache[notifierPath];
+  require.cache[configPath] = fakeConfig;
+
+  const notifierFresh = require('../src/handoff/notifier');
+  const r = await notifierFresh.notifyHubert('test message');
   assert.strictEqual(r, false, '沒 token 應 return false');
   console.log('  ✓ notifyHubert 沒 token 時正確 skip');
 
-  // lineProfileCache 也能用（沒 token 時 getLineDisplayName fallback）
+  // ─── 4b. lineProfileCache 也能用（沒 token 時 getLineDisplayName fallback） ───
+  // 用原始 lineProfileCache（top-level require），仍持有真實 config 的 getLineBotToken
   const profile = await lineProfileCache.getLineDisplayName('test-user-id');
   assert.ok(profile, 'getLineDisplayName 應返回字串');
   assert.ok(profile.length > 0, 'profile 不應為空');
