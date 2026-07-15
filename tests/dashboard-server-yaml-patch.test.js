@@ -118,8 +118,10 @@ function killProc(proc) {
     }
     tryKillAll();
     // 再二次確保（SIGKILL 後某些 descendants 可能隔 100-200ms 才反應）
-    setTimeout(tryKillAll, 200).unref();
-    setTimeout(resolve, 700).unref();
+    // 不加 .unref()：保持 timer keep-alive，確保 await killProc 在 finally cleanup 前 resolve
+    // 修 2026-07-16 bug：.unref() 導致 process 提早退出，finally 的 unlinkSync 沒跑到 → fixture 殘留
+    setTimeout(tryKillAll, 200);
+    setTimeout(resolve, 700);
   });
 }
 
