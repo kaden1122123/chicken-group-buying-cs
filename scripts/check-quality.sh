@@ -275,6 +275,27 @@ fi
 
 # ─────────────────────────────────────────
 # ─────────────────────────────────────────
+# 檢查 8: KB Source of Truth 驗證（Session X1-D，2026-07-15 補回實作）
+# 背景：原本 X1-D commit 3cd7e1f 寫「+ check-quality.sh Check 8」但只改 header 註解、
+#       沒插實作，導致 verify-kb-sources.js 從未被任何 check 觸發。
+# 範圍：12 個 KB 檔存在/非空/不重複/與 INDEX.md 一致/無 legacy duplicate
+# 詳見：scripts/verify-kb-sources.js 內 4 個 sub-checks
+# ─────────────────────────────────────────
+section "Check 8/9: KB Source of Truth 驗證"
+
+if [ -f "scripts/verify-kb-sources.js" ]; then
+  if node scripts/verify-kb-sources.js > /tmp/verify-kb-output.log 2>&1; then
+    pass "KB 12 檔案存在、內容不重複、與 INDEX.md 一致、無 legacy duplicate"
+  else
+    fail "KB Source of Truth 驗證失敗（看 /tmp/verify-kb-output.log）"
+    cat /tmp/verify-kb-output.log
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+  fi
+else
+  warn "scripts/verify-kb-sources.js 不存在（跳過）"
+fi
+
+# ─────────────────────────────────────────
 # 檢查 9: config.yaml drift 預防 (Decision 2B + 2026-07-15)
 # 目的：防止「改 chicken.yaml 後忘跑 sync-config.sh」
 #       （依 Hubert 「系統要足夠完善」要求做多層檢查）
@@ -291,12 +312,15 @@ if [ ! -f "$CHICKEN_CONFIG" ]; then
 elif [ ! -f "$LEGACY_CONFIG" ]; then
   warn "config.yaml 不存在（無 fallback 但 chicken.yaml 還在，OK）"
 else
+  DRIFT_FOUND=0
+
   # 1. mtime 檢查：config.yaml 必須 ≥ chicken.yaml（sync 後才允許 commit）
   CHICKEN_MTIME=$(stat -c %Y "$CHICKEN_CONFIG")
   LEGACY_MTIME=$(stat -c %Y "$LEGACY_CONFIG")
   if [ "$LEGACY_MTIME" -lt "$CHICKEN_MTIME" ]; then
     DELTA_MIN=$(( (CHICKEN_MTIME - LEGACY_MTIME) / 60 ))
     warn "config.yaml mtime 比 chicken.yaml 老 ${DELTA_MIN}分鐘 → 須跑: bash scripts/sync-config.sh"
+    DRIFT_FOUND=1
   fi
 
   # 2. missing top-level keys 檢查：防 fallback 功能缺漏（如 tenant/delivery_fee 等）
@@ -306,6 +330,11 @@ else
   if [ -n "$MISSING" ]; then
     MISSING_LIST=$(echo "$MISSING" | tr '\n' ' ' | sed 's/ $//')
     warn "config.yaml 缺少 chicken.yaml 的 top-level keys: ${MISSING_LIST}"
+    DRIFT_FOUND=1
+  fi
+
+  if [ "$DRIFT_FOUND" -eq 0 ]; then
+    pass "config.yaml 與 chicken.yaml mtime + keys 皆同步"
   fi
 fi
 
