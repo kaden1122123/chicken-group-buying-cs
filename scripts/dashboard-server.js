@@ -47,21 +47,32 @@ const _hasYamlDump = yaml && typeof yaml.dump === 'function';
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const USERNAME = process.env.DASHBOARD_USERNAME || 'admin';
 let PASSWORD = process.env.DASHBOARD_PASSWORD || '';
-// 支援 DASHBOARD_PASSWORD_FILE：避免密碼出現在 process env 或命令列
-// 觸發場景：OpenClaw exec 會自動 redact process.env 中的密碼字面值，導致實際密碼只剩 "***"
-// 修法：寫到檔案（mode 600），dashboard 直接讀取檔案內容
-if (process.env.DASHBOARD_PASSWORD_FILE) {
+// 密碼載入優先順序（修 2026-07-15 Tailscale auth loop）：
+// 1. DASHBOARD_PASSWORD_FILE env（明確指定，避免 OpenClaw exec redact）
+// 2. /tmp/dash-pwd 預設 fallback（任何啟動方式都讀得到，包括 dashboard-watchdog 重啟無 env 情況）
+//
+// 觸發 bug：dashboard-watchdog 透過 manage-tunnel.sh start 重啟時不一定帶 env，
+//          原本只支援 DASHBOARD_PASSWORD_FILE → 重啟後密碼失效 → 客戶 auth loop。
+//          加 /tmp/dash-pwd fallback 讓三種啟動方式（手動 nohup / manage-tunnel.sh / watchdog）都能找到密碼。
+const PASSWORD_FILE_SOURCES = [
+  process.env.DASHBOARD_PASSWORD_FILE,
+  '/tmp/dash-pwd',
+];
+for (const filePath of PASSWORD_FILE_SOURCES) {
+  if (!filePath) continue;
   try {
-    const fileContent = require('fs').readFileSync(process.env.DASHBOARD_PASSWORD_FILE, 'utf8');
-    PASSWORD = fileContent.trim();
-    if (!PASSWORD) {
-      logger.warn('[dashboard-server] DASHBOARD_PASSWORD_FILE 為空，所有 auth 將失敗');
-    } else {
-      logger.info(`[dashboard-server] Password loaded from ${process.env.DASHBOARD_PASSWORD_FILE} (${PASSWORD.length} chars)`);
+    const trimmed = require('fs').readFileSync(filePath, 'utf8').trim();
+    if (trimmed) {
+      PASSWORD = trimmed;
+      logger.info(`[dashboard-server] Password loaded from ${filePath} (${PASSWORD.length} chars)`);
+      break;
     }
   } catch (e) {
-    logger.error(`[dashboard-server] 讀取 DASHBOARD_PASSWORD_FILE 失敗: ${e.message}`);
+    // 檔案不存在或讀不到，繼續下一個來源
   }
+}
+if (!PASSWORD) {
+  logger.warn('[dashboard-server] 密碼未設定：所有 auth 將失敗。建議設 DASHBOARD_PASSWORD_FILE 或寫入 /tmp/dash-pwd');
 }
 
 // 路徑
