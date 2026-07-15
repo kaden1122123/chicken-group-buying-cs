@@ -60,21 +60,21 @@
 
 | 服務 | Port | 帳號 | 密碼檔（mode 600） | 用途 |
 |------|------|------|------------------|------|
-| **Dashboard** | 3000 | `admin` | `/tmp/dash-pwd` (15 chars) | 訂單管理、訂單建單、付款狀態（未來）|
-| **api-server** | 3001 | `api-user` | `/tmp/api-pwd` (14 chars) | 給 Worker / B 方案呼叫 |
-| **Line Bot Token** | — | — | `/tmp/line-bot-token` (待寫) | 給 notifier.js push LINE 給 Hubert |
+| **Dashboard** | 3000 | `admin` | `/home/clawuser/.config/chicken/secrets/dashboard-pwd` (15 chars) | 訂單管理、訂單建單、付款狀態（未來）|
+| **api-server** | 3001 | `api-user` | `/home/clawuser/.config/chicken/secrets/api-pwd` (14 chars) | 給 Worker / B 方案呼叫 |
+| **Line Bot Token** | — | — | `/home/clawuser/.config/chicken/secrets/line-bot-token` (172 chars, d4b0d23 寫入) | 給 notifier.js push LINE 給 Hubert |
 | **Tailscale** | — | — | — | 100.114.197.9（你 PC + server 同一 mesh） |
 
 啟動服務的範例指令（chmod 555 保護下，要 u+w 暫解 + 記得 u+w 改回）：
 
 ```bash
 # dashboard
-DASHBOARD_USERNAME=admin DASHBOARD_PASSWORD_FILE=/tmp/dash-pwd PORT=3000 \
+DASHBOARD_USERNAME=admin DASHBOARD_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/dashboard-pwd PORT=3000 \
   nohup node scripts/dashboard-server.js > /tmp/dashboard-server.log 2>&1 &
 disown
 
 # api-server
-API_USERNAME=api-user API_PASSWORD_FILE=/tmp/api-pwd PORT=3001 \
+API_USERNAME=api-user API_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/api-pwd PORT=3001 \
   nohup node scripts/api-server.js > /tmp/api-server.log 2>&1 &
 disown
 ```
@@ -154,9 +154,9 @@ disown
 
 | 路徑 | 用途 | 寫入時機 |
 |------|------|----------|
-| `/tmp/dash-pwd` | dashboard 密碼（15 chars）| 重啟 dashboard 時驗證 |
-| `/tmp/api-pwd` | api-server 密碼（14 chars）| 重啟 api-server 時驗證 |
-| `/tmp/line-bot-token` | **待寫**（Hubert 手動加 LINE_BOT_TOKEN）| 重啟 api-server 時驗證 |
+| `/home/clawuser/.config/chicken/secrets/dashboard-pwd` | dashboard 密碼（15 chars）| 重啟 dashboard 時驗證 |
+| `/home/clawuser/.config/chicken/secrets/api-pwd` | api-server 密碼（14 chars）| 重啟 api-server 時驗證 |
+| `/home/clawuser/.config/chicken/secrets/line-bot-token` | LINE channel access token (172 chars, d4b0d23 寫入) | 重啟 api-server 時驗證 |
 | `/tmp/dashboard-server.log` | dashboard 啟動 log | 自動 |
 | `/tmp/api-server.log` | api-server 啟動 log | 自動 |
 
@@ -230,7 +230,7 @@ chmod 555 main/scripts/*.js main/src/  # restore
 | api-server 服務 | ✅ 跑中（port 3001）|
 | Worker Cloudflare | ❌ 404（healthz degraded，但不擋 line bot 對話）|
 | 89 leaked cloudflared processes | ⚠️ 可選清理 |
-| 老闆 LINE 通知 | ❌ **LINE_BOT_TOKEN 還沒設**（Hubert 03:14 說要手動加）|
+| 老闆 LINE 通知 | ✅ **已設**（172 chars, d4b0d23 寫入 XDG secrets）|
 
 ---
 

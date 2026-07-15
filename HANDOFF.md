@@ -56,7 +56,7 @@
 | 測試套件 | ✅ 全綠 | `npm test` → 49 unit + 1 integration |
 | 品質檢查 | ✅ 全綠 | `bash scripts/check-quality.sh` → 11 checks, 0 fail |
 | api-server | ✅ 跑中 | PID 3455982, port 3001 |
-| Dashboard-server | ✅ 跑中（修過） | PID 3461715, port 3000, /tmp/dash-pwd fallback |
+| Dashboard-server | ✅ 跑中（修過） | PID 3461715, port 3000, /home/clawuser/.config/chicken/secrets/dashboard-pwd fallback |
 
 ---
 
@@ -115,7 +115,7 @@
 ### Dashboard 密碼修整
 - Root cause：OpenClaw exec 工具自動 redact process.env 中密碼字串
 - commit 3e3e993：dashboard-server.js 加 DASHBOARD_PASSWORD_FILE 支援
-- **本次新增** `/tmp/dash-pwd` 預設 fallback：dashboard-watchdog 透過 manage-tunnel.sh 重啟無 env 時仍能讀到密碼
+- **本次新增** `/home/clawuser/.config/chicken/secrets/dashboard-pwd` 預設 fallback：dashboard-watchdog 透過 manage-tunnel.sh 重啟無 env 時仍能讀到密碼
 
 ---
 
@@ -140,7 +140,7 @@
 
 ### 長期（下 session）
 - [ ] dashboard-server.js 改 session-based auth（避免瀏覽器 cache HTTP Basic 的 quirk）
-- [ ] /tmp/dash-pwd backup SOP（重啟 vs 持久性）
+- [ ] /home/clawuser/.config/chicken/secrets/dashboard-pwd backup SOP（重啟 vs 持久性）
 - [ ] 包成 Helm/systemd service 統一管理 3 個 services
 - [ ] cloudflare-worker code 完整 review（之前測試發現只有 `cloudflare-worker` 在 `/home/clawuser/openclaw-workspace/external-user/` 不在本 repo）
 
@@ -175,7 +175,7 @@ cat HANDOFF.md                    # 讀此檔
 ### Q&A（常見問題快速答）
 
 **Q: Dashboard 登入帳密？**
-A: `admin / ChickenTest2026`，檔於 `/tmp/dash-pwd`（mode 600）
+A: `admin / ChickenTest2026`，檔於 `/home/clawuser/.config/chicken/secrets/dashboard-pwd`（mode 600）
 
 **Q: api-server 帳密？**
 A: `api-user / 環境變數 API_PASSWORD`（在 OpenClaw SERVICE_MANAGED_ENV_KEYS 清單）
@@ -199,7 +199,7 @@ A: `pwd`，應為 `/home/clawuser/openclaw-workspace/others/chicken-group-buying
 1. **永遠在 dev repo 編輯**（`pwd` 確認）
 2. **commit 前**：跑 `bash scripts/check-quality.sh`
 3. **push 前**：跑 `bash scripts/sync-mirror.sh from-legacy`（避免 main drift）
-4. **重啟 dashboard**：`env PORT=3000 node scripts/dashboard-server.js`（無密碼，自動 fallback `/tmp/dash-pwd`）
+4. **重啟 dashboard**：`env PORT=3000 node scripts/dashboard-server.js`（無密碼，自動 fallback `/home/clawuser/.config/chicken/secrets/dashboard-pwd`）
 5. **清測試訂單**：`node scripts/cleanup-test-orders.js`（保護 6/13 + 6/16 真實訂單）
 6. **心跳檢查**：`dashboard-watchdog`（cron `36d2ca19`）每 10 分鐘檢查 /healthz 並重啟
 7. **預防未來 session 搞混目錄**：用 `scripts/check-cwd.sh <file>` 或整合到 Claude Code hooks
@@ -234,7 +234,7 @@ A: `pwd`，應為 `/home/clawuser/openclaw-workspace/others/chicken-group-buying
 ## 10. 下階段規劃（按優先度）
 
 ### A. 立即（下個 session 開頭）
-- [ ] **LINE_BOT_TOKEN 整合驗證**：Hubert 手動寫 token 到 `/tmp/line-bot-token`，重啟 api-server，驗證 notifier 真的可以 push LINE
+- [x] ✅ **LINE_BOT_TOKEN 整合驗證**（2026-07-15 d4b0d23 commit 完成）：token 已寫入 `/home/clawuser/.config/chicken/secrets/line-bot-token`（mode 600, 172 chars），重啟 api-server 後 log 顯示 "LINE_BOT_TOKEN loaded from /home/clawuser/.config/chicken/secrets/line-bot-token (172 chars)"，待 Hubert 手動驗證 LINE push 是否到帳
 - [ ] **P5 付款狀態機制**（30 分鐘）：dashboard 加「已收款」按鈕 + 客戶問"我付款了嗎" 自動回應
 - [ ] **P7 訂單完整性規則**（5 分鐘）：加 main_idea.md §十二 規則
 

@@ -63,8 +63,8 @@
 cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service
 bash scripts/check-quality.sh    # 應 10 通過 0 警告 0 失敗
 npm test                          # 應 47 套全綠
-ls /tmp/line-bot-token            # 看 Hubert 是否已寫 LINE_BOT_TOKEN
-ls /tmp/dash-pwd /tmp/api-pwd     # 確認密碼檔存在
+ls /home/clawuser/.config/chicken/secrets/line-bot-token            # 看 Hubert 是否已寫 LINE_BOT_TOKEN
+ls /home/clawuser/.config/chicken/secrets/dashboard-pwd /home/clawuser/.config/chicken/secrets/api-pwd     # 確認密碼檔存在
 cat /home/clawuser/.openclaw/agents/external-user/SOUL.md | head -5  # 確認 LLM 會讀的 SOUL
 ```
 
@@ -80,7 +80,7 @@ cat /home/clawuser/.openclaw/agents/external-user/SOUL.md | head -5  # 確認 LL
 | api-server | ✅ 跑（port 3001, PID 動態查）|
 | dashboard-server | ✅ 跑（port 3000）|
 | Worker Cloudflare | ❌ 404（healthz degraded，不擋 line bot 對話）|
-| 老闆 LINE 通知 | ⚠️ **待 LINE_BOT_TOKEN**（Hubert 03:14 答應手動加 token 到 /tmp/line-bot-token）|
+| 老闆 LINE 通知 | ✅ **已設**（d4b0d23 commit 寫入 XDG secrets, 172 chars）|
 | 3 層 enforcement | ✅ 上線（chmod 555 + cron 10min + Check 10）|
 
 ---
@@ -88,11 +88,11 @@ cat /home/clawuser/.openclaw/agents/external-user/SOUL.md | head -5  # 確認 LL
 ## 待修整清單（按優先度）
 
 ### P0 — 立即（1-2 小時）
-- [ ] **P1 LINE_BOT_TOKEN 修整**（commit `953da66` 之後這部分還沒 commit 到 git，src/config.js 已加 LINE_BOT_TOKEN_FILE 支援但 syntax error 剛修完需驗證）
-  - 確認：Hubert 已寫 `/tmp/line-bot-token`（mode 600，LINE channel access token，有 push_message scope）
-  - 重啟 api-server，看 log 有 "LINE_BOT_TOKEN loaded from /tmp/line-bot-token (N chars)" 而非 warning
-  - Test：模擬 LLM 觸發 notifyHubert()，看 LINE push 是否到 Hubert 手機
-  - 詳見 `src/handoff/notifier.js` line 16-22 (getLineToken → getLineBotToken)
+- [x] ✅ **P1 LINE_BOT_TOKEN 修整**（2026-07-15 d01359f + d4b0d23 commits 完成）
+  - 確認：Hubert 已寫 `/home/clawuser/.config/chicken/secrets/line-bot-token`（mode 600, 172 chars, d4b0d23 commit 從 /tmp 搬過來）
+  - 重啟 api-server，看 log 有 "LINE_BOT_TOKEN loaded from /home/clawuser/.config/chicken/secrets/line-bot-token (172 chars)" 而非 warning
+  - Test：模擬 LLM 觸發 notifyHubert()，看 LINE push 是否到 Hubert 手機（待 Hubert 手動驗證）
+  - 詳見 `src/handoff/notifier.js` line 7-17 (getLineBotToken → config.js)
 
 - [ ] **Worker 404 修整**（HANDOFF.md 緊急段已有）
   - deploy Cloudflare Worker `external-user-line-security` 帳號
@@ -151,8 +151,8 @@ cat /home/clawuser/.openclaw/agents/external-user/SOUL.md | head -5  # 確認 LL
 - **永遠在 dev repo 編輯**：`cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service/`
 - **commit 前必跑**：`bash scripts/check-quality.sh`
 - **push 前必跑**：`bash scripts/sync-mirror.sh from-legacy`
-- **重啟 dashboard 帶 env**：`DASHBOARD_PASSWORD_FILE=/tmp/dash-pwd`（不要用 env 直接傳密碼）
-- **重啟 api-server 帶 env**：`API_PASSWORD_FILE=/tmp/api-pwd`
+- **重啟 dashboard 帶 env**：`DASHBOARD_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/dashboard-pwd`（不要用 env 直接傳密碼）
+- **重啟 api-server 帶 env**：`API_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/api-pwd`
 
 ---
 
@@ -168,13 +168,13 @@ sleep 2
 
 # 2. 啟動新 process（從 dev repo CWD 確保讀到正確 config）
 cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service
-nohup env API_USERNAME=api-user API_PASSWORD_FILE=/tmp/api-pwd PORT=3001 \
+nohup env API_USERNAME=api-user API_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/api-pwd PORT=3001 \
   node scripts/api-server.js > /tmp/api-server.log 2>&1 &
 disown
 sleep 1
 nohup env DASHBOARD_USERNAME=admin \
-  DASHBOARD_PASSWORD_FILE=/tmp/dash-pwd \
-  API_USERNAME=api-user API_PASSWORD_FILE=/tmp/api-pwd \
+  DASHBOARD_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/dashboard-pwd \
+  API_USERNAME=api-user API_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/api-pwd \
   PORT=3000 \
   node scripts/dashboard-server.js > /tmp/dashboard-server.log 2>&1 &
 disown
