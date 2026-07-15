@@ -1,8 +1,8 @@
 # Session Handoff — 雞味客服專案
 
 > 此檔為當前 production 狀態摘要 + 未完成修整清單
-> **最後更新**：2026-07-15 17:09 session（commit 3e3e993 + dashboard PASSWORD_FILE fallback + check-cwd.sh + 本檔）
-> **用法**：未來 session 接手時先讀此檔（10 分鐘內可進入狀況）
+> **最後更新**：2026-07-16 03:00 session（commit 953da66 之後；加 src/config.js LINE_BOT_TOKEN_FILE 支援、docs/PROJECT_INVENTORY.md、docs/handoff/sessions/SESSION_NEXT_PROMPT.md）
+> **用法**：未來 session 接手時先讀此檔 + PROJECT_INVENTORY.md + SESSION_NEXT_PROMPT.md（10 分鐘內可進入狀況）
 
 ---
 
@@ -168,9 +168,70 @@ A: `pwd`，應為 `/home/clawuser/openclaw-workspace/others/chicken-group-buying
 
 | 版本 | 日期 | 主要變更 |
 |------|------|----------|
-| v1 | 2026-07-15 17:09 | 初次建立（本 session）|
+| v1 | 2026-07-15 17:09 | 初次建立 |
+| v2 | 2026-07-16 03:00 | 加 9 個未修整清單 + B 方案規劃 + 新增 doc/PROJECT_INVENTORY.md + doc/handoff/sessions/SESSION_NEXT_PROMPT.md + src/config.js LINE_BOT_TOKEN_FILE 支援 |
 
 ---
 
-**由 2026-07-15 17:09 session 建立**
+## 9. 9 個未修整清單（Hubert 2026-07-15 22:35 提出，2026-07-16 03:00 狀態）
+
+| # | 問題 | 難度 | 狀態 | 建議時程 |
+|---|------|------|------|----------|
+| **P1** | 為何老闆沒收到通知？ | 簡單 | ✅ **已修**：src/config.js 加 `LINE_BOT_TOKEN_FILE` fallback（commit 待 push） | 立刻 |
+| **P2** | 客戶無權限確認訂單，老闆如何回覆 | 中 | ⏳ 方案 A（LINE 老闆 command）或 B（dashboard 按鈕） | 下次 session |
+| **P3** | 統一回覆（Quick Reply） | 中 | ⏳ chicken.yaml 加 quick_replies + main_idea.md 加規則 | 下次 session |
+| **P4** | 街口支付傳圖片（不傳網址） | 中高 | ⏳ notifier 加 image 接收器 + data/receipts/ 儲存 | 中期 |
+| **P5** | 老闆確認付款狀態 | 簡單 | ⏳ payment_status 欄位 + dashboard 按鈕 | 下次 session |
+| **P6** | OCR 轉帳截圖 | 中 | ⏳ LLM vision API 讀 image 提取金額/帳號 | 中期 |
+| **P7** | 訂單不完整時要求完整表格 | 簡單 | ⏳ main_idea.md 加規則（5 分鐘）| 下次 session |
+| **P8** | Dashboard 何時更新？ | 已說明 | ✅ **已答**：A 方案需老闆手動建單；2026-07-15 訂單都是測試 fixture | — |
+| **P9** | 試算表 | 簡單 | ⏳ `storage.phase2.enabled: true` + Google Sheets credentials | 中期 |
+
+---
+
+## 10. 下階段規劃（按優先度）
+
+### A. 立即（下個 session 開頭）
+- [ ] **LINE_BOT_TOKEN 整合驗證**：Hubert 手動寫 token 到 `/tmp/line-bot-token`，重啟 api-server，驗證 notifier 真的可以 push LINE
+- [ ] **P5 付款狀態機制**（30 分鐘）：dashboard 加「已收款」按鈕 + 客戶問"我付款了嗎" 自動回應
+- [ ] **P7 訂單完整性規則**（5 分鐘）：加 main_idea.md §十二 規則
+
+### B. 下個 session（半天，3-4 小時）
+- [ ] **P2 老闆回覆機制**（1 小時）：方案 B — dashboard「核准並建單」按鈕
+- [ ] **P3 統一回覆（Quick Reply）**（1-2 小時）：chicken.yaml config + LLM 規則
+- [ ] **Worker 404 修整**（30 分鐘）：deploy Cloudflare Worker 或改 WORKER_HEALTH_URL
+
+### C. 中期（半天設計 + 實作）
+- [ ] **B 方案（LLM 自動觸發 POST /api/orders）**（4-6 小時）：取代 A 方案手動建單
+  - 觸發機制：偵測「客戶確認」關鍵字（"確認/好/收到/yes/送出/下單" 等）
+  - 觸發後：LLM 自動 call api-server `POST /api/orders`
+  - 需要：auth（X-API-Token）、error handling（POST 失敗 fallback to push notification）
+  - 取代流程：客戶「確認」 → 自動建單 → push 通知老闆「已建單，請確認付款」
+  - 影響：dashboard 訂單頁會有新「自動建的訂單」標籤
+- [ ] **P4 街口支付傳圖片**（2-3 小時）：notifier 加 image 接收器
+- [ ] **P6 OCR 轉帳截圖**（半天）：LLM vision 自動標記付款
+- [ ] **P9 試算表（Google Sheets）**（30 分鐘）：storage.phase2 啟用
+
+### D. 環境清理
+- [ ] **89 個 leaked cloudflared processes 清理**（5 分鐘）：`pkill -9 cloudflared`
+- [ ] 各種 docs drift 修整（docs/KNOWN_ISSUES 等）
+
+---
+
+## 11. 重要檔案位置（給 new session 接手用）
+
+| 檔案 | 用途 |
+|------|------|
+| `docs/PROJECT_INVENTORY.md` | **完整系統目錄 + 檔案清單**（必讀） |
+| `docs/handoff/sessions/SESSION_NEXT_PROMPT.md` | **下個 session 開局 prompt**（直接貼到新 session） |
+| `docs/CEO_DECISION_GUIDE.md` | 13 個 session 決策（CEO 視角）|
+| `docs/ENGINEERING_HANDBOOK.md` | 工程慣例 + §6.6 三層位置架構 |
+| `docs/API_CURL.md` | api-server curl 範例 |
+| `MEMORY.md` §I-1/I-2/I-3 | commit / sync / pre-edit guard SOP |
+
+**記得先讀 PROJECT_INVENTORY.md**（路徑、cron、3 層 enforcement）— 這是 2026-07-16 03:00 後新 session 的 first stop。
+
+---
+
+**由 2026-07-15 17:09 session 建立，2026-07-16 03:00 大幅更新**
 更新方式：每次 session 結束時覆寫，或加日期版本（`docs/handoff/SESSION_HANDOFF_<date>.md`）

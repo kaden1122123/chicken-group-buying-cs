@@ -227,9 +227,35 @@ function loadConfig() {
 loadConfig();
 
 // ─── 環境變數 ───
-const LINE_BOT_TOKEN = process.env.LINE_BOT_TOKEN || '';
+let LINE_BOT_TOKEN = process.env.LINE_BOT_TOKEN || '';
 const LINE_CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET || '';
 const JKO_QR_CODE_URL = process.env.JKO_QR_CODE_URL || '';
+
+// LINE_BOT_TOKEN 支援 file-based 載入（避免 OpenClaw exec redact 密碼）
+// Pattern: env LINE_BOT_TOKEN_FILE > /tmp/line-bot-token (default fallback)
+// 2026-07-16 加（Hubert 22:35 報告的 P1 修法：手動加 token 不被 redact）
+const TOKEN_FILE_SOURCES = [
+  process.env.LINE_BOT_TOKEN_FILE,
+  '/tmp/line-bot-token',
+];
+if (!LINE_BOT_TOKEN) {
+  for (const filePath of TOKEN_FILE_SOURCES) {
+    if (!filePath) continue;
+    try {
+      const trimmed = require('fs').readFileSync(filePath, 'utf8').trim();
+      if (trimmed) {
+        LINE_BOT_TOKEN = trimmed;
+        logger.info(`[config] LINE_BOT_TOKEN loaded from ${filePath} (${LINE_BOT_TOKEN.length} chars)`);
+        break;
+      }
+    } catch (e) {
+      // 檔案不存在或讀不到就繼續 fallback
+    }
+  }
+}
+if (!LINE_BOT_TOKEN) {
+  logger.warn('[config] LINE_BOT_TOKEN 未設定：LINE push 通知會靜默失敗。寫 token 到 /tmp/line-bot-token (mode 600) 或設 env LINE_BOT_TOKEN_FILE');
+}
 
 // ─── 匯出設定 ───
 
