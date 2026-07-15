@@ -84,7 +84,7 @@ cd "$PROJECT_ROOT"
 # ─────────────────────────────────────────
 # 檢查 1: npm test
 # ─────────────────────────────────────────
-section "Check 1/8: npm test"
+section "Check 1/9: npm test"
 
 if npm test > /tmp/npm-test-output.log 2>&1; then
   # 動態計算 npm test 實際跑的測試檔數（數行首的 ▶▶▶ 行數，排除 shell trace）
@@ -98,7 +98,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 2: 0 個 hardcode
 # ─────────────────────────────────────────
-section "Check 2/8: Hardcode 檢查"
+section "Check 2/9: Hardcode 檢查"
 
 # Session D3-6 修整：原 check 只查 5 個特定檔案，造成 src/index.js:151 / src/states/confirming.js:61
 # 的 hardcode 漏網。改為 grep -r 掃描所有 src/，避免「換檔案 hardcode」就檢查不到。
@@ -158,7 +158,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 3: 0 個 dead config
 # ─────────────────────────────────────────
-section "Check 3/8: Dead config 檢查"
+section "Check 3/9: Dead config 檢查"
 
 # 從 CONFIG_VARIABLES_TABLE.md 整理的 dead config 旗標
 # 注意：這些是「應該被讀取」的旗標，目前 src/ 完全沒有讀取它們
@@ -178,7 +178,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 4: 真實訂單仍在
 # ─────────────────────────────────────────
-section "Check 4/8: 真實訂單保護"
+section "Check 4/9: 真實訂單保護"
 
 REAL_ORDERS_DIR="data/orders/chicken"
 MISSING_ORDERS=0
@@ -205,7 +205,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 5: 兩位置 rsync 一致性
 # ─────────────────────────────────────────
-section "Check 5/8: 兩位置 rsync 一致性"
+section "Check 5/9: 兩位置 rsync 一致性"
 
 MAIN_LOCATION="/home/clawuser/.openclaw/workspace-external-user/projects/chicken-group-buying-customer-service"
 
@@ -232,7 +232,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 6: git working tree 狀態
 # ─────────────────────────────────────────
-section "Check 6/8: git working tree"
+section "Check 6/9: git working tree"
 
 cd "$PROJECT_ROOT"
 
@@ -256,7 +256,7 @@ fi
 # ─────────────────────────────────────────
 # 檢查 7: ESLint 0 errors（Session G4 修整）
 # ─────────────────────────────────────────
-section "Check 7/8: ESLint 檢查"
+section "Check 7/9: ESLint 檢查"
 
 # Session G4 修整：本地 check-quality.sh 也跑 lint，與 GitHub Actions 一致防漏網
 # warning 不擋 CI（與 .eslintrc.json "rules" 設計一致）但 error 必擋
@@ -274,6 +274,43 @@ else
 fi
 
 # ─────────────────────────────────────────
+# ─────────────────────────────────────────
+# 檢查 9: config.yaml drift 預防 (Decision 2B + 2026-07-15)
+# 目的：防止「改 chicken.yaml 後忘跑 sync-config.sh」
+#       （依 Hubert 「系統要足夠完善」要求做多層檢查）
+# 範圍：mtime + missing top-level keys + 檔案存在性
+# 詳見：docs/adr/0003-config-legacy-fallback.md v2 §補充
+# ─────────────────────────────────────────
+section "Check 9/9: config.yaml drift 預防"
+
+CHICKEN_CONFIG="$PROJECT_ROOT/config/tenants/chicken.yaml"
+LEGACY_CONFIG="$PROJECT_ROOT/config.yaml"
+
+if [ ! -f "$CHICKEN_CONFIG" ]; then
+  warn "config/tenants/chicken.yaml 不存在（跳過 drift 檢查）"
+elif [ ! -f "$LEGACY_CONFIG" ]; then
+  warn "config.yaml 不存在（無 fallback 但 chicken.yaml 還在，OK）"
+else
+  # 1. mtime 檢查：config.yaml 必須 ≥ chicken.yaml（sync 後才允許 commit）
+  CHICKEN_MTIME=$(stat -c %Y "$CHICKEN_CONFIG")
+  LEGACY_MTIME=$(stat -c %Y "$LEGACY_CONFIG")
+  if [ "$LEGACY_MTIME" -lt "$CHICKEN_MTIME" ]; then
+    DELTA_MIN=$(( (CHICKEN_MTIME - LEGACY_MTIME) / 60 ))
+    warn "config.yaml mtime 比 chicken.yaml 老 ${DELTA_MIN}分鐘 → 須跑: bash scripts/sync-config.sh"
+  fi
+
+  # 2. missing top-level keys 檢查：防 fallback 功能缺漏（如 tenant/delivery_fee 等）
+  CHICKEN_KEYS=$(grep -oE "^[a-z_]+:" "$CHICKEN_CONFIG" | sort -u)
+  LEGACY_KEYS=$(grep -oE "^[a-z_]+:" "$LEGACY_CONFIG" | sort -u)
+  MISSING=$(comm -23 <(echo "$CHICKEN_KEYS") <(echo "$LEGACY_KEYS"))
+  if [ -n "$MISSING" ]; then
+    MISSING_LIST=$(echo "$MISSING" | tr '\n' ' ' | sed 's/ $//')
+    warn "config.yaml 缺少 chicken.yaml 的 top-level keys: ${MISSING_LIST}"
+  fi
+fi
+
+# ─────────────────────────────────────────
+
 # 總結
 # ─────────────────────────────────────────
 echo ""

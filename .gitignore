@@ -17,3 +17,7 @@ data/orders/**/*.csv
 # Session D D2 併發測試 tenant（獨立隔離避免誤刪 chicken tenant 真實訂單）
 data/orders/_csv_concurrency_test/
 knowledge/tenants/_csv_concurrency_test/
+
+# config.yaml.bak.* — sync-config.sh 自動產生的備份副本（Decision 3B，2026-07-15）
+# git 不追蹤；要回退就用本機檔案 cp 即可
+config.yaml.bak.*

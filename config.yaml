@@ -14,125 +14,130 @@
 # Phase 1：CSV 本地儲存（已啟用）
 # Phase 2：Google Sheets（規劃中）
 # ─────────────────────────────────────────
+
+# ─────────────────────────────────────────
+# 以下為 tenant.yaml 同步內容（單向鏡像）
+# ─────────────────────────────────────────
+
+tenant:
+  id: chicken
+  display_name: 雞味研究所
+  agent_path: ~/.openclaw/agents/external-user
+  environment: production
 storage:
   phase1:
     enabled: true
-    type: "csv"
-    base_path: "data/orders"
-    filename_pattern: "{date}.csv"
-    backup_path: "data/orders/archive"
+    type: csv
+    base_path: data/orders
+    filename_pattern: '{date}.csv'
+    backup_path: data/orders/archive
   phase2:
     enabled: false
-    type: "google_sheets"
-    spreadsheet_id: ""
-    credentials_path: ""
-
-# ─────────────────────────────────────────
-# 官方資訊
-# ─────────────────────────────────────────
+    type: google_sheets
+    spreadsheet_id: ''
+    credentials_path: ''
 official:
-  brand_name: "雞味研究所｜牧草放山雞"
-  line_community: "@620boqol"
-  line_community_url: "https://line.me/ti/g2/4Qsf5GqgDlR2Liiy1asPTj8IFGHddyQKcD4yQA"
-  bank_account: "銀行代碼：007（第一銀行）|| 帳號：23257030422"
-  jko_qr_code_url: "https://pub-ce7f744c6a2145a4a3277e8ed2c3f8fd.r2.dev/Payment/%E9%9B%9E%E5%91%B3%E7%A0%94%E7%A9%B6%E6%89%80_%E8%A1%97%E5%8F%A3%E6%94%AF%E4%BB%98_QRcode.jpg"
+  brand_name: 雞味研究所｜牧草放山雞
+  line_community: '@620boqol'
+  line_community_url: https://line.me/ti/g2/4Qsf5GqgDlR2Liiy1asPTj8IFGHddyQKcD4yQA
+  bank_account: 銀行代碼：007（第一銀行）|| 帳號：23257030422
+  jko_qr_code_url: >-
+    https://pub-ce7f744c6a2145a4a3277e8ed2c3f8fd.r2.dev/Payment/%E9%9B%9E%E5%91%B3%E7%A0%94%E7%A9%B6%E6%89%80_%E8%A1%97%E5%8F%A3%E6%94%AF%E4%BB%98_QRcode.jpg
   line_pay:
     enabled: true
-    line_id: "Willy0221"
-
-# ─────────────────────────────────────────
-# 配送規則
-# ─────────────────────────────────────────
+    line_id: Willy0221
 delivery:
   hours:
-    am: "10:00~12:00"
-    pm: "16:00~18:00"
+    am: 10:00~12:00
+    pm: 16:00~18:00
   minimum_order:
-    chicken: "半隻 NT$380 起（包含 1 盒以上雞肉即可外送）"
+    chicken: 半隻 NT$380 起（包含 1 盒以上雞肉即可外送）
     side_dish_ntd: 350
+  # Session D3-2：滿額免運門檻與未達門檻運費（從 hardcode 改為 config）
+  delivery_fee_short_fallback: 80
   areas:
+    # Session D3-3：broad 區域關鍵字（04_delivery.md loader 不抓 #### 標題）
+    # 包含三峽、鶯歌等區域名，選址包含這些關鍵字仍視為配送範圍
     allowed:
-      - "三鶯生活圈"
+      - 三鶯生活圈
+      - 三峽
+      - 鶯歌
     denied:
-      - "非三鶯生活圈"
-    # 具體清單見 knowledge/tenants/chicken/04_delivery.md
-
-# ─────────────────────────────────────────
-# 開團日期（YYYY-MM-DD 格式）
-# Phase 2 改為讀取 Google Sheets / 行事曆
-# ─────────────────────────────────────────
+      - 非三鶯生活圈
 open_dates:
-  - "2026-06-16"
-  - "2026-06-18"
-  - "2026-06-23"
-  - "2026-06-26"
-  # 以後改這裡即可，格式為 YYYY-MM-DD
-  # 注意：single source of truth 為 config/tenants/chicken.yaml，config.yaml 為 legacy fallback（保留兩份以防 loader 走 fallback 路徑）
-
-# ─────────────────────────────────────────
-# 忽略關鍵字（Bot 完全不回覆，100% 符合才觸發）
-# 用於 LINE 官方關鍵字回應已涵蓋的功能
-# ─────────────────────────────────────────
+  - '2026-06-16'
+  - '2026-06-18'
+  - '2026-06-23'
+  - '2026-06-26'
 ignored_keywords:
-  - "我要訂購"
-  - "常見問題"
-  - "黑羽放山雞介紹"
-  - "蔥鹽醬介紹"
-  - "吃法介紹"
-
-# ─────────────────────────────────────────
-# 訂單 Schema（欄位收集順序）
-# ─────────────────────────────────────────
+  - 我要訂購
+  - 常見問題
+  - 黑羽放山雞介紹
+  - 蔥鹽醬介紹
+  - 吃法介紹
 order:
   field_sequence:
-    - date           # 1. 日期
-    - items          # 2. 品項與數量
-    - name           # 3. 姓名
-    - phone          # 4. 電話
-    - address        # 5. 地址
-    - community      # 6. 社區/公司（選填）
-    - time_slot      # 7. 時段（上午/下午）
-    - payment_method # 8. 付款方式
-    - paid           # 9. 是否已付款
-    - note           # 10. 備註（選填）
-
-# ─────────────────────────────────────────
-# Human Handoff 觸發條件（14 種）
-# 設計原則：語意相近就觸發（Semantic Matching）
-# 安全閘：所有轉人工都要先寫入 CSV，再通知 Hubert
-# ─────────────────────────────────────────
+    - date
+    - items
+    - name
+    - phone
+    - address
+    - community
+    - time_slot
+    - payment_method
+    - paid
+    - note
 handoff:
   customer_reply: |
     感謝您的提問！您的問題已轉交給老闆處理，將儘快回覆您，請留意 LINE 通知，謝謝！ 🐔
-
   L1_triggers:
-    - { type: "refund_request",        label: "【退貨/退款】",       description: "客戶要求退款" }
-    - { type: "cancel_request",        label: "【取消訂單】",         description: "客戶要取消已成立訂單" }
-    - { type: "reschedule_request",    label: "【改天需求】",         description: "客戶收單後想改天" }
-    - { type: "complaint",             label: "【售後/客訴】",         description: "客戶抱怨品質、配送或服務" }
-    - { type: "escalation",            label: "【客訴/爭議】",         description: "客戶態度激動或有爭議" }
-    - { type: "explicit_request",      label: "【明確要求真人】",     description: "客戶明確說要跟真人說" }
-
+    - type: refund_request
+      label: 【退貨/退款】
+      description: 客戶要求退款
+    - type: cancel_request
+      label: 【取消訂單】
+      description: 客戶要取消已成立訂單
+    - type: reschedule_request
+      label: 【改天需求】
+      description: 客戶收單後想改天
+    - type: complaint
+      label: 【售後/客訴】
+      description: 客戶抱怨品質、配送或服務
+    - type: escalation
+      label: 【客訴/爭議】
+      description: 客戶態度激動或有爭議
+    - type: explicit_request
+      label: 【明確要求真人】
+      description: 客戶明確說要跟真人說
   L2_triggers:
-    - { type: "discount_request",       label: "【折扣請求】",         description: "客戶要求特殊折扣" }
-    - { type: "delivery_confirm_needed", label: "【配送範圍確認】",   description: "地址不確定是否在配送範圍" }
-    - { type: "bulk_order",             label: "【大批訂單/公司合作】", description: "大量訂購或公司合作" }
-    - { type: "high_value_order",       label: "【金額異常】",           description: "訂單金額超過 NT$3,000" }
-
+    - type: discount_request
+      label: 【折扣請求】
+      description: 客戶要求特殊折扣
+    - type: delivery_confirm_needed
+      label: 【配送範圍確認】
+      description: 地址不確定是否在配送範圍
+    - type: bulk_order
+      label: 【大批訂單/公司合作】
+      description: 大量訂購或公司合作
+    - type: high_value_order
+      label: 【金額異常】
+      description: 訂單金額超過 NT$3,000
   L3_triggers:
-    - { type: "payment_mismatch",       label: "【付款異常】",           description: "付款截圖金額不符" }
-    - { type: "linepay_failed",         label: "【LINE Pay 付款失敗】", description: "LINE Pay code 過期或付款失敗" }
-    - { type: "open_date_inquiry",      label: "【開團日期確認】",       description: "開團日期不確定" }
-    - { type: "late_modify",            label: "【截單後變更】",         description: "14:00 後追加雞肉或 18:00 後變更小菜/時段" }
-
+    - type: payment_mismatch
+      label: 【付款異常】
+      description: 付款截圖金額不符
+    - type: linepay_failed
+      label: 【LINE Pay 付款失敗】
+      description: LINE Pay code 過期或付款失敗
+    - type: open_date_inquiry
+      label: 【開團日期確認】
+      description: 開團日期不確定
+    - type: late_modify
+      label: 【截單後變更】
+      description: 14:00 後追加雞肉或 18:00 後變更小菜/時段
   notify_owner:
     enabled: true
-    line_user_id: "Uf56650056d35626deb64165926a26182"
-    # line_bot_token：同一隻 LINE Bot（LINE_BOT_TOKEN）用於接收客戶 + 通知 Hubert
-
-# ─────────────────────────────────────────
-# 付款方式規則
-# ─────────────────────────────────────────
+    line_user_id: Uf56650056d35626deb64165926a26182
 payment:
   cash:
     enabled: true
@@ -140,64 +145,49 @@ payment:
     returning_customer: true
   transfer:
     enabled: true
-    bank_code: "007"
-    account: "23257030422"
+    bank_code: '007'
+    account: '23257030422'
   jko:
     enabled: true
-    qr_code_url: "${JKO_QR_CODE_URL}"
+    qr_code_url: ${JKO_QR_CODE_URL}
   linepay:
     enabled: true
-    line_id: "Willy0221"
-
-# ─────────────────────────────────────────
-# 收單時間規則
-# ─────────────────────────────────────────
+    line_id: Willy0221
 cutoff:
-  reminder_time:        "前一日 11:00~12:00"
-  order_close_time:      "13:00"
-  final_confirm_time:    "14:00"
-  chicken_modify_cutoff: "14:00"
-  side_dish_cutoff:      "18:00"
-
-# ─────────────────────────────────────────
-# 知識庫路徑
-# ─────────────────────────────────────────
+  reminder_time: 前一日 11:00~12:00
+  order_close_time: '13:00'
+  final_confirm_time: '14:00'
+  chicken_modify_cutoff: '14:00'
+  side_dish_cutoff: '18:00'
 knowledge:
-  base_path:    "knowledge/tenants/chicken"  # Session C C2：移除 knowledge/base/ fallback，改為 tenant 路徑
-  learned_path:  "knowledge/learned"
-  triggers_path: "src/knowledge/triggers.js"
-
-# ─────────────────────────────────────────
-# 安全設定
-# ─────────────────────────────────────────
+  base_path: knowledge/tenants/chicken  # Session C C2：移除 knowledge/base/ fallback，改為 tenant 路徑
+  learned_path: knowledge/learned
+  triggers_path: src/knowledge/triggers.js
 security:
   status_flow:
-    payment_status: ["pending", "paid", "confirmed"]
-    order_status:   ["new", "confirmed", "preparing", "delivered", "completed", "cancelled"]
+    payment_status:
+      - pending
+      - paid
+      - confirmed
+    order_status:
+      - new
+      - confirmed
+      - preparing
+      - delivered
+      - completed
+      - cancelled
   forbidden_info:
-    - "Hubert 個人電話"
-    - "老闆私人 LINE"
-    - "成本結構"
-    - "內部系統細節"
+    - Hubert 個人電話
+    - 老闆私人 LINE
+    - 成本結構
+    - 內部系統細節
   input_sanitization: true
-  # LINE Bot 白名單（測試階段限定）
-  # 允許的 LINE user ID 清單（U開頭 33 字元）
-  # block_others: true  → 不在清單內的 user 一律阻擋
-  # block_others: false → 不阻擋任何人（開放給所有人）
   allowed_line_users:
-    - "Uf56650056d35626deb64165926a26182"  # Hubert
-  block_others: false  # Phase 1 預設開放，避免阻擋新客戶；上線前改為 true
-
-# ─────────────────────────────────────────
-# LINE Bot
-# ─────────────────────────────────────────
+    - Uf56650056d35626deb64165926a26182
+  block_others: false
 line:
-  bot_token:      "${LINE_BOT_TOKEN}"
-  channel_secret: "${LINE_CHANNEL_SECRET}"
-
-# ─────────────────────────────────────────
-# 備註
-# ─────────────────────────────────────────
+  bot_token: ${LINE_BOT_TOKEN}
+  channel_secret: ${LINE_CHANNEL_SECRET}
 notes: |
   Phase 1：CSV 儲存 → data/orders/{date}.csv（實際檔名以 csvWriter.js 為準）
   Phase 2：升級 Google Sheets（需設定 spreadsheet_id + credentials）

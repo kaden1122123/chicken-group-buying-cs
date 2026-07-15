@@ -58,4 +58,39 @@
 
 ---
 
-_本 ADR 防止接手者直接改 config.yaml 造成 drift_
+## 補充（2026-07-15）— Drift 預防 SOP
+
+### 問題回顧
+
+2026-07-15 audit 發現 config.yaml 從未被 sync-config.sh 同步過，遺漏：
+
+- `tenant:` section（Session C C3 引入，2026-06-27）
+- `delivery.delivery_fee_short_fallback: 80`（Session D3-2 引入）
+- `delivery.areas.allowed` 詳細清單「三峽、鶯歌」（Session D3-3 引入）
+
+若 production 環境被降級 fallback 到 `config.yaml`，上述 3 個 Session D3 修整的特性會失效，客戶地址「三峽區」會被誤判為不在配送範圍。
+
+### 預防 SOP（每次改 chicken.yaml 後必跑）
+
+1. **改 chicken.yaml**
+2. **立即跑**：`bash scripts/sync-config.sh`（單向鏡像，自動備份 config.yaml → `config.yaml.bak.YYYYMMDD-HHMMSS`）
+3. **驗證**：`diff <(grep -v "^#" config/tenants/chicken.yaml) <(grep -v "^#" config.yaml)` 應該無差異（允許 open_dates 日期、ad-hoc 註解等非同步差異）
+4. **commit**：`git add -A` + commit（`config.yaml.bak.*` 由 `.gitignore` 排除不會污染 git）
+
+### CI/CD 自動化（Check 9 — Decision 2B）
+
+`scripts/check-quality.sh` Check 9 自動掃：
+
+- **mtime 檢查**：`config.yaml` mtime 必須 ≥ `config/tenants/chicken.yaml` mtime（保證 sync 後才 commit）
+- **missing keys 檢查**：`chicken.yaml` 所有 top-level keys 必須出現在 `config.yaml`（防 fallback 功能缺漏）
+- **檔案存在性**：兩檔都必須存在才比對
+- **緩解強度**：warn 不 fail（不擋 commit 流程）
+
+### backup 政策（Decision 3B）
+
+- `config.yaml.bak.*` 自動產生，**`.gitignore` 排除**（不留 git 雜訊）
+- 真的要回退時，從本機端 `cp config.yaml.bak.YYYYMMDD-HHMMSS config.yaml` 即可
+
+---
+
+_本 ADR 防止接手者直接改 config.yaml 造成 drift（v2: 加 drift 預防 SOP + Check 9 + backup 政策）_
