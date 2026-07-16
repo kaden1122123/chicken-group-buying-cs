@@ -170,7 +170,7 @@ function postOrder(payload, token) {
       res.on('end', () => {
         try {
           const parsed = JSON.parse(data);
-          if (res.statusCode === 200 && parsed.success) {
+          if ((res.statusCode === 200 || res.statusCode === 201) && parsed.success) {
             resolve({ success: true, orderId: parsed.order_id || (parsed.data && parsed.data.order_id) });
           } else {
             resolve({ success: false, error: parsed.error || data.substring(0, 200) });
