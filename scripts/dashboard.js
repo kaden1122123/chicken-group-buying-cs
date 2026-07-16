@@ -219,6 +219,7 @@ function generateHTML(data) {
         <th>金額</th>
         <th>狀態</th>
         <th>付款</th>
+        <th>驗證</th>
         <th>操作</th>
       </tr>
     </thead>
@@ -235,6 +236,7 @@ function generateHTML(data) {
           <td>NT$${o.total_amount || 0}</td>
           <td>${o.order_status || '-'}</td>
           <td>${isPaid ? '<span style="color:#2e7d32;font-weight:600">✓ 已收款</span>' : '<span style="color:#e65100">⏳ 待收款</span>'}</td>
+          <td>${(o.likely_paid === 'true' || o.likely_paid === true) ? '<span style="color:#2e7d32;font-weight:600" title="vision 判定: ' + (o.detected_amount || '?') + '/' + (o.vision_confidence || '0') + '">✓ 已驗證</span>' : (o.vision_source === 'cash_skip' ? '<span style="color:#999">💵 現金</span>' : (o.receipts_path ? '<span style="color:#e65100" title="confidence: ' + (o.vision_confidence || '0') + '">⏳ 待審</span>' : '<span style="color:#bbb">—</span>'))}</td>
           <td>${needApprove ? `<button class="approve-btn" data-order-id="${o.order_id}" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button>` : ''}${o.receipts_path ? `<span style="color:#1976d2;font-size:11px;margin-right:4px">📎 有截圖</span>` : `<button class="upload-receipt-btn" data-order-id="${o.order_id}" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳截圖</button>`}${isPaid ? '<span style="color:#999;font-size:12px">已確認收款</span>' : `<button class="mark-paid-btn" data-order-id="${o.order_id}" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button>`}</td>
         </tr>
       `;

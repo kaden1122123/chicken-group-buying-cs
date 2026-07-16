@@ -1271,5 +1271,89 @@ LLM 偵測以下情境之一 → 觸發 receipt 上傳流程：
 - ❌ 客戶沒主動傳圖就主動要（浪費頻寬）
 - ❌ 推送圖片後忘記告知「請傳截圖」（客戶會不知道下一步）
 - ❌ 把截圖存到無 order_id 時仍標記 confirmed（要等 P6 vision 分析 + 老闆確認才標）
-- ❌ 跳過 api-server 直接存本地（api-server 是 SSoT，多入口共用）
+- ❌ 跳過 api-server 直接存本地（api-server 是 SSoT，多入口共用）\n
 
+---
+
+# 二十一、B 方案 LLM 自動建單（2026-07-16 加）🚨
+
+Hubert 22:28 強調「**非常關鍵**」+ 嚴格規則。
+
+## 觸發規則
+
+客戶必須回覆**純文字**「**確認**」才建單（**嚴格匹配**，trim 後 === "確認"）：
+- 允許結尾標點：「確認。」「確認！」「確認？」
+- ❌ 排除：
+  - 其他非「確認」文字（「好的」「OK」「YES」「下單」「收到」等都不觸發）
+  - Line 貼圖（格式 `(*****)`）
+  - Emoji（純或混合）
+  - 包含額外文字（"確認 👍"、"我確認了"、"確認訂單" 都不算純文字）
+
+## 流程（嚴格執行）
+
+1. 客戶在訂單確認狀態下回「確認」純文字
+2. LLM 偵測 → 呼叫 `triggerAutoOrder({userId, orderData})`
+3. `src/handoff/autoOrder.js` 用 X-API-Token 從 `/home/clawuser/.config/chicken/secrets/api-token` 讀
+4. POST `/api/orders` 帶 `X-API-Token` header
+5. 成功 → notifyHubert「已建單 #xxx，請確認付款」
+6. 失敗 → notifyHubert fallback「自動建單失敗，請手動」+ 詳細錯誤原因
+
+## LLM 端配合
+
+當客戶訊息符合 `isStrictConfirmation()` → **主動觸發** B 方案（不要再問「您要建單嗎」）。當不符合 → 引導客戶回「確認」（純文字）。
+
+## 安全
+
+- X-API-Token 從 XDG secrets 讀（**禁止 commit 到 git**）
+- `.gitignore` 加 `**/api-token*` 排除
+- Token 64 chars random hex（`openssl rand -hex 32`）
+- api-server 同時接受 HTTP Basic Auth（瀏覽器）+ X-API-Token（server-to-server）
+
+## 為什麼不用 LINE 對話 command（方案 A）
+
+Hubert 21:54 確認方案 A 風險太大：雖然能辨別 line_user_id == notify_owner.line_user_id，但負擔大（要在 OpenClaw session 處理老闆身份驗證）。方案 B 簡單且已 work。
+
+---
+
+# 二十二、P6 Vision Analyzer 自動標記付款（2026-07-16 加）
+
+當顧客上傳支付截圖後，**api-server 自動觸發 vision analyzer** 比對金額，標記訂單 likely_paid。
+
+## 4 種支付方式處理
+
+| 付款方式 | Analyzer 行為 |
+|---------|--------------|
+| 現金 | 跳過分析（confidence: 1.0, source: 'cash_skip'），無需 OCR |
+| 轉帳 | 讀截圖 → 偵測金額 + 帳號末五碼 → 對比 expected amount → 標 likely_paid |
+| 街口支付 | 同上（先 P4 推 QR code，客戶付款後回截圖） |
+| LINE Pay | 落後選項不主動提供（Hubert 21:54 確認），客戶詢問才給老闆 LINE ID |
+
+## Vision provider：minimax（透過 OpenClaw Gateway）
+
+`src/handoff/receiptAnalyzer.js` 介面：
+- `analyzeReceipt({imagePath, orderContext})` → `{likely_paid, detected_amount, detected_account_last5, confidence, source, raw_response, analyzed_at}`
+- 透過 OpenClaw Gateway `/v1/vision/analyze` endpoint（需 Gateway 支援）
+- Stub fallback：vision 失敗 → confidence: 0 → 標記人工審核
+
+## Amount match 規則
+
+`isAmountMatch(detected, expected)` 容許 ±1 元誤差（轉帳手續費等）
+
+## 訂單 CSV 新欄位（6 個）
+
+- `likely_paid`: boolean
+- `detected_amount`: number|null
+- `detected_account_last5`: string|null
+- `vision_confidence`: number 0-1
+- `vision_source`: string
+- `analyzed_at`: ISO 8601
+
+## LLM 端配合
+
+當顧客上傳截圖時（LINE image message）→ 自動呼叫 api-server `POST /api/orders/:id/receipts` → analyzer 自動跑。LLM 不需額外處理。
+
+## 不要
+
+- ❌ Vision 還沒啟用前強行啟用 Phase 2 Google Sheets
+- ❌ 跨支付方式混用 analyzer（現金就不該 OCR）
+- ❌ 不驗證 magic bytes 就接受 image（防偽造）
