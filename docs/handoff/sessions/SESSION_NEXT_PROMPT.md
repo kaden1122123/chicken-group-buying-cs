@@ -70,34 +70,47 @@ cat /home/clawuser/.openclaw/agents/external-user/SOUL.md | head -5  # 確認 LL
 
 ---
 
-## 當前狀態（2026-07-16 03:00）
+## 當前狀態（2026-07-16 21:30）
 
 | 項目 | 狀態 |
 |------|------|
 | Production runtime 對齊 | ✅ AGENTS.md / SOUL.md / main_idea.md md5 全 match version control |
-| 測試套件 | ✅ 47 unit + 1 integration（`npm test` 全綠）|
-| 品質檢查 | ✅ 10 checks（`check-quality.sh`）— **0 警告 / 0 失敗** |
+| 測試套件 | ✅ 49 unit + 1 integration（`npm test` 全綠）|
+| 品質檢查 | ✅ 11 checks（`check-quality.sh`）— **0 警告 / 0 失敗** |
 | api-server | ✅ 跑（port 3001, PID 動態查）|
 | dashboard-server | ✅ 跑（port 3000）|
-| Worker Cloudflare | ❌ 404（healthz degraded，不擋 line bot 對話）|
-| 老闆 LINE 通知 | ✅ **已設**（d4b0d23 commit 寫入 XDG secrets, 172 chars）|
+| Worker Cloudflare | ✅ 改 WORKER_HEALTH_URL 指向 api-server /api/health（Round 3E）|
+| 老闆 LINE 通知 | ✅ 重新啟用（2026-07-16 21:30 Hubert 重啟 OpenClaw Gateway 後 bug fix c6438e8 生效）|
+| LINE push loop 防護 | ✅ 上線（HUMAN_HANDOFF guard + 1分鐘 debounce，commits c6438e8 + bbe6533）|
 | 3 層 enforcement | ✅ 上線（chmod 555 + cron 10min + Check 10）|
+| P2 方案 B（dashboard 核准）| ✅ 實作完成（commit 0e2d29f）|
+| P3 Quick Reply 意圖定義 | ✅ 實作完成（待 OpenClaw pipeline 渲染，commit fa0500d）|
+| P5 付款狀態機制 | ✅ 實作完成（commits 18565aa + 854948a）|
+| P7 訂單完整性規則 | ✅ 實作完成（commit 1380731）|
 
 ---
+
+## Round 3 完成紀錄（2026-07-16）
+
+- ✅ **Round 3A**: P7 訂單完整性規則（commit 1380731）— main_idea.md §十二 + 7 項必填欄位
+- ✅ **Round 3B**: P5 付款狀態機制（commits 18565aa + 854948a）— dashboard 「✓ 已收款」按鈕 + 客戶查詢規則
+- ✅ **Round 3C**: P3 Quick Reply 意圖定義（commit fa0500d）— chicken.yaml + main_idea.md §十八
+- ✅ **Round 3D**: P2 老闆回覆機制方案 B（commit 0e2d29f）— dashboard 「✓ 核准」按鈕
+- ✅ **Round 3E**: Worker 404 修整 — /healthz 全綠
+- ✅ **Round 3E-2**: LINE push loop 修整（commits c6438e8 + bbe6533）— HUMAN_HANDOFF guard + 1分鐘 debounce
 
 ## 待修整清單（按優先度）
 
 ### P0 — 立即（1-2 小時）
-- [x] ✅ **P1 LINE_BOT_TOKEN 修整**（2026-07-15 d01359f + d4b0d23 commits 完成）
+- [x] ✅ **P1 LINE_BOT_TOKEN 修整**（2026-07-15 d01359f + d4b0d23 commits 完成，2026-07-16 21:30 Hubert 手動驗證通過）
   - 確認：Hubert 已寫 `/home/clawuser/.config/chicken/secrets/line-bot-token`（mode 600, 172 chars, d4b0d23 commit 從 /tmp 搬過來）
   - 重啟 api-server，看 log 有 "LINE_BOT_TOKEN loaded from /home/clawuser/.config/chicken/secrets/line-bot-token (172 chars)" 而非 warning
-  - Test：模擬 LLM 觸發 notifyHubert()，看 LINE push 是否到 Hubert 手機（待 Hubert 手動驗證）
+  - Test：2026-07-16 21:30 Hubert 重啟 OpenClaw Gateway 後，notifyHubert() push 正常運作
   - 詳見 `src/handoff/notifier.js` line 7-17 (getLineBotToken → config.js)
 
-- [ ] **Worker 404 修整**（HANDOFF.md 緊急段已有）
-  - deploy Cloudflare Worker `external-user-line-security` 帳號
-  - 或改 `WORKER_HEALTH_URL` 環境變數
-  - 修完 healthz 變全綠
+- [x] ✅ **Worker 404 修整**（Round 3E 2026-07-16 完成）
+  - `WORKER_HEALTH_URL=http://127.0.0.1:3001/api/health` 環境變數
+  - 重啟後 /healthz 從 `degraded` 變 `ok`（三服務都 up）
 
 ### P1 — 下個 session（半天）
 - [ ] **P5 付款狀態機制**（30 分鐘）
@@ -153,6 +166,7 @@ cat /home/clawuser/.openclaw/agents/external-user/SOUL.md | head -5  # 確認 LL
 - **push 前必跑**：`bash scripts/sync-mirror.sh from-legacy`
 - **重啟 dashboard 帶 env**：`DASHBOARD_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/dashboard-pwd`（不要用 env 直接傳密碼）
 - **重啟 api-server 帶 env**：`API_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/api-pwd`
+- **重啟 dashboard 帶 WORKER_HEALTH_URL**（讓 /healthz worker=up）：`WORKER_HEALTH_URL=http://127.0.0.1:3001/api/health`
 
 ---
 
@@ -175,6 +189,7 @@ sleep 1
 nohup env DASHBOARD_USERNAME=admin \
   DASHBOARD_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/dashboard-pwd \
   API_USERNAME=api-user API_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/api-pwd \
+  WORKER_HEALTH_URL=http://127.0.0.1:3001/api/health \
   PORT=3000 \
   node scripts/dashboard-server.js > /tmp/dashboard-server.log 2>&1 &
 disown
@@ -182,7 +197,7 @@ sleep 2
 
 # 3. 驗證
 curl -sS -m 5 http://localhost:3000/healthz
-# 預期：dashboard=up, api_server=up, worker=down:404（Worker 未 deploy，正常）
+# 預期：dashboard=up, api_server=up, worker=up（Worker URL 已指向 api-server /api/health）
 ```
 
 ---

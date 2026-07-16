@@ -60,9 +60,10 @@
 
 | 服務 | Port | 帳號 | 密碼檔（mode 600） | 用途 |
 |------|------|------|------------------|------|
-| **Dashboard** | 3000 | `admin` | `/home/clawuser/.config/chicken/secrets/dashboard-pwd` (15 chars) | 訂單管理、訂單建單、付款狀態（未來）|
+| **Dashboard** | 3000 | `admin` | `/home/clawuser/.config/chicken/secrets/dashboard-pwd` (15 chars) | 訂單管理、訂單建單、付款狀態（已實作 ✓ 已收款按鈕）|
 | **api-server** | 3001 | `api-user` | `/home/clawuser/.config/chicken/secrets/api-pwd` (14 chars) | 給 Worker / B 方案呼叫 |
-| **Line Bot Token** | — | — | `/home/clawuser/.config/chicken/secrets/line-bot-token` (172 chars, d4b0d23 寫入) | 給 notifier.js push LINE 給 Hubert |
+| **Line Bot Token** | — | — | `/home/clawuser/.config/chicken/secrets/line-bot-token` (172 chars, d4b0d23 寫入) | 給 notifier.js push LINE 給 Hubert（2026-07-16 21:30 重新啟用）|
+| **WORKER_HEALTH_URL** | — | — | 環境變數，`http://127.0.0.1:3001/api/health`（Round 3E 設）| 讓 dashboard /healthz worker=up |
 | **Tailscale** | — | — | — | 100.114.197.9（你 PC + server 同一 mesh） |
 
 啟動服務的範例指令（chmod 555 保護下，要 u+w 暫解 + 記得 u+w 改回）：
@@ -228,9 +229,14 @@ chmod 555 main/scripts/*.js main/src/  # restore
 | 品質檢查 | ✅ 10 通過 / 0 警告 / 0 失敗 |
 | Dashboard 服務 | ✅ 跑中（port 3000）|
 | api-server 服務 | ✅ 跑中（port 3001）|
-| Worker Cloudflare | ❌ 404（healthz degraded，但不擋 line bot 對話）|
+| Worker Cloudflare | ✅ 改 WORKER_HEALTH_URL 指向 api-server /api/health（Round 3E）|
 | 89 leaked cloudflared processes | ⚠️ 可選清理 |
-| 老闆 LINE 通知 | ✅ **已設**（172 chars, d4b0d23 寫入 XDG secrets）|
+| 老闆 LINE 通知 | ✅ **已啟用**（2026-07-16 21:30 Hubert 重啟 OpenClaw Gateway 後 bug fix c6438e8 生效）|
+| LINE push loop 防護 | ✅ HUMAN_HANDOFF guard + 1分鐘 debounce（c6438e8 + bbe6533）|
+| P2 方案 B | ✅ 實作完成（commit 0e2d29f）|
+| P3 Quick Reply 意圖 | ✅ 實作完成（待 OpenClaw 渲染，commit fa0500d）|
+| P5 付款狀態機制 | ✅ 實作完成（commits 18565aa + 854948a）|
+| P7 訂單完整性規則 | ✅ 實作完成（commit 1380731）|
 
 ---
 

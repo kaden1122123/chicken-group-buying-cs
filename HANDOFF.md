@@ -1,6 +1,6 @@
 # Session Handoff — 雞味客服專案
 
-> **最後更新**：2026-07-16 06:30 session（commit d4b0d23 之後；XDG secrets 持久化 + 文檔 best practices 強化）
+> **最後更新**：2026-07-16 21:30 session（Round 3A-3E-2 + 文件 drift 全面修整 + notify_owner 重新啟用）
 
 ## 🎯 用途（Purpose）
 
@@ -55,17 +55,27 @@
 | Production runtime 三檔 | ✅ 對齊 | AGENTS.md / SOUL.md / main_idea.md md5 與 production-prompt/2026-07-03/ 完全一致 |
 | 測試套件 | ✅ 全綠 | `npm test` → 49 unit + 1 integration |
 | 品質檢查 | ✅ 全綠 | `bash scripts/check-quality.sh` → 11 checks, 0 fail |
-| api-server | ✅ 跑中 | PID 3455982, port 3001 |
-| Dashboard-server | ✅ 跑中（修過） | PID 3461715, port 3000, /home/clawuser/.config/chicken/secrets/dashboard-pwd fallback |
+| api-server | ✅ 跑中 | PID 3558773, port 3001 |
+| Dashboard-server | ✅ 跑中 | port 3000, /home/clawuser/.config/chicken/secrets/dashboard-pwd fallback |
+| LINE push 通知 | ✅ 恢復 | 2026-07-16 21:30 Hubert 重啟 OpenClaw Gateway 後，`handoff.notify_owner.enabled` 重新啟用（bug fix c6438e8 HUMAN_HANDOFF guard + 1分鐘 debounce 已生效）|
+| LINE push loop 防護 | ✅ 上線 | HUMAN_HANDOFF guard + 1分鐘 debounce（src/index.js + src/states/handoff.js，commits c6438e8 + bbe6533）|
+| P3 Quick Reply | ✅ 意圖定義 | chicken.yaml `quick_replies` + main_idea.md §十八（待 OpenClaw pipeline 支援渲染）|
+| P5 付款狀態機制 | ✅ 已實作 | dashboard 「✓ 已收款」按鈕 + POST /api/orders/:id/mark-paid（commits 18565aa + 854948a）|
+| P2 老闆回覆機制 | ✅ 方案 B 已實作 | dashboard 「✓ 核准」按鈕 + POST /api/orders/:id/approve（commit 0e2d29f）|
+| P7 訂單完整性規則 | ✅ 已實作 | main_idea.md §十二「訂單完整性規則」（commit 1380731）|
 
 ---
 
-## 2. 最近 4 個 Commits
+## 2. 最近 6 個 Commits（2026-07-16）
 
-- **3e3e993** feat(check-quality): Check 10 雙位置檔案 md5 同步 + dashboard 密碼檔支援
-- **953da66** fix(check-quality): 補 Check 8 X1-D 實作 + Check 9 缺 pass 訊息
-- **47baeae** docs(audit): AGENTS.md × 2 收尾 + config drift 修整 + Check 9 drift 預防
-- **decd2b6** docs(audit): 完整 codebase audit + drift 修整（Hubert 17:18 觸發）
+- **bbe6533** chore(lint): lint:fix 自動修 src/states/handoff.js indent (7 errors → 0)
+- **c6438e8** fix(handoff): P3-emergency 修 LINE push infinite loop — HUMAN_HANDOFF guard + 1分鐘 debounce
+- **0e2d29f** feat(dashboard): P2 老闆回覆機制方案 B — dashboard 「✓ 核准」按鈕 + POST /api/orders/:id/approve
+- **fa0500d** feat(config+prompt): P3 Quick Reply 統一回覆（chicken.yaml + main_idea.md §十八）
+- **854948a** fix(dashboard): P5 mark-paid endpoint 加跨檔案查找（2026-07-16 修整）
+- **18565aa** feat(dashboard): P5 付款狀態機制 — dashboard 「✓ 已收款」按鈕 + 客戶查詢規則
+
+完整 log: `git log --oneline -10`
 
 完整 log: `git log --oneline -10`
 
@@ -85,7 +95,7 @@
 
 ---
 
-## 4. 此 Session 完成（2026-07-15）
+## 4. 此 Session 完成（2026-07-15 + 2026-07-16 Round 2-3）
 
 ### 完整 audit（11 維度）
 - REVIEW_GUIDE 套數 30 → 49
@@ -117,18 +127,58 @@
 - commit 3e3e993：dashboard-server.js 加 DASHBOARD_PASSWORD_FILE 支援
 - **本次新增** `/home/clawuser/.config/chicken/secrets/dashboard-pwd` 預設 fallback：dashboard-watchdog 透過 manage-tunnel.sh 重啟無 env 時仍能讀到密碼
 
+### 2026-07-16 Round 2-3 完成項目
+
+#### Round 2: 文件 drift 修整 + secrets 清理
+- fbb797b docs(handoff): 三份 handoff 文件 drift 修整 — /tmp/ → XDG secrets
+- 清掉 /tmp/dash-pwd + /tmp/api-pwd 冗餘檔（d4b0d23 commit 從 /tmp 搬到 XDG，舊檔留著污染）
+- running services 自動 fallthrough 到 XDG secrets，無重啟影響
+
+#### Round 3A: P7 訂單完整性規則
+- 1380731 main_idea.md §十二 加「訂單完整性規則」
+- 7 項必填欄位檢查清單（日期、品項、姓名、電話、地址、時段、付款）
+- ❌/✅ 範例對照 + 4 條原則
+- 客戶只給部分資訊 → 列缺項請補完，不要說「好，訂單收到」
+
+#### Round 3B: P5 付款狀態機制
+- 18565aa + 854948a dashboard-server.js：加 `POST /api/orders/:orderId/mark-paid` endpoint
+- 跨檔案查找 readAllOrders + 傳 delivery_date 給 updateOrder
+- dashboard.js template 加「付款」+「操作」兩欄
+- 「✓ 已收款」按鈕（橘色，payment_status=pending 時顯示）
+- main_idea.md §六加「💰 客戶查詢付款狀態」規則
+
+#### Round 3C: P3 Quick Reply 統一回覆（意圖定義，待 OpenClaw 支援渲染）
+- fa0500d chicken.yaml 加 `quick_replies` section（4 種情境：menu/payment/hours/delivery）
+- main_idea.md §十八 Quick Reply 統一回覆（使用原則、範例）
+- config.yaml 從 chicken.yaml sync
+
+#### Round 3D: P2 老闆回覆機制方案 B
+- 0e2d29f dashboard-server.js：加 `POST /api/orders/:orderId/approve` endpoint
+- dashboard.js：加 `needApprove` 變數 + 藍色「✓ 核准」按鈕（order_status=pending_handoff 時顯示）
+- main_idea.md §十九「老闆回覆機制（P2 方案 B）」
+- 方案 A（LINE 對話 command）放棄（Hubert 21:30 確認風險太大，雖然 line_user_id 辨別管理者可行但負擔大）
+
+#### Round 3E: Worker 404 修整
+- WORKER_HEALTH_URL 環境變數指向 `http://127.0.0.1:3001/api/health`
+- 重啟 SOP 加 WORKER_HEALTH_FILE 路徑
+- /healthz 從 `degraded` 變 `ok`（三服務都 up）
+
+#### Round 3E-2: P3-emergency LINE push infinite loop 修整
+- c6438e8 雙層保護：
+  1. `src/index.js` 加 HUMAN_HANDOFF guard（line 50-58 條件加 `state !== STATES.HUMAN_HANDOFF`）
+  2. `src/states/handoff.js` 加 1 分鐘 debounce（同 userId + 同訊息 hash 1 分鐘內只 push 1 次）
+- bbe6533 lint:fix 自動修 7 個 indent errors
+- 根因：客戶在 HUMAN_HANDOFF 狀態下重發訊息 → 每次都觸發 handoff → push
+- 暫時止血：`handoff.notify_owner.enabled: false`（保留磁碟狀態，未 commit）
+- 2026-07-16 21:30 Hubert 重啟 OpenClaw Gateway 後，重新啟用 `notify_owner.enabled: true`
+
 ---
 
 ## 5. ⚠️ 待修整項目（依緊急度排序）
 
 ### 緊急（30 分鐘內）
-- [ ] **Worker 404 未修**：dashboard-server.js 內寫死 Worker URL = https://external-user-line-security.kaden1122123.workers.dev/，ping /healthz 回 404
-  - dashboard.healthz 會一直 degraded
-  - 修法二選一：
-    a. 部署該 Worker（Hubert 進 Cloudflare dashboard 部署）；或
-    b. 改 dashboard WORKER_HEALTH_URL 環境變數指向可達到的 health endpoint
-  - 注意：**不會擋 line bot 對話**，只是 healthz 狀態
-- [x] Dashboard PASSWORD_FILE fallback（本次完成，待 commit）
+- [x] ✅ **Worker 404 修整**（Round 3E 2026-07-16 完成）：`WORKER_HEALTH_URL=http://127.0.0.1:3001/api/health` 環境變數，重啟後 /healthz 從 `degraded` 變 `ok`（三服務都 up）
+- [x] ✅ Dashboard PASSWORD_FILE fallback（XDG secrets 已上線，dashboard-watchdog 透過 manage-tunnel.sh 重啟無 env 時仍能讀到密碼）
 - [ ] **清理 89 個 leaked cloudflared processes**：`pkill -9 cloudflared` 即可清理
 - [ ] **Manual Test Plan 11 步驟**（從 LINE bot 測試開始）— 見 [reference note]
 
@@ -212,6 +262,7 @@ A: `pwd`，應為 `/home/clawuser/openclaw-workspace/others/chicken-group-buying
 |------|------|----------|
 | v1 | 2026-07-15 17:09 | 初次建立 |
 | v2 | 2026-07-16 03:00 | 加 9 個未修整清單 + B 方案規劃 + 新增 doc/PROJECT_INVENTORY.md + doc/handoff/sessions/SESSION_NEXT_PROMPT.md + src/config.js LINE_BOT_TOKEN_FILE 支援 |
+| v3 | 2026-07-16 21:30 | 文件 drift 全面修整 + Round 2-3 全部 commit 記錄 + P2-P3-P5-P7 完成狀態 + LINE push loop bug fix (c6438e8/bbe6533) + notify_owner 重新啟用 |
 
 ---
 
@@ -220,41 +271,73 @@ A: `pwd`，應為 `/home/clawuser/openclaw-workspace/others/chicken-group-buying
 | # | 問題 | 難度 | 狀態 | 建議時程 |
 |---|------|------|------|----------|
 | **P1** | 為何老闆沒收到通知？ | 簡單 | ✅ **已修**：src/config.js 加 `LINE_BOT_TOKEN_FILE` fallback（commit 待 push） | 立刻 |
-| **P2** | 客戶無權限確認訂單，老闆如何回覆 | 中 | ⏳ 方案 A（LINE 老闆 command）或 B（dashboard 按鈕） | 下次 session |
-| **P3** | 統一回覆（Quick Reply） | 中 | ⏳ chicken.yaml 加 quick_replies + main_idea.md 加規則 | 下次 session |
-| **P4** | 街口支付傳圖片（不傳網址） | 中高 | ⏳ notifier 加 image 接收器 + data/receipts/ 儲存 | 中期 |
-| **P5** | 老闆確認付款狀態 | 簡單 | ⏳ payment_status 欄位 + dashboard 按鈕 | 下次 session |
-| **P6** | OCR 轉帳截圖 | 中 | ⏳ LLM vision API 讀 image 提取金額/帳號 | 中期 |
-| **P7** | 訂單不完整時要求完整表格 | 簡單 | ⏳ main_idea.md 加規則（5 分鐘）| 下次 session |
+| **P2** | 客戶無權限確認訂單，老闆如何回覆 | 中 | ✅ **方案 B 已修**（commit 0e2d29f，dashboard 「✓ 核准」按鈕）；方案 A 放棄（Hubert 21:30 確認風險太大） | — |
+| **P3** | 統一回覆（Quick Reply） | 中 | ✅ **已修意圖定義**（commit fa0500d，chicken.yaml `quick_replies` + main_idea.md §十八），待 OpenClaw pipeline 支援渲染 | — |
+| **P4** | 街口支付傳圖片 | 中高 | ⏳ 2026-07-16 21:30 詳細需求確認：街口 QR code 是老闆的收款碼（固定）；顧客回傳支付截圖要儲存 + order_id 對應；下階段實作 | 中期 |
+| **P5** | 老闆確認付款狀態 | 簡單 | ✅ **已修**（commits 18565aa + 854948a，dashboard 「✓ 已收款」按鈕 + POST /api/orders/:id/mark-paid）| — |
+| **P6** | OCR 轉帳截圖 | 中 | ⏳ 2026-07-16 21:30 確認走 minimax vision（不引入新 LLM）+ 4 種支付方式 flow（現金/轉帳/街口/LinePay）+ likely_paid 標記需老闆確認；下階段實作 | 中期 |
+| **P7** | 訂單不完整時要求完整表格 | 簡單 | ✅ **已修**（commit 1380731，main_idea.md §十二「訂單完整性規則」+ 7 項必填欄位檢查清單）| — |
 | **P8** | Dashboard 何時更新？ | 已說明 | ✅ **已答**：A 方案需老闆手動建單；2026-07-15 訂單都是測試 fixture | — |
-| **P9** | 試算表 | 簡單 | ⏳ `storage.phase2.enabled: true` + Google Sheets credentials | 中期 |
+| **P9** | 試算表 | 簡單 | ⏳ 2026-07-16 21:30 待 Hubert 確認 external-user 是否獨立 google email；下階段實作 | 中期 |
 
 ---
 
 ## 10. 下階段規劃（按優先度）
 
-### A. 立即（下個 session 開頭）
-- [x] ✅ **LINE_BOT_TOKEN 整合驗證**（2026-07-15 d4b0d23 commit 完成）：token 已寫入 `/home/clawuser/.config/chicken/secrets/line-bot-token`（mode 600, 172 chars），重啟 api-server 後 log 顯示 "LINE_BOT_TOKEN loaded from /home/clawuser/.config/chicken/secrets/line-bot-token (172 chars)"，待 Hubert 手動驗證 LINE push 是否到帳
-- [ ] **P5 付款狀態機制**（30 分鐘）：dashboard 加「已收款」按鈕 + 客戶問"我付款了嗎" 自動回應
-- [ ] **P7 訂單完整性規則**（5 分鐘）：加 main_idea.md §十二 規則
+### A. 立即（2026-07-16 全部完成）
+- [x] ✅ **LINE_BOT_TOKEN 整合驗證**（2026-07-15 d4b0d23 commit 完成）
+- [x] ✅ **P5 付款狀態機制**（commit 18565aa + 854948a 完成）
+- [x] ✅ **P7 訂單完整性規則**（commit 1380731 完成）
 
-### B. 下個 session（半天，3-4 小時）
-- [ ] **P2 老闆回覆機制**（1 小時）：方案 B — dashboard「核准並建單」按鈕
-- [ ] **P3 統一回覆（Quick Reply）**（1-2 小時）：chicken.yaml config + LLM 規則
-- [ ] **Worker 404 修整**（30 分鐘）：deploy Cloudflare Worker 或改 WORKER_HEALTH_URL
+### B. 下個 session（全部完成）
+- [x] ✅ **P2 老闆回覆機制方案 B**（commit 0e2d29f 完成）
+- [x] ✅ **P3 統一回覆（Quick Reply）意圖定義**（commit fa0500d 完成，待 OpenClaw 支援渲染）
+- [x] ✅ **Worker 404 修整**（Round 3E 完成，/healthz 從 degraded 變 ok）
+- [x] ✅ **LINE push loop 修整**（commits c6438e8 + bbe6533 完成）
 
-### C. 中期（半天設計 + 實作）
-- [ ] **B 方案（LLM 自動觸發 POST /api/orders）**（4-6 小時）：取代 A 方案手動建單
-  - 觸發機制：偵測「客戶確認」關鍵字（"確認/好/收到/yes/送出/下單" 等）
-  - 觸發後：LLM 自動 call api-server `POST /api/orders`
-  - 需要：auth（X-API-Token）、error handling（POST 失敗 fallback to push notification）
-  - 取代流程：客戶「確認」 → 自動建單 → push 通知老闆「已建單，請確認付款」
-  - 影響：dashboard 訂單頁會有新「自動建的訂單」標籤
-- [ ] **P4 街口支付傳圖片**（2-3 小時）：notifier 加 image 接收器
-- [ ] **P6 OCR 轉帳截圖**（半天）：LLM vision 自動標記付款
-- [ ] **P9 試算表（Google Sheets）**（30 分鐘）：storage.phase2 啟用
+### C. 中期（Hubert 21:30 詳細需求已確認，實作計畫見 §10-D）
 
-### D. 環境清理
+#### P4：街口支付傳圖片（2-3 小時）
+- 街口支付有固定 QR code（老闆的收款碼）→ P4 是「push 這個 QR code 給客戶」
+- 顧客回傳支付截圖（轉帳/街口）：儲存到 `data/receipts/{order_id}/`（萬一糾紛備份）
+- order_id 對應：訂單建立時加 `receipts_path` 欄位（CSV 存路徑，圖片存檔案系統）
+- 區分兩種 image：
+  - **老闆 QR code**（送給客戶看）→ notifier 推 LINE image message
+  - **客戶轉帳截圖**（客戶送來）→ 存檔 + 標記 likely_paid
+
+#### P6：OCR 轉帳截圖（半天，4-5 小時）
+- 4 種支付方式具體 flow：
+  1. **現金**：依現金規則，後續貨到付款（不用 OCR）
+  2. **轉帳**：傳送轉帳資訊，客戶轉帳後回傳截圖 → 對比 expected amount + likely_paid
+  3. **街口支付**：P4 完成後傳老闆 QR code image，客戶付款後回傳截圖 → 對比 expected amount + likely_paid
+  4. **Line pay**：落後選項不主動提供；客戶詢問才給老闆 LINE ID（config 內有）→ 完全老闆作業程序
+- **走 minimax vision**（不引入新 LLM，與 Discord 傳圖片同原理）
+- 統一介面 `analyzeReceiptImage(imageUrl, orderData) → { likely_paid, detected_amount, detected_account_last5, confidence }`
+- 不引入 OCR library
+
+#### P9：Google Sheets 試算表（30 分鐘）
+- 待 Hubert 確認 external-user 是否用獨立 google email
+- chicken.yaml 加 `storage.phase2.enabled: true`
+- Google Sheets credentials（service account JSON 或 OAuth refresh token）
+- 自動 sync CSV → Sheets
+
+#### B 方案：LLM 自動觸發 POST /api/orders（4-6 小時）
+- **嚴格規則**：客戶必須回覆「確認」才建單
+- 排除：line 貼圖（格式 `(*****)`）、其他非純文字 → 重新請客戶回覆「確認」
+- 流程：客戶「確認」 → 自動 call api-server `POST /api/orders`（X-API-Token auth）→ push 通知老闆
+- error handling：POST 失敗 → fallback push 通知老闆手動建單
+- **auth 安全**（Hubert 強調）：X-API-Token 從 XDG secrets 讀，**禁止 commit 到 git**
+- **repo 應設為 private**（Hubert 強調）
+
+### D. 下一步明確行動（Hubert 21:30 確認後啟動）
+
+1. **P9 google email 確認**：Hubert 需回答「external-user agent 要不要用獨立 google email」
+2. **P4 實作啟動**：先做 image storage 路徑設計（order_id 對應）
+3. **P6 實作啟動**：先做 minimax vision adapter（4 種支付方式 flow）
+4. **B 方案實作**：先做「確認」關鍵字 detector（嚴格規則：純文字、排除 line 貼圖）
+5. **repo private 設定**：Hubert 確認 GitHub repo 是否已設為 private
+
+### E. 環境清理
 - [ ] **89 個 leaked cloudflared processes 清理**（5 分鐘）：`pkill -9 cloudflared`
 - [ ] 各種 docs drift 修整（docs/KNOWN_ISSUES 等）
 
