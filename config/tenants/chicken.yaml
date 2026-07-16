@@ -11,10 +11,18 @@ storage:
     filename_pattern: '{date}.csv'
     backup_path: data/orders/archive
   phase2:
-    enabled: false
+    enabled: false  # P9：待 Hubert 完成 OAuth setup 後改 true（見 scripts/setup-google-sheets.sh）
     type: google_sheets
-    spreadsheet_id: ''
-    credentials_path: ''
+    spreadsheet_id: ''  # Google Sheets ID（Hubert 建立試算表後從 URL 複製）
+    sheet_name: 'Orders'  # 工作表名稱
+    sync_direction: 'csv_to_sheets'  # csv → sheets 單向同步（讀 chicken.csv 寫入 Sheets）
+    sync_interval_hours: 24  # 每日同步（凌晨 3 點 cron）
+    auth:
+      type: 'oauth_service_account'  # service account 認證（比 OAuth 簡單，適合 server-to-server）
+      credentials_path: '/home/clawuser/.config/chicken/secrets/google-service-account.json'
+      # Setup: 用 clawbrt@gmail.com 登入 https://console.cloud.google.com →
+      # 建立 project → 啟用 Google Sheets API → 建立 service account →
+      # 下載 JSON key 放到上述路徑 → 把該 service account email 加入 Google Sheets 為編輯者
 official:
   brand_name: 雞味研究所｜牧草放山雞
   line_community: '@620boqol'

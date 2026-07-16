@@ -463,7 +463,16 @@ function getBlockOthers() {
   return security.block_others === true;
 }
 
+/**
+ * 取得 storage 配置（P9 2026-07-16 加）
+ * @returns {object|null} storage section 或 null
+ */
+function getStorageConfig() {
+  return configYaml.storage || null;
+}
+
 module.exports = {
+  getStorageConfig,
   getOpenDates,
   isOpenDate,
   getIgnoredKeywords,
