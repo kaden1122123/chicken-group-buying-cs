@@ -112,14 +112,14 @@ async function handleHandoff(userId, userMessage, orderData = {}, userProfile = 
   } else {
     const notification = formatLINENotification(handoffOrderData, userMessage);
     notifyHubert(notification).catch((e) => {
-    logger.error('LINE notification failed', { err: e.message });
-    handoffOrderData.staff_notes = 'LINE通知失敗，請人工確認';
-    try {
-      writeOrderWithRetry(handoffOrderData); // 更新 staff_notes
-    } catch (e2) {
+      logger.error('LINE notification failed', { err: e.message });
+      handoffOrderData.staff_notes = 'LINE通知失敗，請人工確認';
+      try {
+        writeOrderWithRetry(handoffOrderData); // 更新 staff_notes
+      } catch (e2) {
       // ignore
-    }
-  });
+      }
+    });
   }
 
   return {
