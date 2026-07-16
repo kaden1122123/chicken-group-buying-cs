@@ -1191,3 +1191,42 @@ LLM reply 客戶：
 因為 **OpenClaw pipeline 目前不支援 Quick Reply 渲染**（見 §十二「訂單確認流程」備註）。這個 §十八 是**意圖定義**：未來 OpenClaw 支援後，pipeline 讀 chicken.yaml 的 quick_replies + 這個 §十八 規則，自動生成 LINE 按鈕。客戶問到對應情境時，LLM 主回應文字不變，後面加 Quick Reply 按鈕。
 
 未來 session 接手時，如果 OpenClaw 已支援 Quick Reply，本 §可以直接生效。
+
+---
+
+# 十九、老闆回覆機制（P2 2026-07-16 加 · 方案 B）
+
+LLM 透過 push 通知告知老闆「客戶 X 需要確認」，老闆用 **dashboard 「✓ 核准」按鈕** 回覆（方案 B，推薦）。
+
+## 方案 A vs 方案 B
+
+| 方案 | 機制 | 優點 | 缺點 |
+|------|------|------|------|
+| **A** | LINE 對話內老闆輸入「OK」或「OK #3」 | 老闆不用跳出對話，體驗順 | 要辨識「訊息是來自老闆不是客戶」（看 line_user_id == chicken.yaml 的 notify_owner.line_user_id）、需要 LINE 端驗證逻辑 |
+| **B**（推薦）| dashboard 「✓ 核准」按鈕 | 跟現有 A 方案 flow 差最少、不需 LINE 驗證、可一次看全部待核准訂單 | 老闆要打開 dashboard 瀏覽器 |
+
+## 方案 B 詳細機制
+
+1. LLM 發送 push 給老闆（line_user_id = chicken.yaml 的 notify_owner.line_user_id）
+2. push 內容包含 order_id + 訂單摘要 + 訂單日期檔案
+3. 老闆打開 dashboard（http://100.114.197.9:3000/，帳密 admin / ChickenTest2026）
+4. 看到「待核准」訂單（order_status=pending_handoff）的「✓ 核准」按鈕
+5. 點擊 → POST /api/orders/:orderId/approve → order_status 改為 confirmed
+
+## LLM 端配合事項
+
+- 發 push 通知時，必須包含 order_id（讓老闆能在 dashboard 找到）
+- 內容格式：「🔔 【手動核准】客戶王小明 訂購：鹽水雞 x1，配送 2026-07-20。order_id: PENDING-xxx」
+- 不要只 push 不告訴老闆要去 dashboard 點按鈕（push 裡要明確說「請至 dashboard 核准」）
+
+## 跨方案說明（未來）
+
+如果未來 LINE 端能驗證「訊息是來自老闆」，方案 A 可以用同一個 endpoint：
+- 老闆在 LINE 打「OK PENDING-xxx」→ API 解析 order_id → 呼叫 POST /api/orders/:orderId/approve
+- endpoint 本身不變，差別在入口（dashboard 按鈕 vs LINE 文字）
+
+## 不要
+
+- ❌ LLM 自己幫老闆核准訂單（這是「需要老闆決定」的事項，不能讓 LLM 代勞）
+- ❌ push 通知不含 order_id（老闆找不到訂單在哪）
+- ❌ 在 handoff 客戶詢問時不 push（客戶会以為 AI 能處理，變成兩邊等待）

@@ -2,7 +2,7 @@
 
 > **對應 production runtime**：`~/.openclaw/agents/external-user/`
 > **建立時間**：2026-07-03（Hubert 17:18 codebase audit 觸發）
-> **最後更新**：2026-07-16（P3 Quick Reply 統一回覆：chicken.yaml config + main_idea.md §十八 + config.yaml sync）
+> **最後更新**：2026-07-16（P2 老闆回覆機制方案 B：main_idea.md §十九 + dashboard 「✓ 核准」按鈕 + approve endpoint + main_idea.md sync）
 > **觸發**：完整 codebase audit 發現多處 drift，本版合併修正後對應到 production runtime。
 
 ---
@@ -106,6 +106,43 @@
 - main_idea.md dev ↔ production runtime md5 一致（sync 完成）
 - dashboard.html 本來就是 dev repo 生成 artifact，不需另外 sync 到 production runtime（production runtime 透過 ~/.openclaw/workspace-external-user/ 鏡像讀）
 
+### 7. main_idea.md §十九 老闆回覆機制 + dashboard 「✓ 核准」按鈕（P2 方案 B · 2026-07-16 加）
+
+**問題**：
+- LLM 轉 handoff 後，客戶訊息需要老闆決定（退款、改單、地址查證等）
+- 方案 A（LINE 對話內老闆 command）需要 LINE 端驗證、體驗不順
+- 方案 B（dashboard 按鈕）順手、不需驗證、可一次看全部待核准訂單
+
+**改動 1（prompt）**：
+- `docs/production-prompt/2026-07-03/main_idea.md` 加 # 十九 老闆回覆機制（P2 方案 B）
+- 方案 A vs B 對照表（優缺點）
+- 方案 B 詳細機制：LLM push → 老闆開 dashboard → 點「✓ 核准」按鈕
+- LLM 端配合：push 必須含 order_id + 「請至 dashboard 核准」
+- 跨方案說明：未來 LINE 端驗證後，方案 A 可用同一 endpoint
+- ❌ 不要：LLM 自己核准、push 不含 order_id、客戶 handoff 不 push
+
+**改動 2（code）**：
+- `scripts/dashboard-server.js`：加 `POST /api/orders/:orderId/approve` endpoint
+  - 跟 P5 mark-paid 同 pattern（跨檔案查找 readAllOrders + 傳 delivery_date）
+  - 呼叫 `updateOrder(orderId, { order_status: 'confirmed', delivery_date: _file_date })`
+- `scripts/dashboard.js`：row template 加 `needApprove = order_status === 'pending_handoff'` 變數 + 條件 render 藍色「✓ 核准」按鈕
+- 同個 row 可以同時有兩個按鈕（pending_handoff + 未付款 → 「✓ 核准」+「✓ 已收款」）
+- JS handler 加 `approve-btn` click 處理，跟 mark-paid 同 pattern
+- `dashboard.html`：重新生成（295 orders · approved button 出現在 pending_handoff 訂單）
+
+**雙位置對齊**：
+- main_idea.md dev ↔ production runtime md5 一致（9c8e062b...）
+
+**未來整合**：
+- 方案 A（LINE 對話老闆 command）需 LINE 端驗證「訊息來自老闆」邏輯
+- 驗證後方案 A 可用同一個 `/api/orders/:id/approve` endpoint
+- 入口不同（dashboard 按鈕 vs LINE 文字），endpoint 邏輯不變
+
+**驗證**：
+- npm test 49 套全綠（approve endpoint 不需新 unit test，pattern 同 mark-paid）
+- check-quality.sh 9 通過 / 0 警告 / 0 失敗（commit 後重跑）
+- POST /api/orders/:id/approve 待重啟 dashboard 後 curl 驗證
+
 **驗證**：
 - npm test 49 套全綠
 - check-quality.sh 11 通過 / 0 警告 / 0 失敗（需 commit 後重跑）
@@ -187,6 +224,7 @@
 - ✅ P5 客戶查詢付款狀態規則加 main_idea.md §六（2026-07-16）
 - ✅ P5 dashboard 「✓ 已收款」按鈕 + POST /api/orders/:id/mark-paid endpoint（2026-07-16）
 - ✅ P3 Quick Reply 統一回覆（chicken.yaml quick_replies config + main_idea.md §十八），待 OpenClaw pipeline 支援渲染（2026-07-16）
+- ✅ P2 老闆回覆機制方案 B（main_idea.md §十九 + dashboard 「✓ 核准」按鈕 + POST /api/orders/:id/approve endpoint）（2026-07-16）
 
 ---
 

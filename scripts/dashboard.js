@@ -225,6 +225,7 @@ function generateHTML(data) {
     <tbody>
       ${data.recentOrders.map((o) => {
     const isPaid = o.payment_status === 'confirmed';
+    const needApprove = o.order_status === 'pending_handoff';
     return `
         <tr>
           <td>${o.order_id || '-'}</td>
@@ -234,7 +235,7 @@ function generateHTML(data) {
           <td>NT$${o.total_amount || 0}</td>
           <td>${o.order_status || '-'}</td>
           <td>${isPaid ? '<span style="color:#2e7d32;font-weight:600">✓ 已收款</span>' : '<span style="color:#e65100">⏳ 待收款</span>'}</td>
-          <td>${isPaid ? '<span style="color:#999;font-size:12px">已確認</span>' : `<button class="mark-paid-btn" data-order-id="${o.order_id}" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button>`}</td>
+          <td>${needApprove ? `<button class="approve-btn" data-order-id="${o.order_id}" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button>` : ''}${isPaid ? '<span style="color:#999;font-size:12px">已確認收款</span>' : `<button class="mark-paid-btn" data-order-id="${o.order_id}" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button>`}</td>
         </tr>
       `;
   }).join('')}
@@ -280,36 +281,72 @@ function generateHTML(data) {
     });
   </script>
 
+  <!-- P2：Hubert 手動核准訂單 — 點擊「✓ 核准」按鈕呼叫 POST /api/orders/:id/approve -->
   <!-- P5：Hubert 手動標記付款狀態 — 點擊「✓ 已收款」按鈕呼叫 POST /api/orders/:id/mark-paid -->
   <script>
     document.addEventListener('click', async (e) => {
-      if (!e.target.classList || !e.target.classList.contains('mark-paid-btn')) return;
+      if (!e.target.classList) return;
       const orderId = e.target.dataset.orderId;
-      if (!confirm('確認標記訂單 ' + orderId + ' 為已收款？')) return;
-      e.target.disabled = true;
-      e.target.textContent = '處理中...';
-      try {
-        const r = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/mark-paid', { method: 'POST' });
-        const data = await r.json();
-        if (data.success) {
-          e.target.textContent = '✓ 已收款';
-          e.target.style.background = '#4caf50';
-          e.target.classList.remove('mark-paid-btn');
-          const row = e.target.closest('tr');
-          if (row) {
-            const cells = row.querySelectorAll('td');
-            if (cells[6]) cells[6].innerHTML = '<span style="color:#2e7d32;font-weight:600">✓ 已收款</span>';
-            if (cells[7]) cells[7].innerHTML = '<span style="color:#999;font-size:12px">已確認</span>';
+      if (!orderId) return;
+
+      // P2 核准按鈕
+      if (e.target.classList.contains('approve-btn')) {
+        if (!confirm('確認核准訂單 ' + orderId + '？')) return;
+        e.target.disabled = true;
+        e.target.textContent = '處理中...';
+        try {
+          const r = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/approve', { method: 'POST' });
+          const data = await r.json();
+          if (data.success) {
+            e.target.textContent = '✓ 已核准';
+            e.target.style.background = '#4caf50';
+            e.target.classList.remove('approve-btn');
+            const row = e.target.closest('tr');
+            if (row) {
+              const cells = row.querySelectorAll('td');
+              if (cells[5]) cells[5].innerHTML = '<span style="color:#2e7d32;font-weight:600">confirmed</span>';
+            }
+          } else {
+            e.target.disabled = false;
+            e.target.textContent = '✓ 核准';
+            alert('核准失敗：' + (data.error || '未知錯誤'));
           }
-        } else {
+        } catch (err) {
+          e.target.disabled = false;
+          e.target.textContent = '✓ 核准';
+          alert('網路錯誤：' + err.message);
+        }
+        return;
+      }
+
+      // P5 標記已收款按鈕
+      if (e.target.classList.contains('mark-paid-btn')) {
+        if (!confirm('確認標記訂單 ' + orderId + ' 為已收款？')) return;
+        e.target.disabled = true;
+        e.target.textContent = '處理中...';
+        try {
+          const r = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/mark-paid', { method: 'POST' });
+          const data = await r.json();
+          if (data.success) {
+            e.target.textContent = '✓ 已收款';
+            e.target.style.background = '#4caf50';
+            e.target.classList.remove('mark-paid-btn');
+            const row = e.target.closest('tr');
+            if (row) {
+              const cells = row.querySelectorAll('td');
+              if (cells[6]) cells[6].innerHTML = '<span style="color:#2e7d32;font-weight:600">✓ 已收款</span>';
+              if (cells[7]) cells[7].innerHTML = '<span style="color:#999;font-size:12px">已確認收款</span>';
+            }
+          } else {
+            e.target.disabled = false;
+            e.target.textContent = '✓ 已收款';
+            alert('標記失敗：' + (data.error || '未知錯誤'));
+          }
+        } catch (err) {
           e.target.disabled = false;
           e.target.textContent = '✓ 已收款';
-          alert('標記失敗：' + (data.error || '未知錯誤'));
+          alert('網路錯誤：' + err.message);
         }
-      } catch (err) {
-        e.target.disabled = false;
-        e.target.textContent = '✓ 已收款';
-        alert('網路錯誤：' + err.message);
       }
     });
   </script>

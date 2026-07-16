@@ -659,6 +659,32 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // P2：POST /api/orders/:orderId/approve — Hubert 手動核准訂單（從 pending_handoff → confirmed）
+  const approveMatch = url.match(/^\/api\/orders\/([^/]+)\/approve$/);
+  if (approveMatch && method === 'POST') {
+    const orderId = decodeURIComponent(approveMatch[1]);
+    try {
+      // 同 P5：跨檔案查找訂單所屬檔案日期，才能定位 CSV 檔
+      const allOrders = readAllOrders();
+      const order = allOrders.find((o) => o.order_id === orderId);
+      if (!order) {
+        sendJson(res, 404, { success: false, error: '找不到訂單', order_id: orderId });
+        return;
+      }
+      const updates = { order_status: 'confirmed' };
+      if (order._file_date) updates.delivery_date = order._file_date;
+      const success = updateOrder(orderId, updates);
+      if (success) {
+        sendJson(res, 200, { success: true, message: '訂單已核准', order_id: orderId, file_date: order._file_date, new_status: 'confirmed' });
+      } else {
+        sendJson(res, 500, { success: false, error: '更新 CSV 失敗', order_id: orderId });
+      }
+    } catch (e) {
+      sendJson(res, 500, { success: false, error: `核准失敗: ${e.message}` });
+    }
+    return;
+  }
+
   // GET /admin - 管理員後台
 
   // GET /log-panel - Session X3-C：Log Panel + 錯誤率儀表板
