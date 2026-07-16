@@ -145,19 +145,54 @@ function parseAuth(req) {
   return { user, pass };
 }
 
-function checkAuth(req, res) {
-  if (!API_PASSWORD) {
-    return true; // 沒設密碼 → 全部允許（不安全，測試用）
+/**
+ * X-API-Token 認證（B 方案 · 2026-07-16 加）
+ * 從 XDG secrets 讀取 token，與 client 提供的 X-API-Token header 比對
+ */
+function checkXApiToken(req) {
+  if (!req.headers['x-api-token']) return false;
+
+  const candidates = [
+    process.env.X_API_TOKEN,
+    process.env.API_TOKEN,
+  ].filter(Boolean);
+
+  // 嘗試從檔案讀
+  const tokenFile = process.env.X_API_TOKEN_FILE || process.env.API_TOKEN_FILE
+    || '/home/clawuser/.config/chicken/secrets/api-token';
+  try {
+    if (require('fs').existsSync(tokenFile)) {
+      const fileToken = require('fs').readFileSync(tokenFile, 'utf8').trim();
+      if (fileToken) candidates.push(fileToken);
+    }
+  } catch (e) {
+    // ignore
   }
-  const auth = parseAuth(req);
-  if (auth && auth.user === API_USERNAME && auth.pass === API_PASSWORD) {
+
+  const clientToken = req.headers['x-api-token'];
+  return candidates.some((t) => t && t === clientToken);
+}
+
+function checkAuth(req, res) {
+  if (!API_USERNAME || !API_PASSWORD) {
+    // 沒設定密碼：允許所有（不建議，但保留向後相容）
     return true;
   }
-  res.writeHead(401, {
-    'WWW-Authenticate': 'Basic realm="Chicken API"',
-    'Content-Type': 'text/plain; charset=utf-8',
-  });
-  res.end('401 Unauthorized');
+
+  // B 方案：X-API-Token 認證（server-to-server 用，autoOrder.js 呼叫）
+  if (checkXApiToken(req)) {
+    return true;
+  }
+
+  // HTTP Basic Auth（瀏覽器/dashboard 用）
+  const authHeader = req.headers.authorization || '';
+  const expectedAuth = 'Basic ' + Buffer.from(`${API_USERNAME}:${API_PASSWORD}`).toString('base64');
+
+  if (authHeader === expectedAuth) {
+    return true;
+  }
+
+  sendJson(res, 401, { success: false, error: 'Unauthorized', message: '需要 HTTP Basic Auth 或 X-API-Token' });
   return false;
 }
 

@@ -25,3 +25,6 @@ config.yaml.bak.*
 # P9: Google Sheets service account JSON（絕對禁止 commit）
 **/google-service-account*.json
 **/google-credentials*.json
+
+# B 方案：X-API-Token（絕對禁止 commit，OpenClaw exec 也會 redact）
+**/api-token*
