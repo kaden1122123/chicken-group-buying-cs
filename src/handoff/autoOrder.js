@@ -54,6 +54,14 @@ async function triggerAutoOrder(options) {
     return { success: false, error };
   }
 
+  // items: array of {name, qty}（api-server.validateItems 要求 array 格式）
+  // 從 orderData 的 object 格式（chicken_items/side_items/extra_items）合併轉換
+  const items = [
+    ...Object.entries(orderData.chicken_items || {}).map(([name, qty]) => ({ name, qty: Number(qty) || 1 })),
+    ...Object.entries(orderData.side_items || {}).map(([name, qty]) => ({ name, qty: Number(qty) || 1 })),
+    ...Object.entries(orderData.extra_items || {}).map(([name, qty]) => ({ name, qty: Number(qty) || 1 })),
+  ];
+
   const orderPayload = {
     order_data: {
       user_line_name: orderData.user_line_name || 'LINE 用戶',
@@ -62,9 +70,7 @@ async function triggerAutoOrder(options) {
       community: orderData.community || '',
       delivery_date: orderData.delivery_date,
       time_slot: orderData.time_slot,
-      chicken_items: orderData.chicken_items,
-      side_items: orderData.side_items || {},
-      extra_items: orderData.extra_items || {},
+      items,  // 統一用 items array（api-server.validateItems 要求）
       subtotal: orderData.subtotal,
       delivery_fee: orderData.delivery_fee || 0,
       total_amount: orderData.total_amount,
@@ -74,15 +80,17 @@ async function triggerAutoOrder(options) {
       staff_notes: 'B 方案：客戶回「確認」自動建單',
       customer_notes: orderData.customer_notes || '',
       customer_tags: orderData.customer_tags || '',
-      source: 'b_auto_confirm',
       intent_confirmed: true,
     },
+    // source 在 body 頂層（api-server 從 body.source 取，不是 order_data.source）
+    source: 'b_auto_confirm',
   };
 
   try {
     const result = await postOrder(orderPayload, token);
     if (result.success) {
       logger.info('[autoOrder] 自動建單成功', { userId, orderId: result.orderId });
+      try {
       await notifyHubert(
         '🔔 【B 方案自動建單】客戶 ' + (orderData.user_line_name || userId) + ' 已確認訂單：\n' +
         'order_id: ' + result.orderId + '\n' +
@@ -90,6 +98,10 @@ async function triggerAutoOrder(options) {
         '金額: NT$ ' + orderData.total_amount + '\n' +
         '請確認付款狀態 ✓'
       );
+      } catch (e) {
+        // notifyHubert 失敗（LINE 429 / 網路）只 log，不影響 autoOrder success
+        logger.warn('[autoOrder] 通知老闆失敗', { err: e.message, userId });
+      }
       return { success: true, orderId: result.orderId };
     } else {
       const error = 'API 回傳失敗: ' + (result.error || '未知');
