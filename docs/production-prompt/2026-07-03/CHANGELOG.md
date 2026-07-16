@@ -2,7 +2,7 @@
 
 > **對應 production runtime**：`~/.openclaw/agents/external-user/`
 > **建立時間**：2026-07-03（Hubert 17:18 codebase audit 觸發）
-> **最後更新**：2026-07-16（P5 付款狀態機制：prompt + dashboard「已收款」按鈕 + main_idea.md sync 到 production runtime）
+> **最後更新**：2026-07-16（P3 Quick Reply 統一回覆：chicken.yaml config + main_idea.md §十八 + config.yaml sync）
 > **觸發**：完整 codebase audit 發現多處 drift，本版合併修正後對應到 production runtime。
 
 ---
@@ -111,6 +111,45 @@
 - check-quality.sh 11 通過 / 0 警告 / 0 失敗（需 commit 後重跑）
 - dashboard-server 重啟後 POST /api/orders/:id/mark-paid 可用（XDG secrets 密碼驗證 + auth）
 
+### 6. main_idea.md §十八 Quick Reply 統一回覆（P3 · 2026-07-16 加）
+
+**問題**：
+- 客戶問「你們賣什麼？」「怎麼付款？」「送到哪？」時，AI 只能用文字描述，沒統一 Quick Reply 按鈕
+- 4 種常見場景（菜單 / 付款 / 時段 / 配送範圍）需要快速點選
+
+**改動 1（config）**：
+- `config/tenants/chicken.yaml` 加 `quick_replies` section（4 種情境 × 多按鈕）
+  - `menu`: 看完整菜單 / 招牌鹽水雞 / 煙燻雞 / 玉米雞
+  - `payment`: LINE Pay / 街口支付 / 銀行轉帳 / 現金
+  - `hours`: 上午 10-12 / 下午 16-18
+  - `delivery`: 三鶯地區 / 其他地區
+- 每個按鈕有 `label`（顯示）+ `text`（按下後傳給 LLM 的完整句子）
+
+**改動 2（prompt）**：
+- `docs/production-prompt/2026-07-03/main_idea.md` 加 # 十八 Quick Reply 統一回覆（P3）
+- 4 種情境 + 對應按鈕（從 chicken.yaml 讀）
+- 使用原則：看上下文才出、按鈕標籤簡短（4-6 字）、按鈕 text 完整句子、≤ 4 個
+- ❌ 不要：在確認訂單步驟用 Quick Reply、用按鈕取代文字
+- 範例：客戶問菜單 → 文字回應 + 4 個菜單按鈕
+- 「為什麼目前沒看到按鈕？」段：OpenClaw pipeline 目前不支援 Quick Reply 渲染，這是「意圖定義」
+
+**改動 3（drift 預防）**：
+- 跑 `bash scripts/sync-config.sh` 重建 `config.yaml` 反映新 chicken.yaml
+- Check 9 config drift 預防自動檢測並通過
+
+**雙位置對齊**：
+- main_idea.md dev ↔ production runtime md5 一致（8d1f78a2...）
+- config.yaml 從 chicken.yaml sync 過來（main mirror）
+
+**未來整合**：
+- OpenClaw pipeline 支援 Quick Reply 渲染後，這個 §十八 可以直接生效
+- pipeline 讀 chicken.yaml `quick_replies` + prompt 規則，自動生成 LINE 按鈕
+- 客戶問到對應情境時，LLM 主回應文字不變，後面加 Quick Reply 按鈕
+
+**驗證**：
+- npm test 49 套全綠
+- check-quality.sh 11 通過 / 0 警告 / 0 失敗
+
 **問題**：
 - 客戶下訂只給部分資訊（例如只說「我要一個雞屁股」），LLM 容易回「好的，訂單收到！」→ 污染 dashboard 資料（Hubert 手動建單時缺一堆資訊 → 來回問客戶 → 體驗差 + 工作量高）
 - 之前 main_idea.md 沒有明確規範「訂單不完整時怎麼回」，LLM 憑印象回應
@@ -147,6 +186,7 @@
 - ✅ P7 訂單完整性規則加 main_idea.md §十二，sync 到 production runtime md5 一致（2026-07-16）
 - ✅ P5 客戶查詢付款狀態規則加 main_idea.md §六（2026-07-16）
 - ✅ P5 dashboard 「✓ 已收款」按鈕 + POST /api/orders/:id/mark-paid endpoint（2026-07-16）
+- ✅ P3 Quick Reply 統一回覆（chicken.yaml quick_replies config + main_idea.md §十八），待 OpenClaw pipeline 支援渲染（2026-07-16）
 
 ---
 

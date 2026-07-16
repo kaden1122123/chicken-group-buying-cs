@@ -134,6 +134,30 @@ payment:
   linepay:
     enabled: true
     line_id: Willy0221
+
+# P3：Quick Reply 統一回覆按鈕配置（2026-07-16 加）
+# 客戶問特定問題時，LLM 對應回傳 Quick Reply 結構（LINE 原生功能）
+# 4 種情境：menu / payment / hours / delivery
+# 注意：目前 OpenClaw pipeline 尚未支援 Quick Reply 渲染（見 main_idea.md §十二 「訂單確認流程」備註）
+# 所以這是「意圖定義」，等 OpenClaw 支援後 pipeline 讀這個 config 自動生成按鈕
+quick_replies:
+  menu:
+    - { label: "看完整菜單", text: "請給我完整菜單" }
+    - { label: "招牌鹽水雞", text: "我想了解鹽水雞" }
+    - { label: "煙燻雞", text: "我想了解煙燻雞" }
+    - { label: "玉米雞", text: "我想了解玉米雞" }
+  payment:
+    - { label: "LINE Pay", text: "我選 LINE Pay" }
+    - { label: "街口支付", text: "我選街口支付" }
+    - { label: "銀行轉帳", text: "我選銀行轉帳" }
+    - { label: "現金", text: "我選現金" }
+  hours:
+    - { label: "上午 10-12", text: "我選上午" }
+    - { label: "下午 16-18", text: "我選下午" }
+  delivery:
+    - { label: "三鶯地區", text: "我在三鶯地區" }
+    - { label: "其他地區", text: "我想確認配送範圍" }
+
 cutoff:
   reminder_time: 前一日 11:00~12:00
   order_close_time: '13:00'
