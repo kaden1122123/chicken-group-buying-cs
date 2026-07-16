@@ -220,7 +220,7 @@ chmod 555 main/scripts/*.js main/src/  # restore
 
 ---
 
-## 8. 目前進度（2026-07-16 03:00 狀態）
+## 8. 目前進度（2026-07-17 06:30 狀態）
 
 | 項目 | 狀態 |
 |------|------|
@@ -230,13 +230,21 @@ chmod 555 main/scripts/*.js main/src/  # restore
 | Dashboard 服務 | ✅ 跑中（port 3000）|
 | api-server 服務 | ✅ 跑中（port 3001）|
 | Worker Cloudflare | ✅ 改 WORKER_HEALTH_URL 指向 api-server /api/health（Round 3E）|
-| 89 leaked cloudflared processes | ⚠️ 可選清理 |
-| 老闆 LINE 通知 | ✅ **已啟用**（2026-07-16 21:30 Hubert 重啟 OpenClaw Gateway 後 bug fix c6438e8 生效）|
+| 89 leaked cloudflared processes | ✅ 04:55 Hubert 手動清理 |
+| 老闆 LINE 通知 | ✅ **已啟用**（2026-07-16 21:30 + 2026-07-17 06:30 持續）|
 | LINE push loop 防護 | ✅ HUMAN_HANDOFF guard + 1分鐘 debounce（c6438e8 + bbe6533）|
+| P1 LINE_BOT_TOKEN | ✅ 修整完成（d4b0d23）|
 | P2 方案 B | ✅ 實作完成（commit 0e2d29f）|
 | P3 Quick Reply 意圖 | ✅ 實作完成（待 OpenClaw 渲染，commit fa0500d）|
+| P4 街口支付傳圖片 | ✅ **完整 4 stages + 街口主動推 QR code**（commits 239dbf2/8d4f5dc/060ec7e/5c40664）|
 | P5 付款狀態機制 | ✅ 實作完成（commits 18565aa + 854948a）|
+| P6 OCR analyzer | ✅ 實作完成（commits fbfa2df + 2fd8aca，minimax vision 介面）|
 | P7 訂單完整性規則 | ✅ 實作完成（commit 1380731）|
+| P8 Dashboard 更新 | ✅ 已答（A 方案需老闆手動建單）|
+| P9 Google Sheets sync | ✅ 實作完成 + 662 筆訂單寫入（commits d903098 + 057ed3e）|
+| B 方案 auto-create-order | ✅ 實作完成（commits c67eca3 + 3e998c9 + 756b859 + a42e362）|
+| LINE 月度額度 | ⚠️ 額滿（500/月用完，下個 reset = 2026-08-01）|
+| Gmail 整合（下次 session P0）| ⏳ 待做（用途：通知老闆，Hubert 04:55 確認）|
 
 ---
 

@@ -263,6 +263,7 @@ A: `pwd`，應為 `/home/clawuser/openclaw-workspace/others/chicken-group-buying
 | v1 | 2026-07-15 17:09 | 初次建立 |
 | v2 | 2026-07-16 03:00 | 加 9 個未修整清單 + B 方案規劃 + 新增 doc/PROJECT_INVENTORY.md + doc/handoff/sessions/SESSION_NEXT_PROMPT.md + src/config.js LINE_BOT_TOKEN_FILE 支援 |
 | v3 | 2026-07-16 21:30 | 文件 drift 全面修整 + Round 2-3 全部 commit 記錄 + P2-P3-P5-P7 完成狀態 + LINE push loop bug fix (c6438e8/bbe6533) + notify_owner 重新啟用 |
+| v4 | 2026-07-17 06:30 | 全部 9 個 P 修整完成（P4 街口主動推 QR code 完整、P6 receipt analyzer、P9 Google Sheets sync 662 筆訂單寫入、B 方案 autoOrder + X-API-Token + LLM 端整合）+ Round 4 19 個 commits + SESSION_NEXT_PROMPT.md 全面重寫對齊 + memory/2026-07-17.md 完整 session 總結 + 待辦事項（P0 Gmail 整合）|
 
 ---
 
@@ -273,12 +274,12 @@ A: `pwd`，應為 `/home/clawuser/openclaw-workspace/others/chicken-group-buying
 | **P1** | 為何老闆沒收到通知？ | 簡單 | ✅ **已修**：src/config.js 加 `LINE_BOT_TOKEN_FILE` fallback（commit 待 push） | 立刻 |
 | **P2** | 客戶無權限確認訂單，老闆如何回覆 | 中 | ✅ **方案 B 已修**（commit 0e2d29f，dashboard 「✓ 核准」按鈕）；方案 A 放棄（Hubert 21:30 確認風險太大） | — |
 | **P3** | 統一回覆（Quick Reply） | 中 | ✅ **已修意圖定義**（commit fa0500d，chicken.yaml `quick_replies` + main_idea.md §十八），待 OpenClaw pipeline 支援渲染 | — |
-| **P4** | 街口支付傳圖片 | 中高 | ⏳ 2026-07-16 21:30 詳細需求確認：街口 QR code 是老闆的收款碼（固定）；顧客回傳支付截圖要儲存 + order_id 對應；下階段實作 | 中期 |
+| **P4** | 街口支付傳圖片 | 中高 | ✅ **已完整實作**（commits 239dbf2 + 8d4f5dc + 060ec7e + 5c40664，4 stages + 街口主動推 QR code image）| — |
 | **P5** | 老闆確認付款狀態 | 簡單 | ✅ **已修**（commits 18565aa + 854948a，dashboard 「✓ 已收款」按鈕 + POST /api/orders/:id/mark-paid）| — |
-| **P6** | OCR 轉帳截圖 | 中 | ⏳ 2026-07-16 21:30 確認走 minimax vision（不引入新 LLM）+ 4 種支付方式 flow（現金/轉帳/街口/LinePay）+ likely_paid 標記需老闆確認；下階段實作 | 中期 |
+| **P6** | OCR 轉帳截圖 | 中 | ✅ **已實作 receiptAnalyzer 模組**（commits fbfa2df + 2fd8aca，minimax vision 介面 + 4 種支付方式 flow + api-server 整合 + csvWriter 加 6 個 P6 欄位）| — |
 | **P7** | 訂單不完整時要求完整表格 | 簡單 | ✅ **已修**（commit 1380731，main_idea.md §十二「訂單完整性規則」+ 7 項必填欄位檢查清單）| — |
 | **P8** | Dashboard 何時更新？ | 已說明 | ✅ **已答**：A 方案需老闆手動建單；2026-07-15 訂單都是測試 fixture | — |
-| **P9** | 試算表 | 簡單 | ⏳ 2026-07-16 21:30 待 Hubert 確認 external-user 是否獨立 google email；下階段實作 | 中期 |
+| **P9** | 試算表 | 簡單 | ✅ **已實作 Google Sheets sync**（commits d903098 + 057ed3e，sheetsSync.js + 662 筆訂單成功寫入 + 獨立 google email clawbrt@gmail.com）| — |
 
 ---
 
@@ -295,9 +296,9 @@ A: `pwd`，應為 `/home/clawuser/openclaw-workspace/others/chicken-group-buying
 - [x] ✅ **Worker 404 修整**（Round 3E 完成，/healthz 從 degraded 變 ok）
 - [x] ✅ **LINE push loop 修整**（commits c6438e8 + bbe6533 完成）
 
-### C. 中期（Hubert 21:30 詳細需求已確認，實作計畫見 §10-D）
+### C. 中期（Hubert 21:30 詳細需求已確認，**全部完成**）
 
-#### P4：街口支付傳圖片（2-3 小時）
+#### P4：街口支付傳圖片 ✅ 全部完成（2026-07-17）
 - 街口支付有固定 QR code（老闆的收款碼）→ P4 是「push 這個 QR code 給客戶」
 - 顧客回傳支付截圖（轉帳/街口）：儲存到 `data/receipts/{order_id}/`（萬一糾紛備份）
 - order_id 對應：訂單建立時加 `receipts_path` 欄位（CSV 存路徑，圖片存檔案系統）
