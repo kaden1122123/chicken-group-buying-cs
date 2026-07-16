@@ -81,6 +81,8 @@ const CSV_HEADERS = [
   'staff_notes', 'customer_notes', 'customer_tags',
   'handoff_type', 'handoff_logged_at', 'handoff_resolved_at',
   'source', 'intent_confirmed',
+  // P4（2026-07-16 加）：顧客回傳支付截圖儲存路徑（相對 repo root）
+  'receipts_path',
 ];
 
 const CSV_HEADER_LINE = CSV_HEADERS.join(',');

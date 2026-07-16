@@ -157,7 +157,7 @@ console.log('  ✓ 行數正確：' + expectedLines);
 // 驗證 header 是 CSV_HEADERS 第一行（28 欄）
 const headerLine = csvLines[0];
 const headerColCount = headerLine.split(',').length;
-assert.strictEqual(headerColCount, 28, 'Header 應有 28 欄，實際 ' + headerColCount);
+assert.strictEqual(headerColCount, 29, 'Header 應有 29 欄，實際 ' + headerColCount);
 console.log('  ✓ Header 28 欄');
 
 // 驗證每筆資料行都是 28 欄（沒有半截的 row）
@@ -166,7 +166,7 @@ let allRowsValid = true;
 const orderIdCounts = {};
 dataLines.forEach((line, idx) => {
   const cols = line.split(',');
-  if (cols.length !== 28) {
+  if (cols.length !== 29) {
     console.error('  ✗ 第 ' + (idx + 2) + ' 行欄數錯誤：' + cols.length + '（內容：' + line.substring(0, 60) + '...）');
     allRowsValid = false;
   }

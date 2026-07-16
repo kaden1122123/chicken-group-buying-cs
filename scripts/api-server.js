@@ -23,7 +23,7 @@ const fs = require('fs');
 const path = require('path');
 const { getTenantId } = require('../src/config');
 const { writeOrderWithRetry, updateOrder } = require('../src/order/csvWriter');
-const { getOrdersByDate } = require('../src/order/csvReader');
+const { getOrdersByDate, getRecentOrders } = require('../src/order/csvReader');
 
 // 決策 4：MOCK_TODAY 環境變數支援，讓測試可以控制「今天」是哪一天
 // 用途：api-server.test.js 用 delivery_date: '2026-06-18'，但今天是 2026-06-26
@@ -444,6 +444,129 @@ function handleCreateOrder(req, res) {
 }
 
 /**
+ * POST /api/orders/:orderId/receipts — 顧客回傳支付截圖上傳（P4 2026-07-16 加）
+ * Body: { imageBase64: string, mimeType?: string }
+ * - 從 magic bytes 偵測實際 MIME type（不信任 client 宣告）
+ * - 儲存到 data/receipts/{orderDate}/{orderId}/{timestamp}.{ext}
+ * - 或儲存到 data/receipts/unmatched/{timestamp}.{ext}（找不到 orderId 時）
+ * - 更新訂單 CSV 的 receipts_path 欄位
+ */
+function detectMimeTypeFromBuffer(buffer) {
+  // JPEG: FF D8 FF
+  if (buffer.length >= 3 && buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+    return 'image/jpeg';
+  }
+  // PNG: 89 50 4E 47
+  if (buffer.length >= 4 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+    return 'image/png';
+  }
+  return null;
+}
+
+function formatDate(d) {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+async function handleUploadReceipt(req, res, orderId) {
+  return parseBody(req).then((body) => {
+    if (!body || !body.imageBase64) {
+      return sendJson(res, 400, { success: false, error: '缺少 imageBase64' });
+    }
+
+    try {
+      // Decode base64
+      const buffer = Buffer.from(body.imageBase64, 'base64');
+      if (buffer.length === 0) {
+        return sendJson(res, 400, { success: false, error: 'imageBase64 解碼後為空' });
+      }
+
+      // Detect MIME from magic bytes (不信任 client 宣告)
+      const mimeType = detectMimeTypeFromBuffer(buffer);
+      if (!mimeType) {
+        return sendJson(res, 415, { success: false, error: '不支援的圖片格式（僅支援 JPEG / PNG）' });
+      }
+
+      // Validate size (預設 10MB)
+      const maxSizeBytes = 10 * 1024 * 1024;
+      if (buffer.length > maxSizeBytes) {
+        return sendJson(res, 413, {
+          success: false,
+          error: `圖片超過上限 (${buffer.length} > ${maxSizeBytes} bytes)`,
+        });
+      }
+
+      // Determine storage path
+      const ext = mimeType === 'image/jpeg' ? '.jpg' : '.png';
+      const timestamp = Date.now();
+      let storageDir;
+      let relativePath;
+      let orderFound = null;
+
+      if (orderId) {
+        // 跨檔案查找訂單（用 getRecentOrders 比較快）
+        const recentOrders = getRecentOrders(1000);
+        orderFound = recentOrders.find((o) => o.order_id === orderId);
+        if (orderFound && orderFound.delivery_date) {
+          storageDir = path.join(ROOT, 'data', 'receipts', orderFound.delivery_date, orderId);
+          relativePath = path.join('data', 'receipts', orderFound.delivery_date, orderId, `${timestamp}${ext}`);
+        }
+      }
+
+      // Fallback: 無 orderId 或找不到訂單 → unmatched
+      if (!storageDir) {
+        const unmatchedDir = path.join(ROOT, 'data', 'receipts', 'unmatched');
+        storageDir = unmatchedDir;
+        relativePath = path.join('data', 'receipts', 'unmatched', `${timestamp}${ext}`);
+      }
+
+      // Ensure directory exists
+      fs.mkdirSync(storageDir, { recursive: true });
+
+      // Write file
+      const fullPath = path.join(ROOT, relativePath);
+      fs.writeFileSync(fullPath, buffer);
+
+      // Update order CSV if orderId found
+      let csvUpdated = false;
+      if (orderId && orderFound && orderFound.delivery_date) {
+        try {
+          csvUpdated = updateOrder(orderId, {
+            receipts_path: relativePath,
+            delivery_date: orderFound.delivery_date,
+          });
+        } catch (e) {
+          logger.warn('updateOrder failed for receipts_path', { orderId, err: e.message });
+        }
+      }
+
+      logger.info(`[receipt] Uploaded ${buffer.length} bytes to ${relativePath}`, {
+        orderId,
+        mimeType,
+        csvUpdated,
+      });
+
+      return sendJson(res, 200, {
+        success: true,
+        message: '截圖已上傳',
+        receipts_path: relativePath,
+        mime_type: mimeType,
+        size_bytes: buffer.length,
+        order_found: !!orderFound,
+        csv_updated: csvUpdated,
+      });
+    } catch (e) {
+      logger.error('Receipt upload failed', { err: e.message });
+      return sendJson(res, 500, { success: false, error: `上傳失敗: ${e.message}` });
+    }
+  }).catch((e) => {
+    sendJson(res, 400, { success: false, error: `JSON 解析失敗: ${e.message}` });
+  });
+}
+
+/**
  * PATCH /api/orders/:id — 更新訂單
  */
 function handleUpdateOrder(req, res, orderId) {
@@ -633,6 +756,13 @@ const server = http.createServer((req, res) => {
   // GET /api/orders
   if (path === '/api/orders' && method === 'GET') {
     return handleListOrders(req, res, urlObj);
+  }
+
+  // POST /api/orders/:orderId/receipts — 顧客回傳支付截圖上傳（P4）
+  const receiptMatch = path.match(/^\/api\/orders\/([^/]+)\/receipts$/);
+  if (receiptMatch && method === 'POST') {
+    const orderId = decodeURIComponent(receiptMatch[1]);
+    return handleUploadReceipt(req, res, orderId);
   }
 
   // PATCH /api/orders/:id
