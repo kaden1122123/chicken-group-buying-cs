@@ -24,6 +24,8 @@ const path = require('path');
 const { getTenantId } = require('../src/config');
 const { writeOrderWithRetry, updateOrder } = require('../src/order/csvWriter');
 const { getOrdersByDate, getRecentOrders } = require('../src/order/csvReader');
+const { analyzeReceipt } = require('../src/handoff/receiptAnalyzer');
+const { triggerAutoOrder, isStrictConfirmation } = require('../src/handoff/autoOrder');
 
 // 決策 4：MOCK_TODAY 環境變數支援，讓測試可以控制「今天」是哪一天
 // 用途：api-server.test.js 用 delivery_date: '2026-06-18'，但今天是 2026-06-26
@@ -506,7 +508,7 @@ function formatDate(d) {
 }
 
 async function handleUploadReceipt(req, res, orderId) {
-  return parseBody(req).then((body) => {
+  return parseBody(req).then(async (body) => {
     if (!body || !body.imageBase64) {
       return sendJson(res, 400, { success: false, error: '缺少 imageBase64' });
     }
@@ -577,10 +579,49 @@ async function handleUploadReceipt(req, res, orderId) {
         }
       }
 
+      // P6 stage 2: receipt 上傳後自動觸發 vision analyzer
+      // 用 stub fallback（vision API 失敗 → confidence 0 → 標記人工審核）
+      let analysisResult = null;
+      if (orderId && orderFound) {
+        try {
+          analysisResult = await analyzeReceipt({
+            imagePath: fullPath,
+            orderContext: {
+              total_amount: orderFound.total_amount,
+              payment_method: orderFound.payment_method,
+            },
+          });
+
+          // 更新 CSV 加 P6 欄位
+          if (csvUpdated) {
+            try {
+              updateOrder(orderId, {
+                likely_paid: analysisResult.likely_paid ? 'true' : 'false',
+                detected_amount: analysisResult.detected_amount || '',
+                detected_account_last5: analysisResult.detected_account_last5 || '',
+                vision_confidence: String(analysisResult.confidence || 0),
+                vision_source: analysisResult.source || 'unknown',
+                analyzed_at: analysisResult.analyzed_at || new Date().toISOString(),
+                delivery_date: orderFound.delivery_date,
+              });
+            } catch (e) {
+              logger.warn('updateOrder failed for P6 fields', { orderId, err: e.message });
+            }
+          }
+        } catch (e) {
+          logger.warn('[receipt] analyzer failed', { orderId, err: e.message });
+        }
+      }
+
       logger.info(`[receipt] Uploaded ${buffer.length} bytes to ${relativePath}`, {
         orderId,
         mimeType,
         csvUpdated,
+        analysis: analysisResult ? {
+          likely_paid: analysisResult.likely_paid,
+          confidence: analysisResult.confidence,
+          source: analysisResult.source,
+        } : null,
       });
 
       return sendJson(res, 200, {
@@ -591,6 +632,7 @@ async function handleUploadReceipt(req, res, orderId) {
         size_bytes: buffer.length,
         order_found: !!orderFound,
         csv_updated: csvUpdated,
+        analysis: analysisResult, // P6: vision 分析結果
       });
     } catch (e) {
       logger.error('Receipt upload failed', { err: e.message });

@@ -83,6 +83,13 @@ const CSV_HEADERS = [
   'source', 'intent_confirmed',
   // P4（2026-07-16 加）：顧客回傳支付截圖儲存路徑（相對 repo root）
   'receipts_path',
+  // P6（2026-07-16 加）：receipt vision analyzer 結果
+  'likely_paid', // boolean: true/false
+  'detected_amount', // number|null: vision 偵測的轉帳金額
+  'detected_account_last5', // string|null: 轉出帳號末五碼
+  'vision_confidence', // number 0-1
+  'vision_source', // string: 'minimax_vision' | 'cash_skip' | 'vision_api_failed' | 'image_not_found'
+  'analyzed_at', // ISO 8601
 ];
 
 const CSV_HEADER_LINE = CSV_HEADERS.join(',');
