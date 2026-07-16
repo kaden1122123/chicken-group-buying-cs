@@ -13,6 +13,7 @@ const { STATES, getState, transition, setStateDirectly } = require('./states/sta
 const { handleIdle, isOrderIntent } = require('./states/idle');
 const { handleAwaitingInfo } = require('./states/awaitingInfo');
 const { isConfirmReply, isModifyIntent } = require('./states/confirming');
+const { triggerAutoOrder, isStrictConfirmation } = require('../src/handoff/autoOrder');
 const { handleAwaitingPayment } = require('./states/awaitingPayment');
 const { handleCompleted } = require('./states/completed');
 const { handleHandoff } = require('./states/handoff');
@@ -150,6 +151,23 @@ async function handleMessage(userId, message, userProfile = {}) {
       }
 
       if (isConfirmReply(cleanMessage)) {
+        // B 方案（2026-07-16 加）：純文字「確認」才 trigger 自動建單
+        // 其他 confirm reply（好的/OK）保留舊 flow（不自動建單）
+        if (isStrictConfirmation(cleanMessage)) {
+          try {
+            const autoResult = await triggerAutoOrder({ userId, orderData });
+            if (autoResult.success) {
+              logger.info('[B 方案] 自動建單成功', { orderId: autoResult.orderId, userId });
+            } else {
+              logger.warn('[B 方案] 自動建單失敗，老闆需手動建單', { error: autoResult.error, userId });
+              // fallback 走 handoff 讓老闆處理
+              // 不在這裡轉 handoff（避免干擾現有 payment options 顯示）
+            }
+          } catch (e) {
+            logger.error('[B 方案] trigger 拋錯', { err: e.message, userId });
+          }
+        }
+
         transition(userId, 'customer_confirm', {});
         // Session D3-4：付款方式訊息改為從 config 動態生成
         // - 銀行帳號 / LINE Pay ID 從 chicken.yaml 讀
