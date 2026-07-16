@@ -235,7 +235,7 @@ function generateHTML(data) {
           <td>NT$${o.total_amount || 0}</td>
           <td>${o.order_status || '-'}</td>
           <td>${isPaid ? '<span style="color:#2e7d32;font-weight:600">✓ 已收款</span>' : '<span style="color:#e65100">⏳ 待收款</span>'}</td>
-          <td>${needApprove ? `<button class="approve-btn" data-order-id="${o.order_id}" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button>` : ''}${isPaid ? '<span style="color:#999;font-size:12px">已確認收款</span>' : `<button class="mark-paid-btn" data-order-id="${o.order_id}" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button>`}</td>
+          <td>${needApprove ? `<button class="approve-btn" data-order-id="${o.order_id}" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button>` : ''}${o.receipts_path ? `<span style="color:#1976d2;font-size:11px;margin-right:4px">📎 有截圖</span>` : `<button class="upload-receipt-btn" data-order-id="${o.order_id}" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳截圖</button>`}${isPaid ? '<span style="color:#999;font-size:12px">已確認收款</span>' : `<button class="mark-paid-btn" data-order-id="${o.order_id}" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button>`}</td>
         </tr>
       `;
   }).join('')}
@@ -316,6 +316,58 @@ function generateHTML(data) {
           e.target.textContent = '✓ 核准';
           alert('網路錯誤：' + err.message);
         }
+        return;
+      }
+
+      // P4 上傳截圖按鈕
+      if (e.target.classList.contains('upload-receipt-btn')) {
+        const orderId = e.target.dataset.orderId;
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/jpeg,image/png';
+        input.onchange = async (evt) => {
+          const file = evt.target.files[0];
+          if (!file) return;
+          if (file.size > 10 * 1024 * 1024) {
+            alert('圖片超過 10MB 上限');
+            return;
+          }
+          if (!confirm('確認上傳 ' + file.name + ' 到訂單 ' + orderId + '？')) return;
+          e.target.disabled = true;
+          e.target.textContent = '上傳中...';
+          try {
+            // FileReader → base64
+            const reader = new FileReader();
+            reader.onload = async () => {
+              const base64 = reader.result.split(',')[1]; // 去掉 data:image/png;base64, 前綴
+              const r = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/receipts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageBase64: base64, mimeType: file.type }),
+              });
+              const data = await r.json();
+              if (data.success) {
+                e.target.outerHTML = '<span style="color:#1976d2;font-size:11px">📎 已上傳</span>';
+                alert('✅ 截圖上傳成功！\n路徑：' + data.receipts_path + '\n請重新整理頁面查看。');
+              } else {
+                e.target.disabled = false;
+                e.target.textContent = '📎 上傳截圖';
+                alert('❌ 上傳失敗：' + (data.error || '未知錯誤'));
+              }
+            };
+            reader.onerror = () => {
+              e.target.disabled = false;
+              e.target.textContent = '📎 上傳截圖';
+              alert('❌ 讀檔失敗');
+            };
+            reader.readAsDataURL(file);
+          } catch (err) {
+            e.target.disabled = false;
+            e.target.textContent = '📎 上傳截圖';
+            alert('❌ 網路錯誤：' + err.message);
+          }
+        };
+        input.click();
         return;
       }
 

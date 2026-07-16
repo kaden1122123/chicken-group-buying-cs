@@ -1230,3 +1230,46 @@ LLM 透過 push 通知告知老闆「客戶 X 需要確認」，老闆用 **dash
 - ❌ LLM 自己幫老闆核准訂單（這是「需要老闆決定」的事項，不能讓 LLM 代勞）
 - ❌ push 通知不含 order_id（老闆找不到訂單在哪）
 - ❌ 在 handoff 客戶詢問時不 push（客戶会以為 AI 能處理，變成兩邊等待）
+
+---
+
+# 二十、客戶上傳支付截圖（P4 2026-07-16 加）
+
+當客戶**主動傳圖片訊息**且對話上下文是支付確認，主動接收並儲存到 `data/receipts/{order_id}/`（萬一糾紛備份）。
+
+## 觸發條件
+
+LLM 偵測以下情境之一 → 觸發 receipt 上傳流程：
+1. 客戶在「等待付款確認」狀態下傳圖片（轉帳/街口截圖、LINE Pay 截圖）
+2. 客戶明確說「我已付款」「轉帳好了」「這是截圖」+ 圖片
+3. 客戶詢問「怎麼付款」後，AI 回應付款方式後，客戶接著傳圖片
+
+## 處理流程
+
+1. **推斷 order_id**：從當前對話狀態（state.orderData.order_id）取得
+2. **下載圖片**：從 LINE webhook 拿到的 `message.id` 呼叫 `GET https://api-data.line.me/v2/bot/message/{messageId}/content` 下載原圖
+3. **呼叫 api-server**：`POST /api/orders/{order_id}/receipts` Body `{ imageBase64: string, mimeType?: string }`
+4. **回應客戶**：「收到您的付款截圖了，我會請老闆確認 ✓ 請稍等！」
+5. **不需要再 push 給老闆**：因為 receipt 上傳成功後，dashboard 會顯示截圖連結（待 P6 vision 分析後標 likely_paid）
+
+## Order ID 推斷失敗時
+
+如果當前對話狀態不在某個訂單（例如客戶在不同對話視窗傳截圖、或是新客戶）：
+- 仍上傳但 order_id 用空字串 → api-server 自動存到 `data/receipts/unmatched/`（不會污染任何訂單）
+- 回應客戶：「收到您的截圖了，但請問這是哪筆訂單的款項？我幫您標記到老闆那邊核對 🙏」
+- 讓老闆手動在 dashboard 的 unmatched 區配對（未來功能）
+
+## 街口 QR code 主動推送
+
+當客戶選擇「街口支付」且尚未付款時，主動推送街口支付 QR code：
+1. 讀 `chicken.yaml payment.jko.qr_code_url`（從 env `JKO_QR_CODE_URL` 或 config fallback）
+2. 用 `notifier.sendImageMessage(qrUrl, qrUrl, customerUserId)` 推送 LINE image message
+3. 文字補充：「這是街口支付 QR code，掃碼付款完成後請傳截圖給我，我幫您標記到老闆那邊 ✓」
+
+## 不要
+
+- ❌ 客戶沒主動傳圖就主動要（浪費頻寬）
+- ❌ 推送圖片後忘記告知「請傳截圖」（客戶會不知道下一步）
+- ❌ 把截圖存到無 order_id 時仍標記 confirmed（要等 P6 vision 分析 + 老闆確認才標）
+- ❌ 跳過 api-server 直接存本地（api-server 是 SSoT，多入口共用）
+
