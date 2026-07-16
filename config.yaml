@@ -49,6 +49,46 @@
 # 以下為 tenant.yaml 同步內容（單向鏡像）
 # ─────────────────────────────────────────
 
+
+# ─────────────────────────────────────────
+# 以下為 tenant.yaml 同步內容（單向鏡像）
+# ─────────────────────────────────────────
+
+
+# ─────────────────────────────────────────
+# 以下為 tenant.yaml 同步內容（單向鏡像）
+# ─────────────────────────────────────────
+
+
+# ─────────────────────────────────────────
+# 以下為 tenant.yaml 同步內容（單向鏡像）
+# ─────────────────────────────────────────
+
+
+# ─────────────────────────────────────────
+# 以下為 tenant.yaml 同步內容（單向鏡像）
+# ─────────────────────────────────────────
+
+
+# ─────────────────────────────────────────
+# 以下為 tenant.yaml 同步內容（單向鏡像）
+# ─────────────────────────────────────────
+
+
+# ─────────────────────────────────────────
+# 以下為 tenant.yaml 同步內容（單向鏡像）
+# ─────────────────────────────────────────
+
+
+# ─────────────────────────────────────────
+# 以下為 tenant.yaml 同步內容（單向鏡像）
+# ─────────────────────────────────────────
+
+
+# ─────────────────────────────────────────
+# 以下為 tenant.yaml 同步內容（單向鏡像）
+# ─────────────────────────────────────────
+
 tenant:
   id: chicken
   display_name: 雞味研究所
@@ -62,10 +102,18 @@ storage:
     filename_pattern: '{date}.csv'
     backup_path: data/orders/archive
   phase2:
-    enabled: false
+    enabled: true  # P9：2026-07-16 23:29 Hubert 啟用 Sheets API 完成，phase2 啟用
     type: google_sheets
-    spreadsheet_id: ''
-    credentials_path: ''
+    spreadsheet_id: '12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA'  # Google Sheets ID（Hubert 建立試算表後從 URL 複製）
+    sheet_name: '工作表一'  # Google Sheets 預設工作表名稱（Hubert 建立試算表時未改名）
+    sync_direction: 'csv_to_sheets'  # csv → sheets 單向同步（讀 chicken.csv 寫入 Sheets）
+    sync_interval_hours: 24  # 每日同步（凌晨 3 點 cron）
+    auth:
+      type: 'oauth_service_account'  # service account 認證（比 OAuth 簡單，適合 server-to-server）
+      credentials_path: '/home/clawuser/.config/chicken/secrets/google-service-account.json'
+      # Setup: 用 clawbrt@gmail.com 登入 https://console.cloud.google.com →
+      # 建立 project → 啟用 Google Sheets API → 建立 service account →
+      # 下載 JSON key 放到上述路徑 → 把該 service account email 加入 Google Sheets 為編輯者
 official:
   brand_name: 雞味研究所｜牧草放山雞
   line_community: '@620boqol'
@@ -185,6 +233,28 @@ payment:
   linepay:
     enabled: true
     line_id: Willy0221
+
+  # P4：顧客回傳支付截圖（2026-07-16 加）
+  # 街口/轉帳客戶付款後回傳截圖，儲存到 data/receipts/{order_id}/ 備份
+  receipts:
+    enabled: true
+    storage_path: 'data/receipts'
+    max_size_mb: 10
+    allowed_types: ['image/jpeg', 'image/png']
+    unmatched_dir: 'data/receipts/unmatched'  # 無 order_id 時 fallback
+
+api:
+  auto_create_order:
+    enabled: true
+    # 觸發關鍵字（嚴格匹配純文字 === "確認"）
+    # 其他文字（「好的」「OK」「YES」「下單」「收到」）都不觸發
+    trigger_keyword: '確認'
+    # X-API-Token 從環境變數或檔案讀
+    auth:
+      type: 'x_api_token'
+      token_file: '/home/clawuser/.config/chicken/secrets/api-token'
+    # 流程：客戶「確認」→ LLM 自動 call api-server POST /api/orders
+    # 失敗 fallback：push 通知老闆手動建單
 
 quick_replies:
   menu:

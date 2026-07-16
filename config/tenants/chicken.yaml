@@ -11,10 +11,10 @@ storage:
     filename_pattern: '{date}.csv'
     backup_path: data/orders/archive
   phase2:
-    enabled: false  # P9：待 Sheets API 啟用 + OAuth setup 完成後改 true（見 scripts/setup-google-sheets.sh）
+    enabled: true  # P9：2026-07-16 23:29 Hubert 啟用 Sheets API 完成，phase2 啟用
     type: google_sheets
     spreadsheet_id: '12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA'  # Google Sheets ID（Hubert 建立試算表後從 URL 複製）
-    sheet_name: 'Orders'  # 工作表名稱
+    sheet_name: '工作表一'  # Google Sheets 預設工作表名稱（Hubert 建立試算表時未改名）
     sync_direction: 'csv_to_sheets'  # csv → sheets 單向同步（讀 chicken.csv 寫入 Sheets）
     sync_interval_hours: 24  # 每日同步（凌晨 3 點 cron）
     auth:

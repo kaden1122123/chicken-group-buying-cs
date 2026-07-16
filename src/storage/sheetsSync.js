@@ -57,6 +57,42 @@ function base64url(data) {
  * @param {object} credentials - service account JSON
  * @returns {Promise<string>} access token
  */
+/**
+ * 從 spreadsheet metadata 取得第一個 sheet 的名稱（避免 hardcode sheet_name 出錯）
+ */
+function getFirstSheetName(credentials, spreadsheetId) {
+  return new Promise((resolve, reject) => {
+    getAccessToken(credentials).then((token) => {
+      https.get({
+        hostname: SHEETS_API_HOST,
+        path: `${SHEETS_APPEND_PATH}/${encodeURIComponent(spreadsheetId)}?fields=sheets.properties.title`,
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
+      }, (res) => {
+        let data = '';
+        res.on('data', (c) => { data += c; });
+        res.on('end', () => {
+          if (res.statusCode === 200) {
+            try {
+              const parsed = JSON.parse(data);
+              const firstSheet = parsed.sheets && parsed.sheets[0];
+              if (firstSheet) {
+                resolve(firstSheet.properties.title);
+              } else {
+                reject(new Error('No sheets found in spreadsheet'));
+              }
+            } catch (e) {
+              reject(new Error(`Parse metadata failed: ${e.message}`));
+            }
+          } else {
+            reject(new Error(`Get metadata failed: ${res.statusCode} ${data}`));
+          }
+        });
+      }).on('error', reject).end();
+    }).catch(reject);
+  });
+}
+
 function getAccessToken(credentials) {
   return new Promise((resolve, reject) => {
     const now = Math.floor(Date.now() / 1000);
@@ -250,22 +286,33 @@ async function syncOrdersToSheets(options = {}) {
       return { success: true, rowsWritten: 0, dryRun: true, ordersCount: orders.length, errors: [] };
     }
 
-    // 4. 取得 access token
+    // 4. Auto-discover sheet name（避免 sheet_name 跟實際試算表名稱不符 + 中文需單引號問題）
+    let actualSheetName = phase2.sheet_name;
+    try {
+      actualSheetName = await getFirstSheetName(credentials, phase2.spreadsheet_id);
+      logger.info('[sheetsSync] 使用 spreadsheet 第一個 sheet', { sheet: actualSheetName });
+    } catch (e) {
+      logger.warn('[sheetsSync] auto-discover sheet 失敗，用 config 設定', { err: e.message, configured: phase2.sheet_name });
+    }
+    const sheetName = actualSheetName;
+
+    // 5. 取得 access token
     const accessToken = await getAccessToken(credentials);
 
-    // 5. 寫入 Sheets（先 clear 後寫，避免重複）
-    const sheetName = phase2.sheet_name || 'Orders';
-    const range = `${sheetName}!A1:AC${values.length}`;
+    // 6. 寫入 Sheets（先 clear 後寫，避免重複）
+    // 中文 sheet name 用單引號包裝避免 range parse error
+    const quotedSheet = `'${sheetName}'`;
+    const range = `${quotedSheet}!A1`; // append 從 A1 開始（Sheets 自動找尾）
 
     // Clear first
     await httpsPost(
       SHEETS_API_HOST,
-      `${SHEETS_APPEND_PATH}/${encodeURIComponent(phase2.spreadsheet_id)}/values/${encodeURIComponent(`${sheetName}!A1:AC`)}:clear`,
+      `${SHEETS_APPEND_PATH}/${encodeURIComponent(phase2.spreadsheet_id)}/values/${encodeURIComponent(`${sheetName}!A1:ZZ`)}:clear`,
       '',
       {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-      }
+      },
     );
 
     // Append new values
@@ -276,7 +323,7 @@ async function syncOrdersToSheets(options = {}) {
       {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-      }
+      },
     );
 
     if (response.statusCode === 200) {
