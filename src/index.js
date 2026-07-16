@@ -49,8 +49,12 @@ async function handleMessage(userId, message, userProfile = {}) {
 
   // 先檢查是否應觸發轉真人（所有狀態都可能觸發）
   // 但 IDLE 狀態的問候不應觸發
+  // P3-emergency 2026-07-16：加 HUMAN_HANDOFF guard 防止 LINE push infinite loop
+  // 之前 bug：客戶在 HUMAN_HANDOFF 狀態下若再說「退款」「投訴」等關鍵字，
+  // 會重複觸發 handleHandoff → notifyHubert 每次都 push → 累積成「超級多次」推播
+  // 修法：HUMAN_HANDOFF 狀態下不重複觸發 handoff（除非是「不要/取消/不要 AI」這類 escape 訊息）
   const isIntentMessage = isOrderIntent(cleanMessage) || cleanMessage.trim().length > 3;
-  if (state !== STATES.IDLE || isIntentMessage) {
+  if (state !== STATES.HUMAN_HANDOFF && (state !== STATES.IDLE || isIntentMessage)) {
     if ((await shouldTransfer(cleanMessage)).shouldTransfer) {
       const result = await handleHandoff(userId, cleanMessage, orderData, userProfile);
       return { reply: result.reply, newState: result.newState };

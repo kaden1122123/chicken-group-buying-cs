@@ -13,6 +13,29 @@ const { getHandoffCustomerReply } = require('../config');
 // 預設轉真人回覆（若 config 沒設定時使用）
 const DEFAULT_HANDOFF_CUSTOMER_REPLY = '目前老闆再忙，後續會再回覆您，請留意 LINE 通知，謝謝！';
 
+// P3-emergency 2026-07-16：1 分鐘 debounce 防止 LINE push infinite loop
+// 同 userId + 訊息 hash 1 分鐘內只 push 一次，保護 webhook retry / 客戶重複訊息
+const PUSH_DEBOUNCE_MS = 60 * 1000; // 1 分鐘
+const recentPushes = new Map(); // userId → { msgHash, ts }
+
+function shouldDebouncePush(userId, userMessage) {
+  const msgHash = require('crypto').createHash('md5').update(userMessage).digest('hex');
+  const now = Date.now();
+  const last = recentPushes.get(userId);
+  if (last && last.msgHash === msgHash && (now - last.ts) < PUSH_DEBOUNCE_MS) {
+    return true;
+  }
+  recentPushes.set(userId, { msgHash, ts: now });
+  // 清理舊 entries（避免 memory leak）
+  if (recentPushes.size > 500) {
+    const cutoff = now - PUSH_DEBOUNCE_MS * 10;
+    for (const [k, v] of recentPushes.entries()) {
+      if (v.ts < cutoff) recentPushes.delete(k);
+    }
+  }
+  return false;
+}
+
 /**
  * HUMAN_HANDOFF 狀態處理
  * 14 種條件（語意判斷，非關鍵字）
@@ -82,9 +105,13 @@ async function handleHandoff(userId, userMessage, orderData = {}, userProfile = 
   const replyText = getHandoffCustomerReply() || DEFAULT_HANDOFF_CUSTOMER_REPLY;
   const customerReply = textReply(replyText);
 
-  // Step 3: LINE Push 通知 Hubert（非同步）
-  const notification = formatLINENotification(handoffOrderData, userMessage);
-  notifyHubert(notification).catch((e) => {
+  // Step 3: LINE Push 通知 Hubert（非同步 + debounce）
+  // P3-emergency 2026-07-16：1 分鐘 debounce 防止 LINE push infinite loop
+  if (shouldDebouncePush(userId, userMessage)) {
+    logger.warn(`[handoff] Push debounced for ${userId} (same message within 1 min)`);
+  } else {
+    const notification = formatLINENotification(handoffOrderData, userMessage);
+    notifyHubert(notification).catch((e) => {
     logger.error('LINE notification failed', { err: e.message });
     handoffOrderData.staff_notes = 'LINE通知失敗，請人工確認';
     try {
@@ -93,6 +120,7 @@ async function handleHandoff(userId, userMessage, orderData = {}, userProfile = 
       // ignore
     }
   });
+  }
 
   return {
     action: 'handoff_triggered',
