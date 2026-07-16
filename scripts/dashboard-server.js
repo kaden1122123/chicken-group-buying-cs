@@ -26,6 +26,7 @@ const fs = require('fs');
 const path = require('path');
 const { getTenantId } = require('../src/config');
 const { getOrdersByDate, getRecentOrders } = require('../src/order/csvReader');
+const { updateOrder } = require('../src/order/csvWriter'); // P5：Hubert 手動標記付款狀態
 
 // P1-8：js-yaml fallback。Production 環境遺漏 npm install 時不會 crash。
 // 讀取優先用 js-yaml，失敗時用 src/config.js 的 _parseYamlSimple。
@@ -627,6 +628,23 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 200, { success: true, config: newConfig, message: 'Config 已更新' });
     } catch (e) {
       sendJson(res, 400, { success: false, error: e.message });
+    }
+    return;
+  }
+
+  // P5：POST /api/orders/:orderId/mark-paid — Hubert 手動標記訂單為「已收款」
+  const markPaidMatch = url.match(/^\/api\/orders\/([^/]+)\/mark-paid$/);
+  if (markPaidMatch && method === 'POST') {
+    const orderId = decodeURIComponent(markPaidMatch[1]);
+    try {
+      const success = updateOrder(orderId, { payment_status: 'confirmed' });
+      if (success) {
+        sendJson(res, 200, { success: true, message: '訂單已標記為已收款', order_id: orderId });
+      } else {
+        sendJson(res, 404, { success: false, error: '找不到訂單', order_id: orderId });
+      }
+    } catch (e) {
+      sendJson(res, 500, { success: false, error: `標記失敗: ${e.message}` });
     }
     return;
   }

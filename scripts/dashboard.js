@@ -218,10 +218,14 @@ function generateHTML(data) {
         <th>品項</th>
         <th>金額</th>
         <th>狀態</th>
+        <th>付款</th>
+        <th>操作</th>
       </tr>
     </thead>
     <tbody>
-      ${data.recentOrders.map((o) => `
+      ${data.recentOrders.map((o) => {
+    const isPaid = o.payment_status === 'confirmed';
+    return `
         <tr>
           <td>${o.order_id || '-'}</td>
           <td>${o.delivery_date || '-'}</td>
@@ -229,8 +233,11 @@ function generateHTML(data) {
           <td>${(typeof o.chicken_items === 'string' ? o.chicken_items : JSON.stringify(o.chicken_items || {})).substring(0, 50)}</td>
           <td>NT$${o.total_amount || 0}</td>
           <td>${o.order_status || '-'}</td>
+          <td>${isPaid ? '<span style="color:#2e7d32;font-weight:600">✓ 已收款</span>' : '<span style="color:#e65100">⏳ 待收款</span>'}</td>
+          <td>${isPaid ? '<span style="color:#999;font-size:12px">已確認</span>' : `<button class="mark-paid-btn" data-order-id="${o.order_id}" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button>`}</td>
         </tr>
-      `).join('')}
+      `;
+  }).join('')}
     </tbody>
   </table>
 
@@ -270,6 +277,40 @@ function generateHTML(data) {
         }],
       },
       options: { indexAxis: 'y' },
+    });
+  </script>
+
+  <!-- P5：Hubert 手動標記付款狀態 — 點擊「✓ 已收款」按鈕呼叫 POST /api/orders/:id/mark-paid -->
+  <script>
+    document.addEventListener('click', async (e) => {
+      if (!e.target.classList || !e.target.classList.contains('mark-paid-btn')) return;
+      const orderId = e.target.dataset.orderId;
+      if (!confirm('確認標記訂單 ' + orderId + ' 為已收款？')) return;
+      e.target.disabled = true;
+      e.target.textContent = '處理中...';
+      try {
+        const r = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/mark-paid', { method: 'POST' });
+        const data = await r.json();
+        if (data.success) {
+          e.target.textContent = '✓ 已收款';
+          e.target.style.background = '#4caf50';
+          e.target.classList.remove('mark-paid-btn');
+          const row = e.target.closest('tr');
+          if (row) {
+            const cells = row.querySelectorAll('td');
+            if (cells[6]) cells[6].innerHTML = '<span style="color:#2e7d32;font-weight:600">✓ 已收款</span>';
+            if (cells[7]) cells[7].innerHTML = '<span style="color:#999;font-size:12px">已確認</span>';
+          }
+        } else {
+          e.target.disabled = false;
+          e.target.textContent = '✓ 已收款';
+          alert('標記失敗：' + (data.error || '未知錯誤'));
+        }
+      } catch (err) {
+        e.target.disabled = false;
+        e.target.textContent = '✓ 已收款';
+        alert('網路錯誤：' + err.message);
+      }
     });
   </script>
 </body>

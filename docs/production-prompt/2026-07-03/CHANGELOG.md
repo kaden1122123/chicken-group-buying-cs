@@ -2,7 +2,7 @@
 
 > **對應 production runtime**：`~/.openclaw/agents/external-user/`
 > **建立時間**：2026-07-03（Hubert 17:18 codebase audit 觸發）
-> **最後更新**：2026-07-16（P7 訂單完整性規則加 + main_idea.md sync 到 production runtime）
+> **最後更新**：2026-07-16（P5 付款狀態機制：prompt + dashboard「已收款」按鈕 + main_idea.md sync 到 production runtime）
 > **觸發**：完整 codebase audit 發現多處 drift，本版合併修正後對應到 production runtime。
 
 ---
@@ -79,6 +79,56 @@
 - 改 main_idea.md / AGENTS.md / SOUL.md 後必鬆同步 production runtime（不然 LLM 讀不到新規則）
 - CHANGELOG.md 記錄變更作為 audit trail
 
+### 5. main_idea.md §六 客戶查詢付款狀態規則 + dashboard 「✓ 已收款」按鈕（P5 · 2026-07-16 加）
+
+**問題**：
+- 客戶轉帳後問「我付款了嗎？」「你們收到款項了嗎？」LLM 不該隨便回「應該收到了」或「還沒收到」
+- 之後的 dashboard 訂單頁有「狀態」欄（order_status）但無「付款」欄，Hubert 無法一眼看出哪些訂單待收款
+
+**改動 1（prompt）**：
+- `docs/production-prompt/2026-07-03/main_idea.md` §六加子章節「💰 客戶查詢付款狀態（P5）」
+- 查詢流程：先查訂單 → 看 payment_status → confirmed 回感謝 / pending 回「請再傳截圖」/ 找不到回「請問名字電話」
+- 友善原則：不說「沒收到」、不催促、確認後感謝
+- ❌ 不要：憑印象回、說「我去查帳」（不是自動對帳）、含混帶過
+
+**改動 2（code）**：
+- `scripts/dashboard-server.js`：加 `POST /api/orders/:orderId/mark-paid` endpoint
+  - 呼叫 `src/order/csvWriter.updateOrder(orderId, { payment_status: 'confirmed' })`
+  - 成功回 `{success: true, message: '訂單已標記為已收款', order_id}`
+  - 失敗回 404/500
+- `scripts/dashboard.js`：template 加「付款」+「操作」兩欄
+  - 訂單 table header 加 `<th>付款</th><th>操作</th>`
+  - 每行依 `payment_status` 渲染「✓ 已收款」（綠）或「⏳ 待收款」（橙）+ 按鈕
+  - 加 JS click handler：fetch POST `/api/orders/:id/mark-paid` → 成功更新視覺 + 顯示成功訊息
+- `dashboard.html`：重新生成（246 orders · 5 files · 同步重生成）
+
+**雙位置對齊**：
+- main_idea.md dev ↔ production runtime md5 一致（sync 完成）
+- dashboard.html 本來就是 dev repo 生成 artifact，不需另外 sync 到 production runtime（production runtime 透過 ~/.openclaw/workspace-external-user/ 鏡像讀）
+
+**驗證**：
+- npm test 49 套全綠
+- check-quality.sh 11 通過 / 0 警告 / 0 失敗（需 commit 後重跑）
+- dashboard-server 重啟後 POST /api/orders/:id/mark-paid 可用（XDG secrets 密碼驗證 + auth）
+
+**問題**：
+- 客戶下訂只給部分資訊（例如只說「我要一個雞屁股」），LLM 容易回「好的，訂單收到！」→ 污染 dashboard 資料（Hubert 手動建單時缺一堆資訊 → 來回問客戶 → 體驗差 + 工作量高）
+- 之前 main_idea.md 沒有明確規範「訂單不完整時怎麼回」，LLM 憑印象回應
+
+**改動**：
+- `docs/production-prompt/2026-07-03/main_idea.md` §十二「接單時的標準流程」插入子章節「📋 訂單完整性規則（P7）」
+- 內容包含：7 項必填欄位檢查清單、❌/✅ 範例對照、❌ 絕對不要、4 條原則
+- 7 項必填：日期、品項、姓名、電話、地址（含社區名稱）、送達時段、付款方式
+
+**雙位置對齊**：
+- dev `docs/production-prompt/2026-07-03/main_idea.md` ↔ production runtime `~/.openclaw/agents/external-user/knowledge/main_idea.md`
+- md5 一致：`1dfa48f0402a45cbf4852efe5a1c7acd`（file mode 664，不需要 chmod dance）
+- 是無自動化 sync script（手動 `cp`，因為是 prompt 文字檔不是 code）
+
+**未來預防**：
+- 改 main_idea.md / AGENTS.md / SOUL.md 後必鬆同步 production runtime（不然 LLM 讀不到新規則）
+- CHANGELOG.md 記錄變更作為 audit trail
+
 ---
 
 ## 不變的部分
@@ -95,6 +145,8 @@
 - ✅ config.yaml 同步完成（sync-config.sh 跑過）
 - ✅ symlink latest → 2026-07-03
 - ✅ P7 訂單完整性規則加 main_idea.md §十二，sync 到 production runtime md5 一致（2026-07-16）
+- ✅ P5 客戶查詢付款狀態規則加 main_idea.md §六（2026-07-16）
+- ✅ P5 dashboard 「✓ 已收款」按鈕 + POST /api/orders/:id/mark-paid endpoint（2026-07-16）
 
 ---
 
