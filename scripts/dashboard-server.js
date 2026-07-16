@@ -637,11 +637,21 @@ const server = http.createServer(async (req, res) => {
   if (markPaidMatch && method === 'POST') {
     const orderId = decodeURIComponent(markPaidMatch[1]);
     try {
-      const success = updateOrder(orderId, { payment_status: 'confirmed' });
-      if (success) {
-        sendJson(res, 200, { success: true, message: '訂單已標記為已收款', order_id: orderId });
-      } else {
+      // 跨檔案查找訂單所在日期檔案 — csvWriter.updateOrder 用 delivery_date 定位 CSV 檔
+      // 如果沒傳 delivery_date，預設用 today，會找不到舊訂單 → 需預先 lookup 訂單所屬檔案日期
+      const allOrders = readAllOrders();
+      const order = allOrders.find((o) => o.order_id === orderId);
+      if (!order) {
         sendJson(res, 404, { success: false, error: '找不到訂單', order_id: orderId });
+        return;
+      }
+      const updates = { payment_status: 'confirmed' };
+      if (order._file_date) updates.delivery_date = order._file_date;
+      const success = updateOrder(orderId, updates);
+      if (success) {
+        sendJson(res, 200, { success: true, message: '訂單已標記為已收款', order_id: orderId, file_date: order._file_date });
+      } else {
+        sendJson(res, 500, { success: false, error: '更新 CSV 失敗', order_id: orderId });
       }
     } catch (e) {
       sendJson(res, 500, { success: false, error: `標記失敗: ${e.message}` });
