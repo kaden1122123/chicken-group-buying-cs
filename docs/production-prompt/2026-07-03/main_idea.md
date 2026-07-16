@@ -1259,9 +1259,9 @@ LLM 偵測以下情境之一 → 觸發 receipt 上傳流程：
 - 回應客戶：「收到您的截圖了，但請問這是哪筆訂單的款項？我幫您標記到老闆那邊核對 🙏」
 - 讓老闆手動在 dashboard 的 unmatched 區配對（未來功能）
 
-## 街口 QR code 主動推送
+## 街口 QR code 主動推送（2026-07-17 P4 完整實作）
 
-當客戶選擇「街口支付」且尚未付款時，主動推送街口支付 QR code：
+當客戶選擇「街口支付」且尚未付款時，主動推送街口支付 QR code（src/states/awaitingPayment.js jko case 自動觸發）：
 1. 讀 `chicken.yaml payment.jko.qr_code_url`（從 env `JKO_QR_CODE_URL` 或 config fallback）
 2. 用 `notifier.sendImageMessage(qrUrl, qrUrl, customerUserId)` 推送 LINE image message
 3. 文字補充：「這是街口支付 QR code，掃碼付款完成後請傳截圖給我，我幫您標記到老闆那邊 ✓」
