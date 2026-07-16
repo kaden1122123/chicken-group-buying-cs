@@ -135,6 +135,15 @@ payment:
     enabled: true
     line_id: Willy0221
 
+  # P4：顧客回傳支付截圖（2026-07-16 加）
+  # 街口/轉帳客戶付款後回傳截圖，儲存到 data/receipts/{order_id}/ 備份
+  receipts:
+    enabled: true
+    storage_path: 'data/receipts'
+    max_size_mb: 10
+    allowed_types: ['image/jpeg', 'image/png']
+    unmatched_dir: 'data/receipts/unmatched'  # 無 order_id 時 fallback
+
 # P3：Quick Reply 統一回覆按鈕配置（2026-07-16 加）
 # 客戶問特定問題時，LLM 對應回傳 Quick Reply 結構（LINE 原生功能）
 # 4 種情境：menu / payment / hours / delivery
