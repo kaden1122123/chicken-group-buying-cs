@@ -29,6 +29,15 @@ const TOKEN_PATH = '/home/clawuser/.config/chicken/secrets/gmail-token.json';
 // Gmail API 需要的 scope（只送件，不讀取）
 const SCOPES = ['https://www.googleapis.com/auth/gmail.send'];
 
+// 付款方式中文標籤（Hubert 04:05 要求：現金；轉帳；街口支付...）
+// notifier.js 與 formatOrderDigest 都會用
+const PAYMENT_METHOD_LABELS = {
+  cash: '現金',
+  transfer: '轉帳',
+  jko: '街口支付',
+  linepay: 'LINE Pay',
+};
+
 // 延遲載入 googleapis（測試環境若沒裝也可 import，但 sendEmail 會 fail gracefully）
 let _googleapis = null;
 function loadGoogleapis() {
@@ -229,7 +238,8 @@ function formatOrderDigest(orders, type = 'daily') {
     lines.push('   （無資料）');
   } else {
     Object.entries(byPayment).forEach(([method, { count, amount }]) => {
-      lines.push(`   ${method.padEnd(8, ' ')}  ${count} 筆（NT$ ${fmtMoney(amount)}）`);
+      const label = PAYMENT_METHOD_LABELS[method] || method;
+      lines.push(`   ${label.padEnd(8, ' ')}  ${count} 筆（NT$ ${fmtMoney(amount)}）`);
     });
   }
 
@@ -293,4 +303,5 @@ module.exports = {
   SCOPES,
   CREDENTIALS_PATH,
   TOKEN_PATH,
+  PAYMENT_METHOD_LABELS,
 };

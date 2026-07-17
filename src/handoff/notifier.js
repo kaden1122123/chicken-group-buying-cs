@@ -6,7 +6,7 @@ const https = require('https');
 // 支援多租戶、js-yaml 缺失 fallback、與 src/ 其他模組一致
 const { getLineBotToken, getNotifyOwnerUserId, isFeatureEnabled, getEmailConfig } = require('../config');
 // P0 2026-07-17：Email 整合（Gmail 通知老闆的備援通道）
-const { sendEmail } = require('./emailNotifier');
+const { sendEmail, PAYMENT_METHOD_LABELS } = require('./emailNotifier');
 
 // 預設值（若 config 沒設定時使用，僅在開發環境有意義）
 const DEFAULT_HUBERT_LINE_USER_ID = 'Uf56650056d35626deb64165926a26182';
@@ -170,11 +170,25 @@ function buildEmailContent(message, options = {}) {
         field('總盒數', meta.total_boxes),
       );
     }
+    // 退款 trigger（refund_request）：加「💸 退款資訊」section
+    if (meta.trigger_type === 'refund_request' || meta.refund_amount) {
+      lines.push('', section('💸', '退款資訊'));
+      lines.push(field('退款金額', `NT$ ${fmtMoney(meta.refund_amount || meta.total_amount)}`));
+      lines.push(field('退款原因', meta.refund_reason || meta.staff_notes || '—'));
+      lines.push(field('原訂單 ID', meta.order_id));
+    }
+    // 地址確認 trigger（delivery_confirm_needed）：加「📍 地址確認」section
+    if (meta.trigger_type === 'delivery_confirm_needed' || meta.address_check_needed) {
+      lines.push('', section('📍', '地址確認'));
+      lines.push(field('地址', meta.address));
+      lines.push(field('判讀難度', meta.address_difficulty || '—'));
+      lines.push(field('備註', meta.address_note || '—'));
+    }
     // 付款（如有）
     if (meta.total_amount || meta.payment_method) {
       lines.push('', section('💰', '付款資訊'));
       lines.push(field('金額', `NT$ ${fmtMoney(meta.total_amount)}`));
-      lines.push(field('付款方式', meta.payment_method));
+      lines.push(field('付款方式', PAYMENT_METHOD_LABELS[meta.payment_method] || meta.payment_method));
       lines.push(field('付款狀態', meta.payment_status || 'pending'));
     }
     lines.push(
@@ -223,7 +237,7 @@ function buildEmailContent(message, options = {}) {
       field('小計', `NT$ ${fmtMoney(meta.subtotal)}`),
       field('配送費', `NT$ ${fmtMoney(meta.delivery_fee)}`),
       field('總計', `NT$ ${fmtMoney(meta.total_amount)}`),
-      field('付款方式', meta.payment_method),
+      field('付款方式', PAYMENT_METHOD_LABELS[meta.payment_method] || meta.payment_method),
       field('付款狀態', meta.payment_status || 'pending'),
     );
     if (meta.error || meta.failure_reason) {

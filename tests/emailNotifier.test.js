@@ -323,6 +323,75 @@ test('buildEmailContent — handoff v3 含完整重要欄位', () => {
   assert.match(body, /╔═/); // box header
   assert.match(body, /━{20,}/); // divider
   assert.match(body, /處理連結/);
+  // v4：付款方式用中文標籤（Hubert 04:05 要求）
+  assert.match(body, /付款方式：\s*轉帳/);
+});
+
+// ===================
+// v4 擴充（Hubert 04:05 要求）
+// - handoff 版型：trigger_type 對應「💸 退款資訊」+「📍 地址確認」sections
+// - autoOrder / system 版型：付款方式中文標籤（現金 / 轉帳 / 街口支付 / LINE Pay）
+// ===================
+test('buildEmailContent — handoff refund_request 含退款資訊 section', () => {
+  const { body } = buildEmailContent('客戶訊息：我要退錢', {
+    type: 'handoff',
+    metadata: {
+      order_id: 'ORD-REFUND-001',
+      user_line_name: '王小明',
+      trigger_type: 'refund_request',
+      refund_amount: '380',
+      refund_reason: '雞肉不新鲜',
+      total_amount: '380',
+      payment_method: 'transfer',
+      payment_status: 'paid',
+    },
+  });
+  assert.match(body, /💸 退款資訊/);
+  assert.match(body, /退款金額：\s*NT\$ 380/);
+  assert.match(body, /退款原因：\s*雞肉不新鲜/);
+  assert.match(body, /原訂單 ID：\s*ORD-REFUND-001/);
+});
+
+test('buildEmailContent — handoff delivery_confirm_needed 含地址確認 section', () => {
+  const { body } = buildEmailContent('客戶訊息：這地址能送嗎？', {
+    type: 'handoff',
+    metadata: {
+      order_id: 'ORD-ADDRESS-001',
+      user_line_name: '李小華',
+      user_phone: '0912-345-678',
+      address: '桃園市大溪區三元街 123 號',
+      trigger_type: 'delivery_confirm_needed',
+      address_difficulty: '中（疑似在中壢區邊界）',
+      address_note: '建議跟客戶確認地址完整',
+    },
+  });
+  assert.match(body, /📍 地址確認/);
+  assert.match(body, /地址：\s*桃園市大溪區三元街 123 號/);
+  assert.match(body, /判讀難度：\s*中/);
+  assert.match(body, /備註：\s*建議跟客戶確認地址完整/);
+});
+
+test('buildEmailContent — autoOrder 付款方式用中文標籤', () => {
+  const { body } = buildEmailContent('test', {
+    type: 'autoOrder',
+    metadata: {
+      order_id: 'ORD-PAY-001',
+      user_line_name: '張三',
+      payment_method: 'jko',
+      delivery_date: '2026-07-20',
+      time_slot: '下午',
+      total_amount: '380',
+    },
+  });
+  assert.match(body, /付款方式：\s*街口支付/);
+  assert.doesNotMatch(body, /付款方式：\s*jko/);
+});
+
+test('PAYMENT_METHOD_LABELS — 完整 mapping', () => {
+  assert.strictEqual(notifier.PAYMENT_METHOD_LABELS.cash, '現金');
+  assert.strictEqual(notifier.PAYMENT_METHOD_LABELS.transfer, '轉帳');
+  assert.strictEqual(notifier.PAYMENT_METHOD_LABELS.jko, '街口支付');
+  assert.strictEqual(notifier.PAYMENT_METHOD_LABELS.linepay, 'LINE Pay');
 });
 
 test('buildEmailContent — autoOrder v3 含訂單摘要', () => {
