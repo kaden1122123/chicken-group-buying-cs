@@ -152,9 +152,10 @@ test('buildRawMessage — 中文主旨用 RFC 2047 base64', () => {
 // ===================
 // formatOrderDigest
 // ===================
-test('formatOrderDigest — 今日彙總（3 筆訂單）', () => {
+test('formatOrderDigest — v3 今日彙總（3 筆訂單，含統計 + 分組）', () => {
   const orders = [
     {
+      order_id: 'ORD-001',
       delivery_date: '2026-07-17',
       time_slot: '中午',
       user_line_name: '王小明',
@@ -163,6 +164,7 @@ test('formatOrderDigest — 今日彙總（3 筆訂單）', () => {
       order_status: 'confirmed',
     },
     {
+      order_id: 'ORD-002',
       delivery_date: '2026-07-17',
       time_slot: '下午',
       user_line_name: '李小華',
@@ -171,6 +173,7 @@ test('formatOrderDigest — 今日彙總（3 筆訂單）', () => {
       order_status: 'pending_handoff',
     },
     {
+      order_id: 'ORD-003',
       delivery_date: '2026-07-17',
       time_slot: '晚上',
       user_line_name: '張大頭',
@@ -180,22 +183,39 @@ test('formatOrderDigest — 今日彙總（3 筆訂單）', () => {
     },
   ];
   const out = formatOrderDigest(orders, 'daily');
-  assert.match(out, /== 雞味研究所 今日訂單彙總/);
-  assert.match(out, /總筆數: 3/);
-  assert.match(out, /已完成: 2/);
-  assert.match(out, /待處理: 1/);
+  // 標題
+  assert.match(out, /📊 雞味研究所/);
+  assert.match(out, /今日訂單彙總/);
+  assert.match(out, /╔═/); // box header
+  // 統計
+  assert.match(out, /總筆數：\s*3 筆/);
+  assert.match(out, /已完成：\s*2 筆/);
+  assert.match(out, /待處理：\s*1 筆/);
+  assert.match(out, /總金額：\s*NT\$ 1,520/);
+  assert.match(out, /平均金額：\s*NT\$ 507/);
+  // 各付款方式分佈
+  assert.match(out, /各付款方式分佈/);
+  assert.match(out, /transfer/);
+  assert.match(out, /jko/);
+  assert.match(out, /cash/);
+  // 分組訂單
+  assert.match(out, /✅ 已完成（2 筆）/);
+  assert.match(out, /⚠️ 待處理（1 筆）/);
+  assert.match(out, /ORD-001/);
   assert.match(out, /王小明/);
-  assert.match(out, /NT\$380/);
+  // Dashboard CTA
+  assert.match(out, /Dashboard/);
+  assert.match(out, /100\.114\.197\.9:3000/);
 });
 
-test('formatOrderDigest — 空清單', () => {
+test('formatOrderDigest — v3 空清單', () => {
   const out = formatOrderDigest([], 'daily');
-  assert.match(out, /總筆數: 0/);
-  assert.match(out, /（無訂單）/);
+  assert.match(out, /總筆數：\s*0 筆/);
+  assert.match(out, /今日無訂單/);
 });
 
-test('formatOrderDigest — 週報標籤', () => {
-  const out = formatOrderDigest([{ delivery_date: '2026-07-17', time_slot: '中午', user_line_name: 'A', total_amount: '100', payment_method: 'transfer', order_status: 'confirmed' }], 'weekly');
+test('formatOrderDigest — v3 週報標籤', () => {
+  const out = formatOrderDigest([{ order_id: 'ORD-001', delivery_date: '2026-07-17', time_slot: '中午', user_line_name: 'A', total_amount: '100', payment_method: 'transfer', order_status: 'confirmed' }], 'weekly');
   assert.match(out, /本週訂單彙總/);
 });
 
@@ -272,38 +292,88 @@ test('CREDENTIALS_PATH / TOKEN_PATH — 在 XDG secrets 目錄', () => {
 });
 
 // ===================
-// buildEmailContent（4 種 type 版型）
+// buildEmailContent（4 種 type 版型 v3 — 純文字精美、含完整重要欄位）
 // ===================
-test('buildEmailContent — handoff 版型', () => {
-  const { subject, body } = buildEmailContent('客戶訊息：我要退款', { type: 'handoff' });
+test('buildEmailContent — handoff v3 含完整重要欄位', () => {
+  const { subject, body } = buildEmailContent('客戶訊息：我要退款', {
+    type: 'handoff',
+    metadata: {
+      order_id: 'ORD-20260718-001',
+      user_line_name: '王小明',
+      user_line_id: 'U1234567890abcdef',
+      user_phone: '0912-345-678',
+      address: '新北市三峽區',
+      trigger_label: '退貨/退款',
+      chicken_items: '{"雞腿": 2}',
+      side_items: '{"炒青菜": 2}',
+      total_boxes: '4',
+      total_amount: '380',
+      payment_method: 'transfer',
+      payment_status: 'pending',
+    },
+  });
   assert.match(subject, /【雞味研究所】🔔 轉真人通知/);
-  assert.match(body, /類型: handoff/);
-  assert.match(body, /客戶訊息：我要退款/);
-  assert.match(body, /請儘速登入 dashboard/);
+  assert.match(body, /王小明/);
+  assert.match(body, /0912-345-678/);
+  assert.match(body, /ORD-20260718-001/);
+  assert.match(body, /退貨\/退款/);
+  assert.match(body, /雞腿×2/);
+  assert.match(body, /炒青菜×2/);
+  assert.match(body, /NT\$ 380/);
+  assert.match(body, /╔═/); // box header
   assert.match(body, /━{20,}/); // divider
+  assert.match(body, /處理連結/);
 });
 
-test('buildEmailContent — autoOrder 版型', () => {
-  const { subject, body } = buildEmailContent('order_id: ORD-001\n金額: NT$380', { type: 'autoOrder' });
-  assert.match(subject, /【雞味研究所】🤖 B 方案自動建單/);
-  assert.match(body, /類型: autoOrder/);
-  assert.match(body, /order_id: ORD-001/);
-  assert.match(body, /請確認付款狀態/);
+test('buildEmailContent — autoOrder v3 含訂單摘要', () => {
+  const { body } = buildEmailContent('建單訊息', {
+    type: 'autoOrder',
+    metadata: {
+      order_id: 'ORD-002',
+      success: true,
+      user_line_name: '李小華',
+      user_phone: '0923-456-789',
+      address: '新北市三峽區',
+      delivery_date: '2026-07-19',
+      time_slot: '下午',
+      subtotal: '380',
+      delivery_fee: '0',
+      total_amount: '380',
+      payment_method: 'transfer',
+      chicken_items: '{"雞腿": 2}',
+    },
+  });
+  assert.match(body, /李小華/);
+  assert.match(body, /0923-456-789/);
+  assert.match(body, /ORD-002/);
+  assert.match(body, /2026-07-19/);
+  assert.match(body, /下午/);
+  assert.match(body, /小計/);
+  assert.match(body, /NT\$ 380/);
+  assert.match(body, /雞腿×2/);
+  assert.match(body, /確認付款狀態/);
 });
 
-test('buildEmailContent — digest 版型（無 CTA）', () => {
-  const { subject, body } = buildEmailContent('總筆數: 5', { type: 'digest' });
-  assert.match(subject, /【雞味研究所】📊 訂單彙總/);
-  assert.match(body, /類型: digest/);
-  assert.match(body, /總筆數: 5/);
-});
-
-test('buildEmailContent — system 版型（無 CTA、無 divider）', () => {
+test('buildEmailContent — system v3 含 box header', () => {
   const { subject, body } = buildEmailContent('測試訊息', { type: 'system' });
   assert.match(subject, /【雞味研究所】⚙️ 系統通知/);
-  assert.match(body, /類型: system/);
+  assert.match(body, /╔═/); // box header
+  assert.match(body, /系統通知/);
   assert.match(body, /測試訊息/);
-  assert.doesNotMatch(body, /━{20,}/); // 系統通知無 divider
+});
+
+test('buildEmailContent — handoff v3 含錯誤訊息（如有）', () => {
+  const { body } = buildEmailContent('B 方案失敗訊息', {
+    type: 'autoOrder',
+    metadata: {
+      order_id: 'ORD-FAIL',
+      success: false,
+      error: '缺少必填欄位',
+      user_line_name: '張三',
+    },
+  });
+  assert.match(body, /❌ 失敗/);
+  assert.match(body, /缺少必填欄位/);
 });
 
 test('buildEmailContent — 未指定 type 預設 system', () => {

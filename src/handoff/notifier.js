@@ -89,58 +89,182 @@ async function notifyHubertViaLine(message) {
 }
 
 /**
- * Email 通知內容生成器（4 種 type 版型）
- * @param {string|object} message - 原始訊息
+ * Email 通知內容生成器（4 種 type 版型 v3 — 純文字精美、含完整重要欄位）
+ * @param {string|object} message - 原始訊息（向後相容：純文字時仍可用）
  * @param {object} [options]
  * @param {string} [options.type='system'] - handoff | autoOrder | system | digest
+ * @param {object} [options.metadata] - 完整資料（v3 新增，含用戶、訂單、品項、付款等欄位）
  * @returns {{subject: string, body: string}}
  */
 function buildEmailContent(message, options = {}) {
-  const ts = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false });
-  const messageText = typeof message === 'string' ? message : JSON.stringify(message, null, 2);
-  const dashboardUrl = process.env.DASHBOARD_URL || 'https://100.114.197.9:3000/admin';
+  const ts = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Taipei', hour12: false }).replace(' ', ' ');
+  const dashboardBase = process.env.DASHBOARD_URL || 'https://100.114.197.9:3000/admin';
+  const dashboardUrl = options.metadata && options.metadata.order_id
+    ? `${dashboardBase}?order=${encodeURIComponent(options.metadata.order_id)}`
+    : dashboardBase;
   const type = options.type || 'system';
+  const meta = options.metadata || {};
+  const messageText = typeof message === 'string' ? message : JSON.stringify(message, null, 2);
 
-  // 版型設計：分類、Emoji 前綴、CTA 連結
-  const templates = {
-    handoff: {
-      icon: '🔔',
-      label: '轉真人通知',
-      subject: `【雞味研究所】🔔 轉真人通知 (${ts})`,
-      header: `時間: ${ts}\n類型: handoff`,
-      cta: `請儘速登入 dashboard 處理\n${dashboardUrl}`,
-    },
-    autoOrder: {
-      icon: '🤖',
-      label: 'B 方案自動建單',
-      subject: `【雞味研究所】🤖 B 方案自動建單 (${ts})`,
-      header: `時間: ${ts}\n類型: autoOrder`,
-      cta: `請確認付款狀態 ✓\n${dashboardUrl}`,
-    },
-    digest: {
-      icon: '📊',
-      label: '訂單彙總',
-      subject: `【雞味研究所】📊 訂單彙總 (${ts})`,
-      header: `時間: ${ts}\n類型: digest`,
-      cta: dashboardUrl,
-    },
-    system: {
-      icon: '⚙️',
-      label: '系統通知',
-      subject: `【雞味研究所】⚙️ 系統通知 (${ts})`,
-      header: `時間: ${ts}\n類型: system`,
-      cta: '',
-    },
+  // 共用樣式：box header + divider
+  const box = (icon, label) => [
+    '╔═══════════════════════════════════════════════╗',
+    `║ ${icon} 雞味研究所 — ${label.padEnd(30, ' ')}║`,
+    `║ ${ts.padEnd(45, ' ')}║`,
+    '╚═══════════════════════════════════════════════╝',
+  ].join('\n');
+  const divider = '━'.repeat(48);
+  const section = (icon, title) => `\n${icon} ${title}\n${'─'.repeat(40)}`;
+  const field = (key, val, labelWidth = 10) => `   ${(key + '：').padEnd(labelWidth + 4, ' ')}${val || '—'}`;
+
+  // 輔助：解析 items JSON string
+  const parseItems = (raw) => {
+    if (!raw) return null;
+    try {
+      const obj = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      const entries = Object.entries(obj).filter(([, v]) => v);
+      if (entries.length === 0) return null;
+      return entries.map(([k, v]) => `${k}×${v}`).join('、');
+    } catch (e) {
+      return null;
+    }
   };
 
-  const tpl = templates[type] || templates.system;
-  const divider = '━'.repeat(40);
-  const sections = [tpl.header, '', messageText];
-  if (tpl.cta) {
-    sections.push('', divider, tpl.cta);
+  // 輔助：金額格式化（加千分位逗號）
+  const fmtMoney = (n) => {
+    if (n === null || n === undefined || n === '') return '—';
+    const num = Number(n);
+    return isNaN(num) ? String(n) : num.toLocaleString('en-US');
+  };
+
+  // 各版型生成器
+  if (type === 'handoff') {
+    const triggerLabel = meta.trigger_label || meta.handoff_type || '轉真人';
+    const subject = `【雞味研究所】🔔 轉真人通知 ${ts}`;
+    const lines = [
+      box('🔔', '轉真人通知'),
+      section('📋', '案件資訊'),
+      field('類型', `handoff（${triggerLabel}）`),
+      field('時間', ts),
+      field('order_id', meta.order_id),
+      '',
+      section('👤', '客戶資訊'),
+      field('名稱', meta.user_line_name),
+      field('LINE ID', meta.user_line_id),
+      field('電話', meta.user_phone),
+      field('地址', meta.address),
+      '',
+      section('💬', '客戶訊息'),
+      messageText || '（無）',
+    ];
+    // 品項（如有）
+    const chicken = parseItems(meta.chicken_items);
+    const side = parseItems(meta.side_items);
+    const extra = parseItems(meta.extra_items);
+    if (chicken || side || extra) {
+      lines.push('', section('📦', '訂單品項'));
+      if (chicken) lines.push('   🍗 雞肉：  ' + chicken);
+      if (side) lines.push('   🥗 小菜：  ' + side);
+      if (extra) lines.push('   ➕ 加購：  ' + extra);
+      lines.push(
+        field('總盒數', meta.total_boxes),
+      );
+    }
+    // 付款（如有）
+    if (meta.total_amount || meta.payment_method) {
+      lines.push('', section('💰', '付款資訊'));
+      lines.push(field('金額', `NT$ ${fmtMoney(meta.total_amount)}`));
+      lines.push(field('付款方式', meta.payment_method));
+      lines.push(field('付款狀態', meta.payment_status || 'pending'));
+    }
+    lines.push(
+      '',
+      divider,
+      '👉 處理連結',
+      '   ' + dashboardUrl,
+      '   → 請儘速登入 dashboard 處理',
+    );
+    return { subject, body: lines.join('\n') };
   }
-  const body = sections.join('\n');
-  return { subject: tpl.subject, body };
+
+  if (type === 'autoOrder') {
+    const subject = `【雞味研究所】🤖 B 方案自動建單 ${ts}`;
+    const lines = [
+      box('🤖', 'B 方案自動建單'),
+      section('✅', '建單結果'),
+      field('order_id', meta.order_id),
+      field('狀態', meta.success === false ? '❌ 失敗' : '✅ 成功'),
+      field('時間', ts),
+      '',
+      section('👤', '客戶資訊'),
+      field('名稱', meta.user_line_name),
+      field('LINE ID', meta.user_line_id),
+      field('電話', meta.user_phone),
+      field('地址', meta.address),
+    ];
+    // 品項
+    const chicken = parseItems(meta.chicken_items);
+    const side = parseItems(meta.side_items);
+    const extra = parseItems(meta.extra_items);
+    if (chicken || side || extra) {
+      lines.push('', section('🍗', '品項詳情'));
+      if (chicken) lines.push('   雞肉：  ' + chicken);
+      if (side) lines.push('   小菜：  ' + side);
+      if (extra) lines.push('   加購：  ' + extra);
+      lines.push(field('總盒數', meta.total_boxes));
+    }
+    // 配送 + 金額 + 付款
+    lines.push(
+      '', section('📦', '配送資訊'),
+      field('配送日期', meta.delivery_date),
+      field('時段', meta.time_slot),
+      field('社區', meta.community),
+      '', section('💰', '金額明細'),
+      field('小計', `NT$ ${fmtMoney(meta.subtotal)}`),
+      field('配送費', `NT$ ${fmtMoney(meta.delivery_fee)}`),
+      field('總計', `NT$ ${fmtMoney(meta.total_amount)}`),
+      field('付款方式', meta.payment_method),
+      field('付款狀態', meta.payment_status || 'pending'),
+    );
+    if (meta.error || meta.failure_reason) {
+      lines.push('', section('⚠️', '錯誤訊息'));
+      lines.push('   ' + (meta.error || meta.failure_reason));
+    }
+    lines.push(
+      '',
+      divider,
+      '👉 處理連結',
+      '   ' + dashboardUrl,
+      '   → 請確認付款狀態 ✓',
+    );
+    return { subject, body: lines.join('\n') };
+  }
+
+  if (type === 'digest') {
+    // digest 舊版型（v2 設計），保留向下相容
+    const subject = `【雞味研究所】📊 訂單彙總 ${ts}`;
+    const lines = [
+      box('📊', '訂單彙總'),
+      '',
+      `   總筆數：${meta.total || messageText.length || '?'}`,
+    ];
+    lines.push('', messageText);
+    lines.push('', divider, '👉 ' + dashboardUrl);
+    return { subject, body: lines.join('\n') };
+  }
+
+  // system 版型
+  const subject = `【雞味研究所】⚙️ 系統通知 ${ts}`;
+  const lines = [
+    box('⚙️', '系統通知'),
+    '',
+    section('📋', '訊息內容'),
+    messageText,
+  ];
+  if (meta.context) {
+    lines.push('', section('🔍', 'Context'), meta.context);
+  }
+  return { subject, body: lines.join('\n') };
 }
 
 /**
@@ -163,7 +287,7 @@ async function sendEmailNotification(message, options = {}) {
 
 /**
  * Email fallback（保留向後相容別名）
- * @deprecated 2026-07-17 改用 sendEmailNotification（永遠觸發，不再只是 fallback）
+ * @deprecated 2026-07-18 v3 改用 sendEmailNotification（永遠觸發，不再只是 fallback）
  */
 async function sendEmailFallback(message) {
   return sendEmailNotification(message, { type: 'system' });

@@ -183,29 +183,83 @@ async function sendEmail({ to, subject, body }) {
 }
 
 /**
- * 格式化訂單彙總（純文字）
+ * 格式化訂單彙總（純文字精美版 v3 — 分組、重要欄位全加）
  */
 function formatOrderDigest(orders, type = 'daily') {
-  const typeLabel = type === 'daily' ? '今日' : type === 'weekly' ? '本週' : '彙總';
+  const ts = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Taipei', hour12: false }).replace(' ', ' ');
   const dateStr = new Date().toISOString().slice(0, 10);
+  const typeLabel = type === 'daily' ? '今日' : type === 'weekly' ? '本週' : '彙總';
+
+  // 統計
+  const total = orders.length;
+  const confirmed = orders.filter((o) => o.order_status === 'confirmed').length;
+  const pendingHandoff = orders.filter((o) => o.order_status === 'pending_handoff').length;
+  const pending = orders.filter((o) => o.order_status === 'pending').length;
+  const totalAmount = orders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
+  const avgAmount = total > 0 ? Math.round(totalAmount / total) : 0;
+  const fmtMoney = (n) => (n || 0).toLocaleString('en-US');
+
+  // 各付款方式分佈
+  const byPayment = {};
+  orders.forEach((o) => {
+    const p = o.payment_method || 'unknown';
+    if (!byPayment[p]) byPayment[p] = { count: 0, amount: 0 };
+    byPayment[p].count += 1;
+    byPayment[p].amount += Number(o.total_amount) || 0;
+  });
+
   const lines = [
-    `== 雞味研究所 ${typeLabel}訂單彙總 (${dateStr}) ==`,
+    '╔═══════════════════════════════════════════════╗',
+    `║ 📊 雞味研究所 — ${(typeLabel + '訂單彙總').padEnd(28, ' ')}║`,
+    `║ ${dateStr.padEnd(45, ' ')}║`,
+    '╚═══════════════════════════════════════════════╝',
     '',
-    `總筆數: ${orders.length}`,
-    `已完成: ${orders.filter((o) => o.order_status === 'confirmed').length}`,
-    `待處理: ${orders.filter((o) => o.order_status === 'pending_handoff').length}`,
+    '📈 統計',
+    '─'.repeat(40),
+    `   總筆數：     ${total} 筆`,
+    `   已完成：     ${confirmed} 筆${total > 0 ? `（${Math.round(confirmed / total * 100)}%）` : ''}`,
+    `   待處理：     ${pending + pendingHandoff} 筆（pending: ${pending}, pending_handoff: ${pendingHandoff}）`,
+    `   總金額：     NT$ ${fmtMoney(totalAmount)}`,
+    `   平均金額：   NT$ ${fmtMoney(avgAmount)}`,
     '',
-    '--- 訂單清單 ---',
+    '💰 各付款方式分佈',
+    '─'.repeat(40),
   ];
-  if (orders.length === 0) {
-    lines.push('（無訂單）');
+  if (Object.keys(byPayment).length === 0) {
+    lines.push('   （無資料）');
   } else {
-    orders.forEach((o, i) => {
-      lines.push(
-        `${i + 1}. ${o.delivery_date || '?'} ${o.time_slot || '?'} | ${o.user_line_name || '?'} | NT$${o.total_amount || '?'} | ${o.payment_method || '?'} | ${o.order_status || '?'}`,
-      );
+    Object.entries(byPayment).forEach(([method, { count, amount }]) => {
+      lines.push(`   ${method.padEnd(8, ' ')}  ${count} 筆（NT$ ${fmtMoney(amount)}）`);
     });
   }
+
+  // 訂單清單（分組：待處理、已完成、其他）
+  const groups = [
+    { title: '待處理', items: orders.filter((o) => ['pending', 'pending_handoff'].includes(o.order_status)), icon: '⚠️' },
+    { title: '已完成', items: orders.filter((o) => o.order_status === 'confirmed'), icon: '✅' },
+    { title: '其他', items: orders.filter((o) => !['pending', 'pending_handoff', 'confirmed'].includes(o.order_status)), icon: '📦' },
+  ];
+
+  groups.forEach(({ title, items, icon }) => {
+    if (items.length === 0) return;
+    lines.push('', `${icon} ${title}（${items.length} 筆）`, '─'.repeat(40));
+    items.forEach((o, i) => {
+      lines.push(
+        `   ${(i + 1 + '.').padEnd(4, ' ')}${(o.order_id || '?').padEnd(20, ' ')} | ${(o.user_line_name || '?').padEnd(10, ' ')} | ${(o.delivery_date || '?').padEnd(11, ' ')} ${(o.time_slot || '?').padEnd(3, ' ')} | ${(o.payment_method || '?').padEnd(9, ' ')} | NT$${fmtMoney(o.total_amount).padEnd(6, ' ')} | ${o.order_status || '?'}`,
+      );
+    });
+  });
+
+  if (total === 0) {
+    lines.push('', '（今日無訂單）');
+  }
+
+  lines.push(
+    '',
+    '━'.repeat(48),
+    '👉 Dashboard',
+    '   https://100.114.197.9:3000/admin',
+  );
   return lines.join('\n');
 }
 
