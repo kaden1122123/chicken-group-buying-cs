@@ -92,11 +92,11 @@ LINE 月度額度（Free plan）：500 messages/month。當前可能額滿（7/1
 | P7 訂單完整性規則 | ✅ 實作完成（commit 1380731）|
 | B 方案 auto-create-order | ✅ 實作完成（commits c67eca3 + 3e998c9 + 756b859 + a42e362）|
 | P9 Google Sheets sync | ✅ 實作完成 + 662 筆訂單已寫入（commits d903098 + 057ed3e）|
-| P9 Sheets cron sync | ✅ 程式完成（`scripts/sheets-sync-cron.js`，待 `openclaw cron add` 設排程）|
+| P9 Sheets cron sync | ✅ 程式完成（`scripts/sheets-sync-cron.js`，✅ 已設 cron（測試中，main agent + delivery announce to discord））|
 | P0 Gmail 整合 | ✅ 完整實作（5 個 commits：ee04932 / ea64832 / b823dd7 / 1dc9b4d / 6cc05a8）|
 | Gmail OAuth | ✅ 完成授權（clawbrt@gmail.com + GCP project `chickencustomerservicesheets`）|
 | Email 版型 v5 | ✅ 4 種版型（handoff / autoOrder / digest / system）+ 中文付款 + 大小標題 |
-| 日報/週報 script | ✅ 程式完成（`scripts/send-digest.js`，待 `openclaw cron add` 設排程）|
+| 日報/週報 script | ✅ 程式完成（`scripts/send-digest.js`，✅ 已設 cron（測試中，main agent + delivery announce to discord））|
 | LINE 月度額度 | ⚠️ 額滿（500/月用完，下個 reset = 2026-08-01）|
 
 ---
@@ -136,8 +136,8 @@ LINE 月度額度（Free plan）：500 messages/month。當前可能額滿（7/1
    - ✅ OAuth loopback callback（`scripts/gmail-auth.js` v3）
    - ✅ 永遠 LINE+Email 並行（Hubert 22:53 決定）
    - ✅ 4 種版型（handoff / autoOrder / digest / system）+ 中文付款標籤 + 大小標題簡化
-   - ✅ 日報/週報 script（`scripts/send-digest.js`，待 `openclaw cron add` 設排程）
-   - ✅ P9 Sheets cron script（`scripts/sheets-sync-cron.js`，待 `openclaw cron add` 設排程）
+   - ✅ 日報/週報 script（`scripts/send-digest.js`，✅ 已設 cron（測試中，main agent + delivery announce to discord））
+   - ✅ P9 Sheets cron script（`scripts/sheets-sync-cron.js`，✅ 已設 cron（測試中，main agent + delivery announce to discord））
    - ✅ Hubert 已驗證 Email 收到（04:32）
 
 ### P1 — 等 LINE 額度 8/1 reset 後（可做端到端測試）
@@ -150,20 +150,20 @@ LINE 月度額度（Free plan）：500 messages/month。當前可能額滿（7/1
 4. **P9 OAuth 啟用後續驗證**（Sheets API 已啟用 + script 已寫，待 `openclaw cron add`）
    - `bash scripts/sync-mirror.sh from-legacy` 確認 OK
    - `node scripts/sheets-sync-cron.js dryRun` 驗證
-   - 設 cron 每日 3 點自動 sync（待 Hubert 確認）
+   - daily: 03:00 Asia/Taipei → 已設（id 6033de71-...，測試中，sheets-sync-cron.js dryRun 模式）
 
 ### P2 — 環境清理（快速）
 
 5. **清 debug 訂單**（2026-07-21.csv 內 v2-v9 測試訂單 7 個）— ✅ **已完成**（2026-07-17 session）
-6. **89 leaked cloudflared processes 清理預防** — ⚠️ 仍待處理
-   - 問題：dashboard 測試用 `cloudflared tunnel --url http://localhost:3000` 累計 47-89 個 leaked processes
-   - 根因：Cloudflare Quick Tunnel 有 TTL 但仍殘留
-   - 解決：dashboard watchdog 應加 stale process cleanup（>1hr 自動 kill）
-   - **不要殺 PID 1543**（那是 long-running OpenClaw external-user agent tunnel，--token 開頭）
-7. **日報/週報 cron 設定**（v6 程式已完成，待 `openclaw cron add`）
-   - daily: `0 23 * * *` Asia/Taipei → `node scripts/send-digest.js daily`
+6. ✅ **89 leaked cloudflared processes 清理預防**（commit 9911485 + 0484bba）
+   - ✅ `scripts/cleanup-leaked-cloudflared.sh` 完成（>1hr 自動 kill，保護 PID 1543，10# 修 octal bug）
+   - ✅ `scripts/dashboard-watchdog.sh` 整合 cleanup 觸發
+   - ✅ 實戰效果：199 → 0 leaked（清理後又會慢慢累積，建議加獨立 cron 定期跑）
+   - ⚠️ **未完成**：尚無獨立 cron 定期跑 cleanup（依賴 watchdog 觸發頻率太低）
+7. ✅ **日報/週報 cron 設定**（2026-07-18 完成，main agent + delivery announce to discord channel）
+   - daily: `30 23 * * *` Asia/Taipei → `node scripts/send-digest.js daily`
    - weekly: `0 10 * * 0` Asia/Taipei → `node scripts/send-digest.js weekly`
-8. **P9 Sheets cron 設定**（v6 程式已完成，待 `openclaw cron add`）
+8. ✅ **P9 Sheets cron 設定**（2026-07-18 完成，daily 03:00 dryRun 測試中）
    - daily: `0 3 * * *` Asia/Taipei → `node scripts/sheets-sync-cron.js`
 
 ### P3 — 文件持續修整
@@ -171,9 +171,7 @@ LINE 月度額度（Free plan）：500 messages/month。當前可能額滿（7/1
 7. **HANDOFF.md drift 全面檢查**（持續監控）
    - 每次 commit 後跑 `bash scripts/check-quality.sh`（已含 Check 9 drift 預防）
    - Check 9：mtime + missing keys + 檔案存在性三層檢查
-8. **CHANGELOG.md 補 Round 4 完整 log**
-   - 22 個 commits 從 7/16 ~ 7/17
-   - 重點：LINE push loop 緊急修整 + P6/B/P9/P4 完整實作
+8. ✅ **CHANGELOG.md Round 4 + 5 + 6 + 7 log**（commit 13b0de8 已加 P0 Gmail v0-v7 + 架構更正 + Bug 修正 + 統計）
 
 ### P4 — 長期（需求未定）
 
