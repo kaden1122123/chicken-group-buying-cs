@@ -81,7 +81,7 @@ chicken-group-buying-customer-service/
 │   ├── states/
 │   ├── handoff/
 │   └── utils/
-├── tests/                        # 48 套 unit + 1 套 integration（共 49 套，2026-07-03 含 Phase 3 全部 sessions）
+├── tests/                        # 49 套 unit + 1 套 integration（共 50 套，2026-07-18 +B 方案 v2 +send-digest）
 │   ├── rules.test.js                       # 34+ 案例
 │   ├── states.test.js                      # 狀態機轉換
 │   ├── handoff.test.js                     # 14 種觸發條件
@@ -108,7 +108,7 @@ chicken-group-buying-customer-service/
 │   ├── session-j-architecture.test.js      # J regression test
 │   ├── d3-payment-options-dynamic.test.js  # Session D3
 │   ├── d4-phase2-stub.test.js              # Session D4 Phase 2
-│   └── ...（完整 48 套 unit test，詳見 REVIEW_GUIDE.md，2026-07-03 對齊）
+│   └── ...（完整 49 套 unit test，2026-07-18 從 47 → 49（含 autoOrder v2 + send-digest））
 ├── scripts/
 │   ├── api-server.js               # HTTP API（+ /api/docs Swagger UI · Session L）
 │   ├── dashboard.js                # 儀表板生成器

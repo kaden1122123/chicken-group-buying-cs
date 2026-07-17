@@ -23,20 +23,74 @@ const { notifyHubert } = require('./notifier');
 const API_SERVER_URL = process.env.API_SERVER_URL || 'http://127.0.0.1:3001';
 const AUTO_CREATE_TIMEOUT_MS = 10000;
 
+// false positive 監控累計（in-memory stats，process 重啟會清空）
+const confirmStats = {
+  total_checked: 0,
+  total_accepted: 0,
+  rejected_sticker: 0,
+  rejected_emoji: 0,
+  rejected_extra_text: 0,
+  rejected_other: 0,
+};
+
+function getConfirmStats() {
+  return { ...confirmStats };
+}
+
+function resetConfirmStats() {
+  confirmStats.total_checked = 0;
+  confirmStats.total_accepted = 0;
+  confirmStats.rejected_sticker = 0;
+  confirmStats.rejected_emoji = 0;
+  confirmStats.rejected_extra_text = 0;
+  confirmStats.rejected_other = 0;
+}
+
+/**
+ * 嚴格確認匹配 v2（Hubert 21:54 強調「非常關鍵」但要嚴謹）
+ * v2 新增 false positive 監控：累計 rejected_sticker / emoji / extra_text / other
+ */
 function isStrictConfirmation(message) {
-  if (typeof message !== 'string') return false;
+  if (typeof message !== 'string') {
+    confirmStats.rejected_other += 1;
+    confirmStats.total_checked += 1;
+    return false;
+  }
   const trimmed = message.trim();
-  if (trimmed !== '確認' && !/^確認[。！!？?]$/.test(trimmed)) {
-    return false;
-  }
+  confirmStats.total_checked += 1;
+
+  // 排除 line 貼圖格式：(*)、(*_*) 等
   if (/^\(.{3,}\)$/.test(trimmed)) {
-    logger.info('[autoOrder] 偵測到 line 貼圖，跳過', { message: trimmed });
+    logger.info('[autoOrder] false positive: 偵測到 line 貼圖', { message: trimmed });
+    confirmStats.rejected_sticker += 1;
     return false;
   }
+
+  // 排除含 emoji
   if (/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u.test(trimmed)) {
-    logger.info('[autoOrder] 偵測到 emoji，跳過', { message: trimmed });
+    logger.info('[autoOrder] false positive: 偵測到 emoji', { message: trimmed });
+    confirmStats.rejected_emoji += 1;
     return false;
   }
+
+  // 必須是「確認」或「確認訂單」等變體（含標點）
+  if (!/^確認([。！!？?]?)$/.test(trimmed)) {
+    // 判斷是否含「確認」「OK」「好」關鍵字但被擋（false positive 觀察用）
+    if (/確認|OK|好/.test(trimmed)) {
+      logger.warn('[autoOrder] false positive: 含關鍵字但被擋', {
+        message: trimmed,
+        rejected_reason: 'extra_text',
+        hint: '客戶用「我確認」「幫我確認」等變體，需手動處理或擴充白名單',
+      });
+      confirmStats.rejected_extra_text += 1;
+    } else {
+      confirmStats.rejected_other += 1;
+    }
+    return false;
+  }
+
+  confirmStats.total_accepted += 1;
+  logger.debug('[autoOrder] 確認匹配成功', { message: trimmed });
   return true;
 }
 
@@ -209,4 +263,6 @@ module.exports = {
   isStrictConfirmation,
   triggerAutoOrder,
   readXApiToken,
+  getConfirmStats,
+  resetConfirmStats,
 };

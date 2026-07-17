@@ -461,4 +461,43 @@ brtclaw 收到後會：
 
 ---
 
+### ✅ Session P0：Gmail 整合（已完成 2026-07-18）
+
+**業務問題**：
+老闆接收 LINE handoff 通知、autoOrder 建單、訂單彙總—— 目前全部靠 LINE push API，每月 500 則額度上限。7/16-7/31 已額滿，8/1 reset。如果 line bot 有 100 則以上客戶訊息要走 handoff，老闆會收不到。
+
+**影響**：
+- 客戶触發 handoff 後老闆收不到通知（客戶、訂單、付款狀態都看不到）
+- 訂單彙總無法自動寄送（要手動問）
+- LINE 500/月是硬限制，不可超越
+
+**做法**：
+1. Gmail API 整合：OAuth 2.0 Desktop app flow，refresh_token 永久有效（不限額）
+2. notifyHubert 永遠 LINE + Email 並行（不取代 LINE，只備援/備份）
+3. 4 種 Email 版型：handoff / autoOrder / digest / system
+4. 日報/週報 cron 腳本（send-digest.js）：每日 23:00、週日 10:00 Asia/Taipei
+
+**預估**：初次 4-6 hr、後續維護 0 hr（refresh_token 永久）
+
+**架構更正（Session 中）**：
+- LINE 500/月只影響 outbound push，inbound webhook 無限（LINE 只是 gateway，外部限制不影響內部處理）
+- Email 是主要通知管道（無限額），LINE 是備援
+- GCP project `chickencustomerservicesheets`（獨立 project，與 main 分離）
+
+**版本演進（v0→v7）**：
+- v0：基礎 Gmail fallback（LINE 失敗才寄）
+- v1：永遠 LINE+Email 並行
+- v2：4 種版型 + OAuth loopback callback
+- v3：純文字精美 + 重要欄位全加（box header）
+- v4：handoff 退款/地址確認 + 中文付款標籤
+- v5：移掉 box chars，純文字大標題（Hubert 04:32 反饋）
+- v6：日報/週報 cron + Sheets sync + 文件對齊
+- v7：89 cloudflared 清理預防 + B 方案 v2 false positive 統計
+
+**你決定**：「做」 ✓ 完成
+
+---
+
 _本指南是 CEO 與 brtclaw 溝通決策的橋樑_
+
+_最後更新：2026-07-18 06:15（Session P0 v7 Gmail 整合完成）_

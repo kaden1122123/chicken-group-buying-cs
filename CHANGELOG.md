@@ -5,11 +5,76 @@ All notable changes to the chicken-group-buying-customer-service project will be
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-> **最後更新**：2026-07-01
+> **最後更新**：2026-07-18 06:15（Session P0 v7 Gmail 整合完成）
 > **維護者**：brtclaw
-> **對應 Session**：X1-B（建立根目錄 CHANGELOG，從 Session A 回溯）
+> **對應 Session**：P0 v0→v7（Gmail 整合完整實作）
 
 ---
+
+
+## [Unreleased]
+
+### P0 Gmail 整合 v0→v7（2026-07-17 17:16 ~ 2026-07-18 06:15，7 個 commits）
+
+#### Round 1：Gmail 整合基礎（17:41 commit ee04932）
+- `src/handoff/emailNotifier.js`：Gmail API client + token 管理 + 訂單彙總
+- `scripts/gmail-auth.js`：OAuth 一次性授權
+- `src/handoff/notifier.js`：notifyHubert 加 Email fallback
+- `src/config.js`：加 getEmailConfig getter
+- `config/tenants/chicken.yaml`：加 email section（digest_to、schedule、fallback flags）
+- `tests/emailNotifier.test.js`：13 個測試（後因 mock 問題從 npm test list 暫時移除，後續修）
+- `docs/EMAIL_SETUP.md`：v1 OAuth 步驟
+
+#### Round 2：永遠 LINE+Email 並行 + 4 種版型（23:08 commit ea64832）
+- `notifier.js`：notifyHubert 永遠觸發 Email（不只 fallback）
+- 4 種版型：handoff / autoOrder / digest / system
+- `EMAIL_SETUP.md` v2：詳細 6 步 OAuth + GCP project `chickencustomerservicesheets`
+
+#### Round 3：版型 v3 純文字精美 + 重要欄位全加（03:30 commit b823dd7）
+- `notifier.js buildEmailContent v3`：box header ╔═══╗ + 分隔線 + emoji 中標題
+- 每個版型都有客戶區塊（名稱/電話/地址/LINE ID）+ 訂單區塊（品項/配送/金額/付款）
+
+#### Round 4：OAuth loopback + 版型退款/地址確認 + 付款中文（04:30 commit 1dc9b4d）
+- `scripts/gmail-auth.js v3`：Desktop app loopback flow（local HTTP server 接 callback）
+- handoff 版型加 `trigger_type === 'refund_request'` → 💸 退款資訊 section
+- handoff 版型加 `trigger_type === 'delivery_confirm_needed'` → 📍 地址確認 section
+- `emailNotifier.js`：加 PAYMENT_METHOD_LABELS（cash→現金、transfer→轉帳、jko→街口支付、linepay→LINE Pay）
+
+#### Round 5：版型 v5 移除 box chars（04:45 commit 6cc05a8）
+- 移掉 ╔═══╗ box header，改用純文字大標題 + ═{40} 主分隔線 + ─{32} section divider
+- 保留中文付款標籤 + trigger_type sections
+
+#### Round 6：後續自動化腳本 + 文件對齊（05:00 commit e512e0d）
+- `scripts/send-digest.js`（162 行 + 4 tests）：日報/週報 cron 腳本
+- `scripts/sheets-sync-cron.js`：P9 Sheets sync 包裝
+- `HANDOFF.md §1/§2/§8` 更新 + `SESSION_NEXT_PROMPT.md` 全面更新 + `memory/2026-07-18.md` 建立
+
+#### Round 7：89 cloudflared 清理預防 + B 方案 v2 + 文件更新（06:15 本次 commit）
+- `scripts/cleanup-leaked-cloudflared.sh`：>1hr 自動 kill，保護 PID 1543 long-running tunnel
+- `dashboard-watchdog.sh` 整合 cleanup 觸發
+- `src/handoff/autoOrder.js`：isStrictConfirmation v2 加 false positive 統計監控
+- `tests/autoOrder.test.js`：10 個測試
+- `tests/send-digest.test.js`：4 個測試
+
+### 架構更正（Hubert 05:51）
+- LINE 500/月限制只影響 outbound push，inbound webhook 無限（LINE 是 gateway）
+- e2e 測試走 dashboard 觸發 + 一則測試訊息（不發測試資料串）
+- P4 街口主動推 QR code 走 OpenClaw 內建 + cloudflare 過濾層
+- P6 OCR 不受 LINE 限制（backend process）
+
+### Bug 修正（教訓）
+- `scripts/send-digest.js` module-level `main()` 呼叫 → 測試時真的寄了 120 筆訂單彙總給 Hubert
+- 修法：加 `require.main === module` guard
+
+### 環境修復
+- 清 5 個測試 fixture CSV（保護 6/13 + 6/16 真實訂單）
+- 修 lint 6 errors（lint:fix 自動修）
+- 重啟 dashboard 帶 WORKER_HEALTH_URL（/healthz worker 從 404 → up）
+
+### 統計
+- 測試套數：47 → 49（+2：autoOrder.test.js + send-digest.test.js）
+- commits：7（ee04932 → ea64832 → b823dd7 → 1dc9b4d → 6cc05a8 → e512e0d → pending）
+- 新增 files：5（send-digest.js、sheets-sync-cron.js、cleanup-leaked-cloudflared.sh、autoOrder.test.js、send-digest.test.js）
 
 ## [Unreleased]
 

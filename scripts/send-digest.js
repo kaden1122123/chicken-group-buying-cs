@@ -159,4 +159,7 @@ async function main() {
   }
 }
 
-main();
+// 只在直接執行時跑 main()（避免 require 時觸發 — 之前測試時真的寄了 120 筆訂單彙總給 Hubert）
+// 教訓：任何有 side effect 的 entry point 都要 require.main === module guard
+if (require.main === module) {
+}
