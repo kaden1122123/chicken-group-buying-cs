@@ -140,14 +140,16 @@ LINE 月度額度（Free plan）：500 messages/month。當前可能額滿（7/1
    - ✅ P9 Sheets cron script（`scripts/sheets-sync-cron.js`，✅ 已設 cron（測試中，main agent + delivery announce to discord））
    - ✅ Hubert 已驗證 Email 收到（04:32）
 
-### P1 — 等 LINE 額度 8/1 reset 後（可做端到端測試）
+### P1 — 立即可做（不受 LINE 額度限制）
 
-2. **P6 完整 e2e 測試**（需 OpenClaw Gateway 提供 /v1/vision/analyze）
+2. **P6 完整 e2e 測試**（不受 LINE 額度限制：P6 OCR 走 OpenClaw backend process，不對 LINE outbound）
    - 修 autoOrder test 環境（修 setJKOQrCodeUrl 在 test 內未生效問題）
-   - 跑真實 LINE → minimax vision 流程：上傳截圖 → 標 likely_paid
-3. **P4 完整 e2e 測試**（街口主動推 QR code，LINE 額度 8/1 後可測）
-   - 客戶選街口付款 → 收到 image message + 文字說明
-4. **P9 OAuth 啟用後續驗證**（Sheets API 已啟用 + script 已寫，待 `openclaw cron add`）
+   - 走 OpenClaw Gateway `/v1/vision/analyze`（如未提供則 stub fallback）
+   - 跑 minimax vision 流程：上傳截圖 → 標 likely_paid（不經 LINE push）
+3. **P4 完整 e2e 測試**（街口主動推 QR code，不受 LINE 額度限制：P4 走 OpenClaw 內建 image 推送機制 + cloudflare 過濾層）
+   - 客戶選街口付款 → dashboard 觸發 → 走 OpenClaw 內建推送 image（不經 LINE Messaging API）
+   - 客戶轉帳後傳截圖 → 系統接收（webhook inbound 無限）
+4. **P9 OAuth 啟用後續驗證**（Sheets API 已啟用，cron 已設，dryRun 測試中）
    - `bash scripts/sync-mirror.sh from-legacy` 確認 OK
    - `node scripts/sheets-sync-cron.js dryRun` 驗證
    - daily: 03:00 Asia/Taipei → 已設（id 6033de71-...，測試中，sheets-sync-cron.js dryRun 模式）
@@ -390,6 +392,19 @@ cat docs/handoff/sessions/SESSION_NEXT_PROMPT.md
 5. **GCP project**：`ChickenCustomerServiceSheets` / project id `chickencustomerservicesheets`
 6. **外部 user agent ID**：`external-user`（🧚 小雞）
 
+### LINE 500/月限制完整釐清（Hubert 07:49 強調，記下避免再混淆）
+
+- **LINE Messaging API outbound push**（line bot → 用戶）：500/月限制
+- **LINE webhook inbound**（用戶 → line bot）：無限（LINE 當 gateway 轉發）
+- **OpenClaw external-user agent 處理 inbound webhook + 自動 reply**：
+  - inbound webhook 處理：無限
+  - 自動 reply（line bot → 用戶）：算 LINE outbound，受 500/月限制
+  - 但客戶對客服對話仍走 LINE inbound（被動接收，無法替代）
+  - 老闆接收通知改走 Email（已實作，無限額）
+- **P4 街口主動推 QR code**：走 OpenClaw 內建 image 推送 + cloudflare 過濾層，**不經 LINE outbound**，不受 500/月限制
+- **P6 OCR analyzer**：backend process 呼叫 minimax vision，**不對外發 LINE 訊息**，不受 500/月限制
+- **e2e 測試方向**：dashboard 觸發 + 一則測試訊息（透過 OpenClaw 內建機制測試，不依賴真實 LINE outbound 額度）
+
 ### 3 個 Bug 修正（教訓）
 
 1. **send-digest.js module-level main() 呼叫** → 測試時真的寄出 120 封給 Hubert。修：加 `if (require.main === module) main();` guard
@@ -411,7 +426,7 @@ cat docs/handoff/sessions/SESSION_NEXT_PROMPT.md
 
 2. **89 cloudflared auto-cleanup 部署**：dashboard-watchdog.sh 已整合 cleanup 呼叫，但還沒設 cron 定期跑（依賴 watchdog 觸發頻率太慢）
 3. **文件 reviewer 定期檢查**：HANDOFF.md / INDEX.md / CEO_DECISION_GUIDE.md 是否過時
-4. **等 LINE 額度 8/1 reset 後做 P4/P6 e2e**：dashboard 觸發 + 一則測試訊息
+4. **P4/P6 e2e 測試立刻做**（不受 LINE 額度限制：LINE 500/月只影響 outbound push，P4/P6 走 OpenClaw 內建 backend）
 
 ### P2 — 環境清理
 
