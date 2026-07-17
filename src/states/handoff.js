@@ -111,7 +111,7 @@ async function handleHandoff(userId, userMessage, orderData = {}, userProfile = 
     logger.warn(`[handoff] Push debounced for ${userId} (same message within 1 min)`);
   } else {
     const notification = formatLINENotification(handoffOrderData, userMessage);
-    notifyHubert(notification).catch((e) => {
+    notifyHubert(notification, { type: 'handoff' }).catch((e) => {
       logger.error('LINE notification failed', { err: e.message });
       handoffOrderData.staff_notes = 'LINE通知失敗，請人工確認';
       try {

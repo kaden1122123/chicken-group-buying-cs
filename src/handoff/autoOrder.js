@@ -97,6 +97,7 @@ async function triggerAutoOrder(options) {
         '配送: ' + orderData.delivery_date + ' ' + orderData.time_slot + '\n' +
         '金額: NT$ ' + orderData.total_amount + '\n' +
         '請確認付款狀態 ✓',
+          { type: 'autoOrder' },
         );
       } catch (e) {
         // notifyHubert 失敗（LINE 429 / 網路）只 log，不影響 autoOrder success
@@ -197,6 +198,7 @@ async function fallbackNotifyHubert(userId, orderData, error) {
       '金額: NT$ ' + (orderData.total_amount || '?') + '\n' +
       '失敗原因: ' + error + '\n' +
       '請至 dashboard 手動建單 🙏',
+      { type: 'autoOrder' },
     );
   } catch (e) {
     logger.error('[autoOrder] fallback 通知老闆也失敗', { err: e.message });

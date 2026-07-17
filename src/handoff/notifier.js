@@ -89,20 +89,84 @@ async function notifyHubertViaLine(message) {
 }
 
 /**
- * Email fallback（LINE push 失敗時的備援通道）
+ * Email 通知內容生成器（4 種 type 版型）
+ * @param {string|object} message - 原始訊息
+ * @param {object} [options]
+ * @param {string} [options.type='system'] - handoff | autoOrder | system | digest
+ * @returns {{subject: string, body: string}}
+ */
+function buildEmailContent(message, options = {}) {
+  const ts = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false });
+  const messageText = typeof message === 'string' ? message : JSON.stringify(message, null, 2);
+  const dashboardUrl = process.env.DASHBOARD_URL || 'https://100.114.197.9:3000/admin';
+  const type = options.type || 'system';
+
+  // 版型設計：分類、Emoji 前綴、CTA 連結
+  const templates = {
+    handoff: {
+      icon: '🔔',
+      label: '轉真人通知',
+      subject: `【雞味研究所】🔔 轉真人通知 (${ts})`,
+      header: `時間: ${ts}\n類型: handoff`,
+      cta: `請儘速登入 dashboard 處理\n${dashboardUrl}`,
+    },
+    autoOrder: {
+      icon: '🤖',
+      label: 'B 方案自動建單',
+      subject: `【雞味研究所】🤖 B 方案自動建單 (${ts})`,
+      header: `時間: ${ts}\n類型: autoOrder`,
+      cta: `請確認付款狀態 ✓\n${dashboardUrl}`,
+    },
+    digest: {
+      icon: '📊',
+      label: '訂單彙總',
+      subject: `【雞味研究所】📊 訂單彙總 (${ts})`,
+      header: `時間: ${ts}\n類型: digest`,
+      cta: dashboardUrl,
+    },
+    system: {
+      icon: '⚙️',
+      label: '系統通知',
+      subject: `【雞味研究所】⚙️ 系統通知 (${ts})`,
+      header: `時間: ${ts}\n類型: system`,
+      cta: '',
+    },
+  };
+
+  const tpl = templates[type] || templates.system;
+  const divider = '━'.repeat(40);
+  const sections = [tpl.header, '', messageText];
+  if (tpl.cta) {
+    sections.push('', divider, tpl.cta);
+  }
+  const body = sections.join('\n');
+  return { subject: tpl.subject, body };
+}
+
+/**
+ * Email 通知（永遠觸發，與 LINE 並行；失敗不影響主流程）
  * @param {string|object} message
+ * @param {object} [options]
+ * @param {string} [options.type='system']
  * @returns {Promise<{success: boolean, error?: string, skipped?: boolean}>}
  */
-async function sendEmailFallback(message) {
+async function sendEmailNotification(message, options = {}) {
   const emailCfg = getEmailConfig();
   const to = emailCfg && emailCfg.digest_to;
   if (!to) {
-    logger.warn('[notifier] email.digest_to 未設定，跳過 Email fallback');
+    logger.warn('[notifier] email.digest_to 未設定，跳過 Email 通知');
     return { success: false, skipped: true };
   }
-  const messageText = typeof message === 'string' ? message : JSON.stringify(message, null, 2);
-  const subject = '【雞味研究所】客服通知 ' + new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
-  return sendEmail({ to, subject, body: messageText });
+  const { subject, body } = buildEmailContent(message, options);
+  return sendEmail({ to, subject, body });
+}
+
+/**
+ * Email fallback（保留向後相容別名）
+ * @deprecated 2026-07-17 改用 sendEmailNotification（永遠觸發，不再只是 fallback）
+ */
+async function sendEmailFallback(message) {
+  return sendEmailNotification(message, { type: 'system' });
 }
 
 /**
@@ -125,12 +189,10 @@ async function sendEmailFallback(message) {
 async function notifyHubert(message, options = {}) {
   const lineResult = await notifyHubertViaLine(message);
 
-  // Email fallback（urgent 或 LINE 失敗時自動觸發）
-  if (options.urgent || !lineResult.success) {
-    sendEmailFallback(message).catch((e) =>
-      logger.warn('[notifier] Email fallback 失敗', { err: e.message }),
-    );
-  }
+  // Email 永遠並行觸發（Hubert 22:53 要求：所有 notifyHubert 都要寄 Email）
+  sendEmailNotification(message, options).catch((e) =>
+    logger.warn('[notifier] Email 通知失敗', { err: e.message }),
+  );
 
   // 向後相容：原行為是失敗時 reject（呼叫端 .catch 處理）
   if (!lineResult.success) {
@@ -144,7 +206,7 @@ async function notifyHubert(message, options = {}) {
  * @returns {Promise<boolean>}
  */
 async function testNotification() {
-  return notifyHubert('🔔 AI 客服測試通知 — 系統運作正常');
+  return notifyHubert('🔔 AI 客服測試通知 — 系統運作正常', { type: 'system' });
 }
 
 /**
@@ -288,7 +350,9 @@ function getJKOQrCodeUrl() {
 module.exports = {
   notifyHubert,
   notifyHubertViaLine,
+  sendEmailNotification,
   sendEmailFallback,
+  buildEmailContent,
   sendTextMessage,
   sendImageMessage,
   getJKOQrCodeUrl,

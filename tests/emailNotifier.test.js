@@ -88,6 +88,7 @@ const {
   saveToken,
   sendEmail,
   sendOrderDigest,
+  buildEmailContent,
   SCOPES,
   CREDENTIALS_PATH,
   TOKEN_PATH,
@@ -268,4 +269,55 @@ test('SCOPES — 含 gmail.send', () => {
 test('CREDENTIALS_PATH / TOKEN_PATH — 在 XDG secrets 目錄', () => {
   assert.match(CREDENTIALS_PATH, /gmail-credentials\.json$/);
   assert.match(TOKEN_PATH, /gmail-token\.json$/);
+});
+
+// ===================
+// buildEmailContent（4 種 type 版型）
+// ===================
+test('buildEmailContent — handoff 版型', () => {
+  const { subject, body } = buildEmailContent('客戶訊息：我要退款', { type: 'handoff' });
+  assert.match(subject, /【雞味研究所】🔔 轉真人通知/);
+  assert.match(body, /類型: handoff/);
+  assert.match(body, /客戶訊息：我要退款/);
+  assert.match(body, /請儘速登入 dashboard/);
+  assert.match(body, /━{20,}/); // divider
+});
+
+test('buildEmailContent — autoOrder 版型', () => {
+  const { subject, body } = buildEmailContent('order_id: ORD-001\n金額: NT$380', { type: 'autoOrder' });
+  assert.match(subject, /【雞味研究所】🤖 B 方案自動建單/);
+  assert.match(body, /類型: autoOrder/);
+  assert.match(body, /order_id: ORD-001/);
+  assert.match(body, /請確認付款狀態/);
+});
+
+test('buildEmailContent — digest 版型（無 CTA）', () => {
+  const { subject, body } = buildEmailContent('總筆數: 5', { type: 'digest' });
+  assert.match(subject, /【雞味研究所】📊 訂單彙總/);
+  assert.match(body, /類型: digest/);
+  assert.match(body, /總筆數: 5/);
+});
+
+test('buildEmailContent — system 版型（無 CTA、無 divider）', () => {
+  const { subject, body } = buildEmailContent('測試訊息', { type: 'system' });
+  assert.match(subject, /【雞味研究所】⚙️ 系統通知/);
+  assert.match(body, /類型: system/);
+  assert.match(body, /測試訊息/);
+  assert.doesNotMatch(body, /━{20,}/); // 系統通知無 divider
+});
+
+test('buildEmailContent — 未指定 type 預設 system', () => {
+  const { subject } = buildEmailContent('test');
+  assert.match(subject, /【雞味研究所】⚙️ 系統通知/);
+});
+
+test('buildEmailContent — 未知 type fallback 到 system', () => {
+  const { subject } = buildEmailContent('test', { type: 'unknown_type' });
+  assert.match(subject, /【雞味研究所】⚙️ 系統通知/);
+});
+
+test('buildEmailContent — object 訊息轉 JSON', () => {
+  const { body } = buildEmailContent({ foo: 'bar', num: 42 }, { type: 'system' });
+  assert.match(body, /"foo": "bar"/);
+  assert.match(body, /"num": 42/);
 });
