@@ -51,19 +51,20 @@ while IFS=$'\t' read -r pid etime cmd; do
   fi
   
   # 解析 etime（格式：[[DD-]HH:]MM:SS）
+  # 用 10# 強制十進制避免 leading zero 被當 octal（如 09 → invalid octal）
   age_seconds=0
   if [[ "$etime" =~ ^([0-9]+)-([0-9]+):([0-9]+):([0-9]+)$ ]]; then
     # DD-HH:MM:SS
-    age_seconds=$(( ${BASH_REMATCH[1]}*86400 + ${BASH_REMATCH[2]}*3600 + ${BASH_REMATCH[3]}*60 + ${BASH_REMATCH[4]} ))
+    age_seconds=$(( 10#${BASH_REMATCH[1]}*86400 + 10#${BASH_REMATCH[2]}*3600 + 10#${BASH_REMATCH[3]}*60 + 10#${BASH_REMATCH[4]} ))
   elif [[ "$etime" =~ ^([0-9]+):([0-9]+):([0-9]+)$ ]]; then
     # HH:MM:SS
-    age_seconds=$(( ${BASH_REMATCH[1]}*3600 + ${BASH_REMATCH[2]}*60 + ${BASH_REMATCH[3]} ))
+    age_seconds=$(( 10#${BASH_REMATCH[1]}*3600 + 10#${BASH_REMATCH[2]}*60 + 10#${BASH_REMATCH[3]} ))
   elif [[ "$etime" =~ ^([0-9]+):([0-9]+)$ ]]; then
     # MM:SS
-    age_seconds=$(( ${BASH_REMATCH[1]}*60 + ${BASH_REMATCH[2]} ))
+    age_seconds=$(( 10#${BASH_REMATCH[1]}*60 + 10#${BASH_REMATCH[2]} ))
   elif [[ "$etime" =~ ^([0-9]+)$ ]]; then
     # SS
-    age_seconds=${BASH_REMATCH[1]}
+    age_seconds=$(( 10#${BASH_REMATCH[1]} ))
   fi
   
   # 太老（>1hr）→ kill
