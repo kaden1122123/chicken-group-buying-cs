@@ -226,6 +226,22 @@ security:
 line:
   bot_token: ${LINE_BOT_TOKEN}
   channel_secret: ${LINE_CHANNEL_SECRET}
+
+# P0：Gmail 通知整合（2026-07-17 加）
+# 用途：LINE push 額滿 / 失敗時，備援通道通知老闆
+# 額度：Gmail API 免費版每天 500 億 quota units（實際無限）
+# 觸發點：notifyHubert 失敗自動 fallback；urgent=true 強制並行
+# OAuth 設定：見 docs/EMAIL_SETUP.md（需 node scripts/gmail-auth.js 授權）
+email:
+  enabled: true
+  digest_to: k.chang.8844@gmail.com
+  digest_schedule:
+    daily: '0 23 * * *'      # 每日 23:00 寄當日訂單彙總（Asia/Taipei）
+    weekly: '0 10 * * 0'     # 週日 10:00 寄本週訂單彙總
+  digest_timezone: 'Asia/Taipei'
+  fallback:
+    line_failure: true       # LINE push 失敗自動 Email fallback
+    urgent_only: false       # false = 失敗或 urgent 都觸發；true = 只 urgent 才觸發
 notes: |
   Phase 1：CSV 儲存 → data/orders/{date}.csv（實際檔名以 csvWriter.js 為準）
   Phase 2：升級 Google Sheets（需設定 spreadsheet_id + credentials）

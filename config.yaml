@@ -94,6 +94,11 @@
 # 以下為 tenant.yaml 同步內容（單向鏡像）
 # ─────────────────────────────────────────
 
+
+# ─────────────────────────────────────────
+# 以下為 tenant.yaml 同步內容（單向鏡像）
+# ─────────────────────────────────────────
+
 tenant:
   id: chicken
   display_name: 雞味研究所
@@ -314,6 +319,17 @@ security:
 line:
   bot_token: ${LINE_BOT_TOKEN}
   channel_secret: ${LINE_CHANNEL_SECRET}
+
+email:
+  enabled: true
+  digest_to: k.chang.8844@gmail.com
+  digest_schedule:
+    daily: '0 23 * * *'      # 每日 23:00 寄當日訂單彙總（Asia/Taipei）
+    weekly: '0 10 * * 0'     # 週日 10:00 寄本週訂單彙總
+  digest_timezone: 'Asia/Taipei'
+  fallback:
+    line_failure: true       # LINE push 失敗自動 Email fallback
+    urgent_only: false       # false = 失敗或 urgent 都觸發；true = 只 urgent 才觸發
 notes: |
   Phase 1：CSV 儲存 → data/orders/{date}.csv（實際檔名以 csvWriter.js 為準）
   Phase 2：升級 Google Sheets（需設定 spreadsheet_id + credentials）

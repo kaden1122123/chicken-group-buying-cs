@@ -139,13 +139,21 @@ console.log('  ✓ notifyHubert 函數存在');
     getLineBotToken: () => '',
     getNotifyOwnerUserId: () => 'Uf56650056d35626deb64165926a26182',
     isFeatureEnabled: () => true, // feature enabled, 但 token 是空字串 → line 36 觸發
+    getEmailConfig: () => null, // P0 2026-07-17：notifier.js Email fallback 需此 export（null → 跳過 Email fallback）
   };
   delete require.cache[notifierPath];
   require.cache[configPath] = fakeConfig;
 
   const notifierFresh = require('../src/handoff/notifier');
-  const r = await notifierFresh.notifyHubert('test message');
-  assert.strictEqual(r, false, '沒 token 應 return false');
+  // P0 2026-07-17：notifyHubert 失敗時 throw（向後相容舊 reject 行為），測試用 try-catch 驗證 throw 而非 return false
+  let caught = null;
+  try {
+    await notifierFresh.notifyHubert('test message');
+  } catch (e) {
+    caught = e;
+  }
+  assert.ok(caught, '沒 token 應 throw Error');
+  assert.match(caught.message, /LINE Bot Token/);
   console.log('  ✓ notifyHubert 沒 token 時正確 skip');
 
   // ─── 4b. lineProfileCache 也能用（沒 token 時 getLineDisplayName fallback） ───

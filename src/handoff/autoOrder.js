@@ -70,7 +70,7 @@ async function triggerAutoOrder(options) {
       community: orderData.community || '',
       delivery_date: orderData.delivery_date,
       time_slot: orderData.time_slot,
-      items,  // 統一用 items array（api-server.validateItems 要求）
+      items, // 統一用 items array（api-server.validateItems 要求）
       subtotal: orderData.subtotal,
       delivery_fee: orderData.delivery_fee || 0,
       total_amount: orderData.total_amount,
@@ -91,13 +91,13 @@ async function triggerAutoOrder(options) {
     if (result.success) {
       logger.info('[autoOrder] 自動建單成功', { userId, orderId: result.orderId });
       try {
-      await notifyHubert(
-        '🔔 【B 方案自動建單】客戶 ' + (orderData.user_line_name || userId) + ' 已確認訂單：\n' +
+        await notifyHubert(
+          '🔔 【B 方案自動建單】客戶 ' + (orderData.user_line_name || userId) + ' 已確認訂單：\n' +
         'order_id: ' + result.orderId + '\n' +
         '配送: ' + orderData.delivery_date + ' ' + orderData.time_slot + '\n' +
         '金額: NT$ ' + orderData.total_amount + '\n' +
-        '請確認付款狀態 ✓'
-      );
+        '請確認付款狀態 ✓',
+        );
       } catch (e) {
         // notifyHubert 失敗（LINE 429 / 網路）只 log，不影響 autoOrder success
         logger.warn('[autoOrder] 通知老闆失敗', { err: e.message, userId });
@@ -196,7 +196,7 @@ async function fallbackNotifyHubert(userId, orderData, error) {
       '配送: ' + (orderData.delivery_date || '?') + ' ' + (orderData.time_slot || '?') + '\n' +
       '金額: NT$ ' + (orderData.total_amount || '?') + '\n' +
       '失敗原因: ' + error + '\n' +
-      '請至 dashboard 手動建單 🙏'
+      '請至 dashboard 手動建單 🙏',
     );
   } catch (e) {
     logger.error('[autoOrder] fallback 通知老闆也失敗', { err: e.message });

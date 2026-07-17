@@ -471,8 +471,18 @@ function getStorageConfig() {
   return configYaml.storage || null;
 }
 
+/**
+ * 取得 email 配置（P0 2026-07-17 加）
+ * Gmail 通知整合：digest_to（彙總收件人）、schedule、enabled flag
+ * @returns {object|null} email section 或 null（未設定時回傳 null）
+ */
+function getEmailConfig() {
+  return configYaml.email || null;
+}
+
 module.exports = {
   getStorageConfig,
+  getEmailConfig,
   getOpenDates,
   isOpenDate,
   getIgnoredKeywords,
