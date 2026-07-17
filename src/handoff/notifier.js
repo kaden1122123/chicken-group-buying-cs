@@ -106,16 +106,16 @@ function buildEmailContent(message, options = {}) {
   const meta = options.metadata || {};
   const messageText = typeof message === 'string' ? message : JSON.stringify(message, null, 2);
 
-  // 共用樣式：box header + divider
-  const box = (icon, label) => [
-    '╔═══════════════════════════════════════════════╗',
-    `║ ${icon} 雞味研究所 — ${label.padEnd(30, ' ')}║`,
-    `║ ${ts.padEnd(45, ' ')}║`,
-    '╚═══════════════════════════════════════════════╝',
-  ].join('\n');
-  const divider = '━'.repeat(48);
-  const section = (icon, title) => `\n${icon} ${title}\n${'─'.repeat(40)}`;
-  const field = (key, val, labelWidth = 10) => `   ${(key + '：').padEnd(labelWidth + 4, ' ')}${val || '—'}`;
+  // v5 樣式：純文字大標題 + 分隔線 + emoji 中標題（移除 box chars）
+  const divider = '═'.repeat(48);
+  const sectionDivider = '─'.repeat(32);
+  const title = (icon, label) => `${icon} 雞味研究所 — ${label}`;
+  const sectionTitle = (icon, label) => `${icon} ${label}`;
+  const field = (key, val, labelWidth = 10) => {
+    const v = val || '—';
+    const label = (key + '：').padEnd(labelWidth + 4, ' ');
+    return `  ${label}${v}`;
+  };
 
   // 輔助：解析 items JSON string
   const parseItems = (raw) => {
@@ -137,56 +137,59 @@ function buildEmailContent(message, options = {}) {
     return isNaN(num) ? String(n) : num.toLocaleString('en-US');
   };
 
-  // 各版型生成器
+  // 各版型生成器（v5：移除 box chars，用純文字大標題 + 分隔線 + emoji 中標題）
   if (type === 'handoff') {
     const triggerLabel = meta.trigger_label || meta.handoff_type || '轉真人';
     const subject = `【雞味研究所】🔔 轉真人通知 ${ts}`;
     const lines = [
-      box('🔔', '轉真人通知'),
-      section('📋', '案件資訊'),
+      title('🔔', '轉真人通知'),
+      divider,
+      '',
+      sectionTitle('📋', '案件資訊'),
+      sectionDivider,
       field('類型', `handoff（${triggerLabel}）`),
       field('時間', ts),
       field('order_id', meta.order_id),
       '',
-      section('👤', '客戶資訊'),
+      sectionTitle('👤', '客戶資訊'),
+      sectionDivider,
       field('名稱', meta.user_line_name),
       field('LINE ID', meta.user_line_id),
       field('電話', meta.user_phone),
       field('地址', meta.address),
       '',
-      section('💬', '客戶訊息'),
-      messageText || '（無）',
+      sectionTitle('💬', '客戶訊息'),
+      sectionDivider,
+      `  ${messageText || '（無）'}`,
     ];
     // 品項（如有）
     const chicken = parseItems(meta.chicken_items);
     const side = parseItems(meta.side_items);
     const extra = parseItems(meta.extra_items);
     if (chicken || side || extra) {
-      lines.push('', section('📦', '訂單品項'));
-      if (chicken) lines.push('   🍗 雞肉：  ' + chicken);
-      if (side) lines.push('   🥗 小菜：  ' + side);
-      if (extra) lines.push('   ➕ 加購：  ' + extra);
-      lines.push(
-        field('總盒數', meta.total_boxes),
-      );
+      lines.push('', sectionTitle('📦', '訂單品項'), sectionDivider);
+      if (chicken) lines.push(`  🍗 雞肉：${chicken}`);
+      if (side) lines.push(`  🥗 小菜：${side}`);
+      if (extra) lines.push(`  ➕ 加購：${extra}`);
+      lines.push(field('總盒數', meta.total_boxes));
     }
     // 退款 trigger（refund_request）：加「💸 退款資訊」section
     if (meta.trigger_type === 'refund_request' || meta.refund_amount) {
-      lines.push('', section('💸', '退款資訊'));
+      lines.push('', sectionTitle('💸', '退款資訊'), sectionDivider);
       lines.push(field('退款金額', `NT$ ${fmtMoney(meta.refund_amount || meta.total_amount)}`));
       lines.push(field('退款原因', meta.refund_reason || meta.staff_notes || '—'));
       lines.push(field('原訂單 ID', meta.order_id));
     }
     // 地址確認 trigger（delivery_confirm_needed）：加「📍 地址確認」section
     if (meta.trigger_type === 'delivery_confirm_needed' || meta.address_check_needed) {
-      lines.push('', section('📍', '地址確認'));
+      lines.push('', sectionTitle('📍', '地址確認'), sectionDivider);
       lines.push(field('地址', meta.address));
       lines.push(field('判讀難度', meta.address_difficulty || '—'));
       lines.push(field('備註', meta.address_note || '—'));
     }
     // 付款（如有）
     if (meta.total_amount || meta.payment_method) {
-      lines.push('', section('💰', '付款資訊'));
+      lines.push('', sectionTitle('💰', '付款資訊'), sectionDivider);
       lines.push(field('金額', `NT$ ${fmtMoney(meta.total_amount)}`));
       lines.push(field('付款方式', PAYMENT_METHOD_LABELS[meta.payment_method] || meta.payment_method));
       lines.push(field('付款狀態', meta.payment_status || 'pending'));
@@ -195,7 +198,7 @@ function buildEmailContent(message, options = {}) {
       '',
       divider,
       '👉 處理連結',
-      '   ' + dashboardUrl,
+      `   ${dashboardUrl}`,
       '   → 請儘速登入 dashboard 處理',
     );
     return { subject, body: lines.join('\n') };
@@ -204,13 +207,17 @@ function buildEmailContent(message, options = {}) {
   if (type === 'autoOrder') {
     const subject = `【雞味研究所】🤖 B 方案自動建單 ${ts}`;
     const lines = [
-      box('🤖', 'B 方案自動建單'),
-      section('✅', '建單結果'),
+      title('🤖', 'B 方案自動建單'),
+      divider,
+      '',
+      sectionTitle('✅', '建單結果'),
+      sectionDivider,
       field('order_id', meta.order_id),
       field('狀態', meta.success === false ? '❌ 失敗' : '✅ 成功'),
       field('時間', ts),
       '',
-      section('👤', '客戶資訊'),
+      sectionTitle('👤', '客戶資訊'),
+      sectionDivider,
       field('名稱', meta.user_line_name),
       field('LINE ID', meta.user_line_id),
       field('電話', meta.user_phone),
@@ -221,19 +228,19 @@ function buildEmailContent(message, options = {}) {
     const side = parseItems(meta.side_items);
     const extra = parseItems(meta.extra_items);
     if (chicken || side || extra) {
-      lines.push('', section('🍗', '品項詳情'));
-      if (chicken) lines.push('   雞肉：  ' + chicken);
-      if (side) lines.push('   小菜：  ' + side);
-      if (extra) lines.push('   加購：  ' + extra);
+      lines.push('', sectionTitle('🍗', '品項詳情'), sectionDivider);
+      if (chicken) lines.push(`  🍗 雞肉：${chicken}`);
+      if (side) lines.push(`  🥗 小菜：${side}`);
+      if (extra) lines.push(`  ➕ 加購：${extra}`);
       lines.push(field('總盒數', meta.total_boxes));
     }
     // 配送 + 金額 + 付款
     lines.push(
-      '', section('📦', '配送資訊'),
+      '', sectionTitle('📦', '配送資訊'), sectionDivider,
       field('配送日期', meta.delivery_date),
       field('時段', meta.time_slot),
       field('社區', meta.community),
-      '', section('💰', '金額明細'),
+      '', sectionTitle('💰', '金額明細'), sectionDivider,
       field('小計', `NT$ ${fmtMoney(meta.subtotal)}`),
       field('配送費', `NT$ ${fmtMoney(meta.delivery_fee)}`),
       field('總計', `NT$ ${fmtMoney(meta.total_amount)}`),
@@ -241,42 +248,49 @@ function buildEmailContent(message, options = {}) {
       field('付款狀態', meta.payment_status || 'pending'),
     );
     if (meta.error || meta.failure_reason) {
-      lines.push('', section('⚠️', '錯誤訊息'));
-      lines.push('   ' + (meta.error || meta.failure_reason));
+      lines.push('', sectionTitle('⚠️', '錯誤訊息'), sectionDivider);
+      lines.push('  ' + (meta.error || meta.failure_reason));
     }
     lines.push(
       '',
       divider,
       '👉 處理連結',
-      '   ' + dashboardUrl,
+      `   ${dashboardUrl}`,
       '   → 請確認付款狀態 ✓',
     );
     return { subject, body: lines.join('\n') };
   }
 
   if (type === 'digest') {
-    // digest 舊版型（v2 設計），保留向下相容
+    // digest 簡單版型（純文字，給 sendOrderDigest 用）
     const subject = `【雞味研究所】📊 訂單彙總 ${ts}`;
     const lines = [
-      box('📊', '訂單彙總'),
+      title('📊', '訂單彙總'),
+      divider,
       '',
-      `   總筆數：${meta.total || messageText.length || '?'}`,
+      `總筆數：${meta.total || messageText.length || '?'}`,
+      '',
+      messageText,
+      '',
+      divider,
+      '👉 Dashboard',
+      `   ${dashboardUrl}`,
     ];
-    lines.push('', messageText);
-    lines.push('', divider, '👉 ' + dashboardUrl);
     return { subject, body: lines.join('\n') };
   }
 
   // system 版型
   const subject = `【雞味研究所】⚙️ 系統通知 ${ts}`;
   const lines = [
-    box('⚙️', '系統通知'),
+    title('⚙️', '系統通知'),
+    divider,
     '',
-    section('📋', '訊息內容'),
+    sectionTitle('📋', '訊息內容'),
+    sectionDivider,
     messageText,
   ];
   if (meta.context) {
-    lines.push('', section('🔍', 'Context'), meta.context);
+    lines.push('', sectionTitle('🔍', 'Context'), sectionDivider, meta.context);
   }
   return { subject, body: lines.join('\n') };
 }

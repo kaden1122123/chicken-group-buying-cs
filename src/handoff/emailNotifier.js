@@ -218,28 +218,28 @@ function formatOrderDigest(orders, type = 'daily') {
   });
 
   const lines = [
-    '╔═══════════════════════════════════════════════╗',
-    `║ 📊 雞味研究所 — ${(typeLabel + '訂單彙總').padEnd(28, ' ')}║`,
-    `║ ${dateStr.padEnd(45, ' ')}║`,
-    '╚═══════════════════════════════════════════════╝',
+    `📊 雞味研究所 — ${typeLabel}訂單彙總`,
+    '═'.repeat(40),
+    '',
+    `日期: ${dateStr}`,
     '',
     '📈 統計',
     '─'.repeat(40),
-    `   總筆數：     ${total} 筆`,
-    `   已完成：     ${confirmed} 筆${total > 0 ? `（${Math.round(confirmed / total * 100)}%）` : ''}`,
-    `   待處理：     ${pending + pendingHandoff} 筆（pending: ${pending}, pending_handoff: ${pendingHandoff}）`,
-    `   總金額：     NT$ ${fmtMoney(totalAmount)}`,
-    `   平均金額：   NT$ ${fmtMoney(avgAmount)}`,
+    `  總筆數:     ${total} 筆`,
+    `  已完成:     ${confirmed} 筆${total > 0 ? `（${Math.round(confirmed / total * 100)}%）` : ''}`,
+    `  待處理:     ${pending + pendingHandoff} 筆（pending: ${pending}, pending_handoff: ${pendingHandoff}）`,
+    `  總金額:     NT$ ${fmtMoney(totalAmount)}`,
+    `  平均金額:   NT$ ${fmtMoney(avgAmount)}`,
     '',
     '💰 各付款方式分佈',
     '─'.repeat(40),
   ];
   if (Object.keys(byPayment).length === 0) {
-    lines.push('   （無資料）');
+    lines.push('  （無資料）');
   } else {
     Object.entries(byPayment).forEach(([method, { count, amount }]) => {
       const label = PAYMENT_METHOD_LABELS[method] || method;
-      lines.push(`   ${label.padEnd(8, ' ')}  ${count} 筆（NT$ ${fmtMoney(amount)}）`);
+      lines.push(`  ${label.padEnd(8, ' ')}  ${count} 筆（NT$ ${fmtMoney(amount)}）`);
     });
   }
 
@@ -254,8 +254,9 @@ function formatOrderDigest(orders, type = 'daily') {
     if (items.length === 0) return;
     lines.push('', `${icon} ${title}（${items.length} 筆）`, '─'.repeat(40));
     items.forEach((o, i) => {
+      const methodLabel = PAYMENT_METHOD_LABELS[o.payment_method] || o.payment_method || '?';
       lines.push(
-        `   ${(i + 1 + '.').padEnd(4, ' ')}${(o.order_id || '?').padEnd(20, ' ')} | ${(o.user_line_name || '?').padEnd(10, ' ')} | ${(o.delivery_date || '?').padEnd(11, ' ')} ${(o.time_slot || '?').padEnd(3, ' ')} | ${(o.payment_method || '?').padEnd(9, ' ')} | NT$${fmtMoney(o.total_amount).padEnd(6, ' ')} | ${o.order_status || '?'}`,
+        `  ${(i + 1 + '.').padEnd(4, ' ')}${(o.order_id || '?').padEnd(20, ' ')} | ${(o.user_line_name || '?').padEnd(10, ' ')} | ${(o.delivery_date || '?').padEnd(11, ' ')} ${(o.time_slot || '?').padEnd(3, ' ')} | ${methodLabel.padEnd(8, ' ')} | NT$${fmtMoney(o.total_amount).padEnd(6, ' ')} | ${o.order_status || '?'}`,
       );
     });
   });
@@ -266,7 +267,7 @@ function formatOrderDigest(orders, type = 'daily') {
 
   lines.push(
     '',
-    '━'.repeat(48),
+    '═'.repeat(40),
     '👉 Dashboard',
     '   https://100.114.197.9:3000/admin',
   );

@@ -186,7 +186,7 @@ test('formatOrderDigest — v3 今日彙總（3 筆訂單，含統計 + 分組�
   // 標題
   assert.match(out, /📊 雞味研究所/);
   assert.match(out, /今日訂單彙總/);
-  assert.match(out, /╔═/); // box header
+  assert.match(out, /═{40,}/); // v5 main divider
   // 統計
   assert.match(out, /總筆數：\s*3 筆/);
   assert.match(out, /已完成：\s*2 筆/);
@@ -320,8 +320,8 @@ test('buildEmailContent — handoff v3 含完整重要欄位', () => {
   assert.match(body, /雞腿×2/);
   assert.match(body, /炒青菜×2/);
   assert.match(body, /NT\$ 380/);
-  assert.match(body, /╔═/); // box header
-  assert.match(body, /━{20,}/); // divider
+  assert.match(body, /═{40,}/); // v5 main divider
+  assert.match(body, /─{20,}/); // v5 section divider
   assert.match(body, /處理連結/);
   // v4：付款方式用中文標籤（Hubert 04:05 要求）
   assert.match(body, /付款方式：\s*轉帳/);
@@ -426,7 +426,7 @@ test('buildEmailContent — autoOrder v3 含訂單摘要', () => {
 test('buildEmailContent — system v3 含 box header', () => {
   const { subject, body } = buildEmailContent('測試訊息', { type: 'system' });
   assert.match(subject, /【雞味研究所】⚙️ 系統通知/);
-  assert.match(body, /╔═/); // box header
+  assert.match(body, /═{40,}/); // v5 main divider
   assert.match(body, /系統通知/);
   assert.match(body, /測試訊息/);
 });
