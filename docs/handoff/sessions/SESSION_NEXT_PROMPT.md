@@ -362,3 +362,89 @@ cat docs/handoff/sessions/SESSION_NEXT_PROMPT.md
 - 今晚所有教訓都寫進本檔「不要踩的雷」section
 
 下一個 session 第一件事：**做 Gmail 整合**（P0，待辦 1）。
+
+---
+
+## Late Session（v0-v7）追加：Gmail 整合完整實作（2026-07-17 17:16 ~ 7/18 06:35）
+
+> 這段是 Session P0 v0→v7 的回顧紀錄，下個 session 接手前必讀。
+
+### 完成狀態
+
+✅ **P0 Gmail 整合完整鏈**（8 commits：ee04932 → ea64832 → b823dd7 → 1dc9b4d → 6cc05a8 → e512e0d → 9911485 → 0484bba）
+
+- `src/handoff/emailNotifier.js`：Gmail API client + PAYMENT_METHOD_LABELS（現金/轉帳/街口支付/LINE Pay）+ formatOrderDigest v5
+- `src/handoff/notifier.js`：buildEmailContent v5（純文字大標題 + 分隔線，移除 box chars）+ sendEmailNotification + notifyHubert 整合
+- `scripts/gmail-auth.js v3`：OAuth 2.0 Desktop app loopback flow（local HTTP server 接 callback）
+- `scripts/send-digest.js`：日報/週報 cron 腳本（162 行 + 4 tests，CSV 解析 + 日期計算）
+- `scripts/sheets-sync-cron.js`：P9 Sheets sync wrapper（包裝 storage/sheetsSync.syncOrdersToSheets）
+- `scripts/cleanup-leaked-cloudflared.sh`：89 cloudflared leaked processes 清理預防（3067 bytes）
+- `src/config.js`：getEmailConfig getter
+- `config/tenants/chicken.yaml`：email section（digest_to + schedule + fallback flags）
+- `package.json`：加 googleapis ^173.0.0
+
+### 架構更正（永久記下）
+
+1. **LINE 500/月只影響 outbound push**，inbound webhook 無限（LINE 是 gateway，所有訊息被導到 external-user agent）
+2. **e2e 測試方向**：dashboard 觸發 + **一則**測試訊息（不發測試資料串，避免 Google/GCP 歸類為可疑）
+3. **P4 街口主動推 QR code**：走 OpenClaw 內建（不是 LINE push API）+ cloudflare 過濾層
+4. **P6 OCR analyzer**：根本不受 LINE message API 限制（backend process 呼叫 minimax vision）
+5. **GCP project**：`ChickenCustomerServiceSheets` / project id `chickencustomerservicesheets`
+6. **外部 user agent ID**：`external-user`（🧚 小雞）
+
+### 3 個 Bug 修正（教訓）
+
+1. **send-digest.js module-level main() 呼叫** → 測試時真的寄出 120 封給 Hubert。修：加 `if (require.main === module) main();` guard
+2. **cleanup-leaked-cloudflared.sh bash octal parse** → `09` 被當 octal 解析 overflow。修：所有 `$(( ))` 加 `10#` 前綴
+3. **OpenClaw edit 工具 batch skip** → 改用 heredoc / write / sed 較可靠
+
+### 後續待辦（按優先度）
+
+### P0 — 立即（測試中）
+
+1. **Cron jobs 驗證**（已設 3 個，今晚 23:00 第一次跑 daily）
+   - daily 23:00 Asia/Taipei → send-digest.js daily（id `796afb16-e3c0-4cd9-b23b-fa19ce1dfa56`）
+   - weekly 週日 10:00 → send-digest.js weekly（id `dc5afd05-6282-4b5f-b9da-e3ce6dc66849`）
+   - sheets sync 03:00 → sheets-sync-cron.js dryRun（id `6033de71-23d9-4007-8861-8e3ceadfb707`）
+   - **Hubert 06:32 決定**：測試期間 enabled，**測試完成後 disable 一陣子**，上線才啟用
+   - **Gmail 寄信警告**：測試時只寄一封（不要發測試資料串，避免被 GCP/Google 封鎖）
+
+### P1 — 待做
+
+2. **89 cloudflared auto-cleanup 部署**：dashboard-watchdog.sh 已整合 cleanup 呼叫，但還沒設 cron 定期跑（依賴 watchdog 觸發頻率太慢）
+3. **文件 reviewer 定期檢查**：HANDOFF.md / INDEX.md / CEO_DECISION_GUIDE.md 是否過時
+4. **等 LINE 額度 8/1 reset 後做 P4/P6 e2e**：dashboard 觸發 + 一則測試訊息
+
+### P2 — 環境清理
+
+5. **Dashboard watchdog 整合 periodic cleanup**：目前 watchdog 觸發時跑 cleanup，但若 watchdog 不觸發，leaked 會累積。建議加獨立 cron `0 */1 * * *` 每小時跑一次 cleanup
+6. **真實訂單測試**：等 8/1 LINE 額度 reset 後，跑一次真實客戶 LINE → handoff → 老闆 Email 流程
+
+### 下次 Session 第一件事（Hubert 07:24 指示）
+
+**先驗證 cron jobs 是否正常運作**：
+- 今晚 23:00 後檢查 Gmail 是否收到日報
+- channel:1512213273846485058 是否收到 cron 完成 announce
+- 如果 OK，Hubert 會指示 disable（等上線）
+
+### 重啟服務 SOP
+
+```bash
+APIPID=$(ps -eo pid,comm,args | awk '$2=="node" && $0~/api-server/ {print $1; exit}')
+DASHPID=$(ps -eo pid,comm,args | awk '$2=="node" && $0~/dashboard-server/ {print $1; exit}')
+[ -n "$APIPID" ] && kill "$APIPID"
+[ -n "$DASHPID" ] && kill "$DASHPID"
+sleep 2
+nohup env API_USERNAME=api-user API_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/api-pwd \
+  X_API_TOKEN_FILE=/home/clawuser/.config/chicken/secrets/api-token \
+  PORT=3001 \
+  node scripts/api-server.js > /tmp/api-server.log 2>&1 &
+disown
+nohup env DASHBOARD_USERNAME=admin \
+  DASHBOARD_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/dashboard-pwd \
+  API_USERNAME=api-user API_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/api-pwd \
+  WORKER_HEALTH_URL=http://127.0.0.1:3001/api/health \
+  PORT=3000 \
+  node scripts/dashboard-server.js > /tmp/dashboard-server.log 2>&1 &
+disown
+```
