@@ -63,17 +63,22 @@
 | P5 付款狀態機制 | ✅ 已實作 | dashboard 「✓ 已收款」按鈕 + POST /api/orders/:id/mark-paid（commits 18565aa + 854948a）|
 | P2 老闆回覆機制 | ✅ 方案 B 已實作 | dashboard 「✓ 核准」按鈕 + POST /api/orders/:id/approve（commit 0e2d29f）|
 | P7 訂單完整性規則 | ✅ 已實作 | main_idea.md §十二「訂單完整性規則」（commit 1380731）|
+| **P0 Gmail 整合** | ✅ 完整實作 | 5 個 commits：ee04932 → ea64832 → b823dd7 → 1dc9b4d → 6cc05a8 |
+| Gmail OAuth | ✅ 完成授權 | clawbrt@gmail.com + GCP project `chickencustomerservicesheets` |
+| Email 版型 v5 | ✅ 4 種版型 | handoff / autoOrder / digest / system + 中文付款標籤 + 大小標題簡化 |
+| 日報/週報 cron script | ✅ 程式完成 | `scripts/send-digest.js`（待 `openclaw cron add` 設排程）|
+| P9 Sheets cron script | ✅ 程式完成 | `scripts/sheets-sync-cron.js`（待 `openclaw cron add` 設排程）|
 
 ---
 
-## 2. 最近 6 個 Commits（2026-07-16）
+## 2. 最近 6 個 Commits（2026-07-17 ~ 18 — Round 5 Gmail 整合）
 
-- **bbe6533** chore(lint): lint:fix 自動修 src/states/handoff.js indent (7 errors → 0)
-- **c6438e8** fix(handoff): P3-emergency 修 LINE push infinite loop — HUMAN_HANDOFF guard + 1分鐘 debounce
-- **0e2d29f** feat(dashboard): P2 老闆回覆機制方案 B — dashboard 「✓ 核准」按鈕 + POST /api/orders/:id/approve
-- **fa0500d** feat(config+prompt): P3 Quick Reply 統一回覆（chicken.yaml + main_idea.md §十八）
-- **854948a** fix(dashboard): P5 mark-paid endpoint 加跨檔案查找（2026-07-16 修整）
-- **18565aa** feat(dashboard): P5 付款狀態機制 — dashboard 「✓ 已收款」按鈕 + 客戶查詢規則
+- **6cc05a8** feat(p0-v5): 版型移除 box chars 改用大小標題（Hubert 04:32 反饋）
+- **1dc9b4d** feat(p0-v4): OAuth loopback callback + 版型退款/地址確認 + 付款中文
+- **b823dd7** feat(p0-v3): 版型 v3 純文字精美 + 重要欄位全加
+- **ea64832** feat(p0-v2): Gmail 永遠 LINE+Email 並行 + 4 種版型 + 詳細 OAuth 步驟
+- **ee04932** feat(p0): Gmail 整合 — Email fallback 給老闆（LINE 額滿備援）
+- **d5dd954** docs(handoff): v4 全面對齊系統現況 + SESSION_NEXT_PROMPT 重寫 + 待辦整理
 
 完整 log: `git log --oneline -10`
 
@@ -264,6 +269,7 @@ A: `pwd`，應為 `/home/clawuser/openclaw-workspace/others/chicken-group-buying
 | v2 | 2026-07-16 03:00 | 加 9 個未修整清單 + B 方案規劃 + 新增 doc/PROJECT_INVENTORY.md + doc/handoff/sessions/SESSION_NEXT_PROMPT.md + src/config.js LINE_BOT_TOKEN_FILE 支援 |
 | v3 | 2026-07-16 21:30 | 文件 drift 全面修整 + Round 2-3 全部 commit 記錄 + P2-P3-P5-P7 完成狀態 + LINE push loop bug fix (c6438e8/bbe6533) + notify_owner 重新啟用 |
 | v4 | 2026-07-17 06:30 | 全部 9 個 P 修整完成（P4 街口主動推 QR code 完整、P6 receipt analyzer、P9 Google Sheets sync 662 筆訂單寫入、B 方案 autoOrder + X-API-Token + LLM 端整合）+ Round 4 19 個 commits + SESSION_NEXT_PROMPT.md 全面重寫對齊 + memory/2026-07-17.md 完整 session 總結 + 待辦事項（P0 Gmail 整合）|
+| v5 | 2026-07-18 05:00 | Gmail 整合 P0 完整實作（5 個 commits：ee04932 → ea64832 → b823dd7 → 1dc9b4d → 6cc05a8）— OAuth Desktop app loopback callback + 永遠 LINE+Email 並行 + 4 種版型（handoff / autoOrder / digest / system）+ 中文付款標籤（現金 / 轉帳 / 街口支付 / LINE Pay）+ 大小標題簡化（移除 ╔═══╗ box chars）+ 後續自動化腳本（`scripts/send-digest.js` 日報/週報 + `scripts/sheets-sync-cron.js` P9 Sheets sync）+ HANDOFF.md §1 / §2 / §8 更新 + memory/2026-07-18.md 建立 |
 
 ---
 

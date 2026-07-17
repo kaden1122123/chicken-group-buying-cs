@@ -71,7 +71,7 @@ LINE 月度額度（Free plan）：500 messages/month。當前可能額滿（7/1
 
 ---
 
-## 當前狀態（2026-07-17 06:30）
+## 當前狀態（2026-07-18 05:00）
 
 | 項目 | 狀態 |
 |------|------|
@@ -92,11 +92,16 @@ LINE 月度額度（Free plan）：500 messages/month。當前可能額滿（7/1
 | P7 訂單完整性規則 | ✅ 實作完成（commit 1380731）|
 | B 方案 auto-create-order | ✅ 實作完成（commits c67eca3 + 3e998c9 + 756b859 + a42e362）|
 | P9 Google Sheets sync | ✅ 實作完成 + 662 筆訂單已寫入（commits d903098 + 057ed3e）|
+| P9 Sheets cron sync | ✅ 程式完成（`scripts/sheets-sync-cron.js`，待 `openclaw cron add` 設排程）|
+| P0 Gmail 整合 | ✅ 完整實作（5 個 commits：ee04932 / ea64832 / b823dd7 / 1dc9b4d / 6cc05a8）|
+| Gmail OAuth | ✅ 完成授權（clawbrt@gmail.com + GCP project `chickencustomerservicesheets`）|
+| Email 版型 v5 | ✅ 4 種版型（handoff / autoOrder / digest / system）+ 中文付款 + 大小標題 |
+| 日報/週報 script | ✅ 程式完成（`scripts/send-digest.js`，待 `openclaw cron add` 設排程）|
 | LINE 月度額度 | ⚠️ 額滿（500/月用完，下個 reset = 2026-08-01）|
 
 ---
 
-## Round 3 + 4 完成紀錄（2026-07-16 ~ 17）
+## Round 3 + 4 + 5 完成紀錄（2026-07-16 ~ 18）
 
 ### Round 3（2026-07-16）
 - ✅ **Round 3A**: P7 訂單完整性規則（commit 1380731）— main_idea.md §十二 + 7 項必填欄位
@@ -125,16 +130,15 @@ LINE 月度額度（Free plan）：500 messages/month。當前可能額滿（7/1
 
 ## 待辦事項（按優先度，2026-07-17 06:30 整理）
 
-### P0 — 立即（下個 session 第一件事）
+### P0 — 立即（已完成 ✅ 2026-07-18）
 
-1. **Gmail 整合**（Hubert 04:55 決定，4-6 小時）
-   - 用途：**通知老闆**（不是取代 LINE 客戶對話）
-   - 需 OAuth 2.0 browser 授權（clawbrt@gmail.com 用 GCP project 登入）
-   - 模組：src/handoff/emailNotifier.js
-   - chicken.yaml 加 `email` section
-   - 觸發點：notifyHubert 改為 notifyHubertViaLine + sendEmailDigest
-   - 設計：訂單彙總日報 + 每週統計 + handoff 即時通知（與 LINE 並行）
-   - 額度：Gmail API 免費版每天 500 億 quota units，實際無限
+1. ~~**Gmail 整合**（Hubert 04:55 決定，4-6 小時）~~ ✅ **完成**（5 個 commits：ee04932 / ea64832 / b823dd7 / 1dc9b4d / 6cc05a8）
+   - ✅ OAuth loopback callback（`scripts/gmail-auth.js` v3）
+   - ✅ 永遠 LINE+Email 並行（Hubert 22:53 決定）
+   - ✅ 4 種版型（handoff / autoOrder / digest / system）+ 中文付款標籤 + 大小標題簡化
+   - ✅ 日報/週報 script（`scripts/send-digest.js`，待 `openclaw cron add` 設排程）
+   - ✅ P9 Sheets cron script（`scripts/sheets-sync-cron.js`，待 `openclaw cron add` 設排程）
+   - ✅ Hubert 已驗證 Email 收到（04:32）
 
 ### P1 — 等 LINE 額度 8/1 reset 後（可做端到端測試）
 
@@ -143,20 +147,24 @@ LINE 月度額度（Free plan）：500 messages/month。當前可能額滿（7/1
    - 跑真實 LINE → minimax vision 流程：上傳截圖 → 標 likely_paid
 3. **P4 完整 e2e 測試**（街口主動推 QR code，LINE 額度 8/1 後可測）
    - 客戶選街口付款 → 收到 image message + 文字說明
-4. **P9 OAuth 啟用後續驗證**（Sheets API 已啟用但要跑 cron sync 確認）
+4. **P9 OAuth 啟用後續驗證**（Sheets API 已啟用 + script 已寫，待 `openclaw cron add`）
    - `bash scripts/sync-mirror.sh from-legacy` 確認 OK
-   - 設 cron 每日 3 點自動 sync
+   - `node scripts/sheets-sync-cron.js dryRun` 驗證
+   - 設 cron 每日 3 點自動 sync（待 Hubert 確認）
 
 ### P2 — 環境清理（快速）
 
-5. **清 debug 訂單**（2026-07-21.csv 內 v2-v9 測試訂單 7 個）
-   - 跑 `node scripts/cleanup-test-orders.js`（已存在的 script）
-   - 或手動刪 v2-v9 行
-6. **89 leaked cloudflared processes 清理預防**
+5. **清 debug 訂單**（2026-07-21.csv 內 v2-v9 測試訂單 7 個）— ✅ **已完成**（2026-07-17 session）
+6. **89 leaked cloudflared processes 清理預防** — ⚠️ 仍待處理
    - 問題：dashboard 測試用 `cloudflared tunnel --url http://localhost:3000` 累計 47-89 個 leaked processes
    - 根因：Cloudflare Quick Tunnel 有 TTL 但仍殘留
    - 解決：dashboard watchdog 應加 stale process cleanup（>1hr 自動 kill）
    - **不要殺 PID 1543**（那是 long-running OpenClaw external-user agent tunnel，--token 開頭）
+7. **日報/週報 cron 設定**（v6 程式已完成，待 `openclaw cron add`）
+   - daily: `0 23 * * *` Asia/Taipei → `node scripts/send-digest.js daily`
+   - weekly: `0 10 * * 0` Asia/Taipei → `node scripts/send-digest.js weekly`
+8. **P9 Sheets cron 設定**（v6 程式已完成，待 `openclaw cron add`）
+   - daily: `0 3 * * *` Asia/Taipei → `node scripts/sheets-sync-cron.js`
 
 ### P3 — 文件持續修整
 
