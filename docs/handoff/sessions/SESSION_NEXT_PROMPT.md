@@ -2,6 +2,7 @@
 
 > **作者**：2026-07-17 06:30 session（Round 4 完整收尾 + 文件 drift 全面修整 + notify_owner 重新啟用 + Gmail 留到下次 + memory/2026-07-17.md 完成）
 > **TL;DR**：Hubert 06:09 提醒「確保文件與系統對齊，不要 drift again」+ 「整理待辦事項進 handoff」。本檔完整對齊系統現況，下個 session 直接用。
+> **2026-07-19 03:36+ Round 10 補充**：Hubert 深夜指示完成 H/L 級 + 重要修正（manage-tunnel.sh drift + Check 10 canonical drift + sync-canonical.sh + GCP rotation SOP + SESSION_H8 狀態對齊）
 
 ## 🎯 用途（Purpose）
 

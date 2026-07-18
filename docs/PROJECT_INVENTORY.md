@@ -251,3 +251,20 @@ chmod 555 main/scripts/*.js main/src/  # restore
 ## 9. 待修整清單（下階段工作）
 
 見 `HANDOFF.md` 第 5 節「待修整清單」與 `docs/handoff/sessions/SESSION_NEXT_PROMPT.md`。
+
+### 2026-07-19 03:36+ Round 10 修整後狀態
+
+**已完成（commit `a4c2c36` / `e7bcac7` / 待本次 commit）**：
+- ✅ H1: `scripts/manage-tunnel.sh start()` 帶完整 env + 用 `_FILE` 取代明文密碼
+- ✅ H2: `scripts/check-quality.sh Check 10` 擴展 production runtime canonical drift 檢查
+- ✅ 重要修正 1: `scripts/sync-canonical.sh` 新增 + 同步 production runtime（解決 12 天 drift）
+- ✅ 重要修正 2: `docs/GCP_ROTATION_SOP.md` 新增
+- ✅ 重要修正 3: `SESSION_H8_PROMPT.md` 狀態對齊（⏸ → ✅ + 4 commits 證據）
+- ✅ check-quality: 11 通過 / 1 警告 / 0 失敗（從原本 9/3/0 大幅改善）
+
+**仍待後續 session 處理（見 SYSTEM_AUDIT §6）**：
+- L1: 攏長文件 archive（54 refs 跨檔、本 session 不實際 git mv）
+- L2: production runtime .bak 清理（sync-canonical.sh 留下的 .bak.20260719-* 可清；原本 .bak.20260715 等保留為歷史）
+- 統一測試 framework 到 `node:test`（48 個自訂 assert 風格）
+- GCP service account key 實 rotate
+- Cloudflare Worker DEPLOYMENT.md 更新（5/31 後沒更新）

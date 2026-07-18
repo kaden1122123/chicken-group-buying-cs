@@ -32,7 +32,23 @@ start() {
 
   echo "=== 2. 啟動 Dashboard Server ==="
   cd "$PROJECT_DIR"
-  setsid env DASHBOARD_USERNAME="$USERNAME" DASHBOARD_PASSWORD="$PASSWORD" PORT=$PORT \
+
+  # Session E (2026-07-19) 修整：帶完整 env + 用 _FILE 取代明文密碼
+  # 修法理由：
+  #   1. dashboard-watchdog.sh 在 /healthz 不健康時會 call 此 start()，
+  #      必須帶 WORKER_HEALTH_URL 才能讓 worker=up
+  #   2. 用 _FILE 從 ~/.config/chicken/secrets/ 讀檔，避免 process.env 被
+  #      OpenClaw exec 自動 redact（明文 PASSWORD 會被遮罩）
+  #   3. 帶完整 api-server 相關 env，dashboard-server 才能正確 proxy
+  # 對齊：SESSION_NEXT_PROMPT.md「服務重啟 SOP」
+  setsid env \
+    DASHBOARD_USERNAME="$USERNAME" \
+    DASHBOARD_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/dashboard-pwd \
+    API_USERNAME=api-user \
+    API_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/api-pwd \
+    X_API_TOKEN_FILE=/home/clawuser/.config/chicken/secrets/api-token \
+    WORKER_HEALTH_URL=http://127.0.0.1:3001/api/health \
+    PORT=$PORT \
     node scripts/dashboard-server.js > $DASHBOARD_LOG 2>&1 < /dev/null &
   disown
   sleep 2

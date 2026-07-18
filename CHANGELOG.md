@@ -61,6 +61,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `40ca4f3 docs(SESSION_NEXT_PROMPT): 修 LINE 額度誤解（P4/P6 不需等 reset，Hubert 07:49）` — 文件對齊
 - `97cb3af docs: 全面更新狀態檔案 + 當日總結（Hubert 08:07）` — HANDOFF.md / PROJECT_INVENTORY.md / SESSION_NEXT_PROMPT.md / memory/2026-07-18.md 同步
 
+### Round 9（2026-07-18~19 03:00+，Hubert 深夜整理）
+- `a4c2c36 docs(system-cleanup): 文件 drift 收尾 + race condition 修法 + CHANGELOG 重複合併` — 7 個 docs/ 檔案對齊 + race condition 修好
+- `e7bcac7 docs(audit): 完整系統 audit 報告 + 補 README + LEGACY 標頭` — 16KB SYSTEM_AUDIT_2026-07-19.md + 8.5KB README.md + SESSION_BACKGROUND.md LEGACY 標頭
+- **Round 10 (2026-07-19 03:36+, Hubert 指示 H/L 修整)**：
+  - `scripts/manage-tunnel.sh` 修法：start() 帶完整 env（`WORKER_HEALTH_URL` / `API_USERNAME` / `API_PASSWORD_FILE` / `X_API_TOKEN_FILE`）+ 用 `DASHBOARD_PASSWORD_FILE` 取代明文 `DASHBOARD_PASSWORD`（**解決 watchdog 重啟後 /healthz 永遠 worker=down 的問題**）
+  - `scripts/check-quality.sh Check 10` 擴展：加 production runtime canonical drift 檢查（AGENTS.md / SOUL.md / main_idea.md vs `docs/production-prompt/2026-07-03/`）+ AGENTS.md 跳過前 14 行 CANONICAL 標頭比對內容
+  - `scripts/sync-canonical.sh` 新增：同步 `docs/production-prompt/2026-07-03/` → `~/.openclaw/agents/external-user/`，AGENTS.md 自動加 14 行 CANONICAL 標頭
+  - `docs/SYSTEM_AUDIT_2026-07-19.md` 加 Round 10 修整紀錄（§8）
+  - `docs/GCP_ROTATION_SOP.md` 新增：GCP service account key rotate 標準作業流程（重要修正 2）
+  - `docs/handoff/sessions/SESSION_H8_PROMPT.md` 狀態對齊：⏸ 待執行 → ✅ 已完成 + 4 commits 證據（`658c9a5` / `f2f1015` / `a8c766a` / `37b7e00`）
+  - `docs/SESSION_NEXT_PROMPT.md` 加 Round 10 修整紀錄（給接手者快速入口）
+
+### Phase 3 進度（6 個 sessions，預估 6-7 hr）
+
+#### Sessions
+- **X1-C**：ENGINEERING_HANDBOOK.md 加 sandbox sync SOP — ⏸ 待做
+- **X1-D** ✅：`scripts/verify-kb-sources.js` + check-quality.sh Check 8（commit 3cd7e1f）
+- **X2** ✅ (commit 37681b6)：11 個 SESSION prompt 狀態欄統一
+- **H8** ✅ (4 commits 658c9a5/f2f1015/a8c766a/37b7e00)：13 個 src/ 模組專屬測試（2026-07-19 03:36+ 狀態對齊）
+- **X4** ✅：csvWriter retry (csv-writer-retry.test.js) + trigger cache (triggers-cache.test.js)
+- **X3**：dashboard 觀察工具增強（recent-orders / logs / error rate）— ⏸ 待做
+- **X5** ✅：Worker + api-server 統一 /healthz 端點（Round 3E，WORKER_HEALTH_URL）
+
+#### 統計
+- 測試套數：32 → 47 → 49 → 51（含 autoOrder v2 + send-digest + P4/P6 邏輯測試）
+- 新增 unit test cases：~250+
+- 完成度：5 / 7（X1-C、X3 待做）
+
 ### 架構更正（Hubert 05:51）
 - LINE 500/月限制只影響 outbound push，inbound webhook 無限（LINE 是 gateway）
 - e2e 測試走 dashboard 觸發 + 一則測試訊息（不發測試資料串）

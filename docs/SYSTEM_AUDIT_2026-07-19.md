@@ -410,10 +410,48 @@ curl http://localhost:3000/healthz  # 應 dashboard:up, api_server:up, worker:up
 
 ## 8. 修整紀錄
 
-| 日期 | Session | 主要動作 |
-|------|---------|----------|
-| 2026-07-18 09:00 | 第一輪整理 | 文件 drift 收尾 + race condition 修法 + .bak 清理 + /healthz 修好（commit `a4c2c36`）|
-| 2026-07-19 03:00+ | 第二輪 audit（Hubert 指示）| 完整 audit 報告 + 補 README + 標記 SESSION_BACKGROUND.md（本次 commit）|
+| 日期 | Session | 主要動作 | Commit |
+|------|---------|----------|--------|
+| 2026-07-18 09:00 | 第一輪整理 | 文件 drift 收尾 + race condition 修法 + .bak 清理 + /healthz 修好 | `a4c2c36` |
+| 2026-07-19 03:00+ | 第二輪 audit（Hubert 指示）| 完整 audit 報告 + 補 README + 標記 SESSION_BACKGROUND.md | `e7bcac7` |
+| 2026-07-19 03:36+ | **第三輪 H/L 修整**（Hubert 深夜指示）| H1 manage-tunnel.sh drift 修法 + H2 Check 10 canonical drift 擴展 + 重要修正 1 sync-canonical.sh + 重要修正 2 GCP_ROTATION_SOP.md + 重要修正 3 SESSION_H8 狀態對齊 | 本次 commit |
+
+### Round 10 修整細節
+
+**H1: `scripts/manage-tunnel.sh start()` 帶完整 env**
+- 原本只帶 `DASHBOARD_USERNAME` + `DASHBOARD_PASSWORD`（明文）+ `PORT`
+- 修法：加 `WORKER_HEALTH_URL` / `API_USERNAME` / `API_PASSWORD_FILE` / `X_API_TOKEN_FILE`，並用 `DASHBOARD_PASSWORD_FILE` 取代明文密碼
+- 影響：`dashboard-watchdog.sh` 在 `/healthz` 不健康時會 call `manage-tunnel.sh start`，修法後 watchdog 重啟 dashboard-server 帶完整 env，**`/healthz` worker 不會再 down**
+
+**H2: `scripts/check-quality.sh Check 10` 擴展**
+- 原本只檢查 dev repo ↔ main mirror（7 個 critical runtime files）
+- 擴展：加 production runtime canonical drift 檢查（3 個 canonical files：AGENTS.md / SOUL.md / main_idea.md）
+- AGENTS.md 特殊處理：prod runtime 版本會比 docs 多 14 行 CANONICAL 標頭（expected design），比較內容時用 `tail -n +15` 跳過
+- 影響：原本 AGENTS.md 12 天 drift + main_idea.md 不一致都會被抓到
+
+**重要修正 1: `scripts/sync-canonical.sh` + AGENTS.md 同步**
+- 同步 `docs/production-prompt/2026-07-03/` → `~/.openclaw/agents/external-user/`
+- AGENTS.md 自動加 14 行 CANONICAL 標頭
+- 同步前自動備份 `.bak.YYYYMMDD-HHMMSS`
+- 執行結果：AGENTS.md / SOUL.md / main_idea.md 全部同步完成，md5 一致
+- Check 10 跑出：**✅ 3 個 canonical files prod runtime ↔ docs/production-prompt md5 同步**
+
+**重要修正 2: `docs/GCP_ROTATION_SOP.md` 新增**
+- GCP service account key 90 天 rotate SOP（手動 6 步）
+- §3 Rotate 歷史記錄表
+- §4 自動化建議（未來實作 cron 提醒 + rotate script）
+- 業界 best practices 整合（Google Cloud IAM / OWASP / HashiCorp Vault）
+
+**重要修正 3: `SESSION_H8_PROMPT.md` 狀態對齊**
+- 原本狀態欄：⏸ 待執行（但實際 4 commits 都 push 過了）
+- 修法：狀態改為 ✅ 已完成（2026-07-01）+ 4 commits 證據（`658c9a5` / `f2f1015` / `a8c766a` / `37b7e00`）
+
+### check-quality 改善
+
+| 階段 | 通過 | 警告 | 失敗 |
+|------|------|------|------|
+| Round 9 結束 | 9 | 3 | 0 |
+| Round 10 完成 | **11** | 1 | 0 |
 
 ---
 

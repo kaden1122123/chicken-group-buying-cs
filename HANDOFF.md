@@ -1,6 +1,6 @@
 # Session Handoff — 雞味客服專案
 
-> **最後更新**：2026-07-18 08:10 session（Gmail 整合 v0-v7 完整鏈 + 11 commits + 4 cron jobs + P4/P6 邏輯測試 + 89 cloudflared cleanup + 文件全面對齊）
+> **最後更新**：2026-07-19 03:36+ session（Hubert 深夜指示 H/L 修整：manage-tunnel.sh drift 修法 + Check 10 canonical drift 擴展 + sync-canonical.sh + GCP rotation SOP + SESSION_H8 狀態對齊）
 
 ## 🎯 用途（Purpose）
 

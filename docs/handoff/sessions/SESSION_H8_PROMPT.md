@@ -8,8 +8,13 @@
 >
 > **影響**：🔴 高（影響品質 + 收入）
 > **推薦**：做（1.5-2 小時、中風險）
-> **狀態**：⏸ 待執行
-> **優先**：🔴 高（掃描發現的 13 個 module 有 8 個無任何覆蓋）
+> **狀態**：✅ 已完成（2026-07-01）
+> **證據**：4 commits `658c9a5` / `f2f1015` / `a8c766a` / `37b7e00`
+>   - `658c9a5 test(h8-a): 補 3 個 state 模組獨立測試（idle/awaitingPayment/completed）`
+>   - `f2f1015 test(h8-b): 補完 transferRules 14 trigger 測試 + edge cases`
+>   - `a8c766a test(h8-c): 拆 8 個 rules 模組為獨立 test files`
+>   - `37b7e00 test(h8-d): knowledge/triggers + lineProfileCache + 補強 sanitizer`
+> **2026-07-19 03:36+ 修整**：Hubert 指示 audit 後狀態對齊 commit 證據
 
 ---
 

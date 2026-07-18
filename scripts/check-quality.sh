@@ -388,6 +388,72 @@ else
   fi
 fi
 
+# ────────────────────────────────────────────────
+# 2026-07-19 擴展：production runtime canonical drift 檢查（Hubert 03:36 指示）
+# 背景：docs/production-prompt/2026-07-03/ 是 git version control 副本，
+#       ~/.openclaw/agents/external-user/ 是 production runtime canonical（LLM 真的在這跑）
+#       兩邊 drift 會導致 LLM 讀到舊版 prompt（之前未被抓到長達 12 天）
+# 詳見：docs/SYSTEM_AUDIT_2026-07-19.md §3.2 + docs/adr/0005-session-based-changes.md
+# ────────────────────────────────────────────────
+PROD_LOC="/home/clawuser/.openclaw/agents/external-user"
+PP_LOC="$PROJECT_ROOT/docs/production-prompt/2026-07-03"
+
+if [ ! -d "$PROD_LOC" ]; then
+  warn "production runtime (~/.openclaw/agents/external-user) 不存在（跳過 canonical drift 檢查）"
+elif [ ! -d "$PP_LOC" ]; then
+  warn "docs/production-prompt/2026-07-03 不存在（跳過 canonical drift 檢查）"
+else
+  CANON_DRIFT=()
+
+  # 3 個 canonical files（path 在 prod vs docs/production-prompt 可能不同）
+  # AGENTS.md / SOUL.md 兩邊都在根目錄
+  # main_idea.md 在 prod 內是 knowledge/main_idea.md，在 docs 內是根目錄 main_idea.md
+  #
+  # AGENTS.md 特殊處理：prod runtime 版本會比 docs 多 14 行 CANONICAL 標頭
+  # （這是 expected design — 提醒 session「這是 production runtime」）
+  # 比較內容時跳過這 14 行（用 tail -n +15）
+  # Trade-off：如果 prod AGENTS.md 的 CANONICAL 標頭被意外移除，Check 10 不會抓到
+  # 但如果 sync-canonical.sh 沒跑（內容真的 drift），Check 10 會 warn
+  for pair in "AGENTS.md:AGENTS.md" \
+              "SOUL.md:SOUL.md" \
+              "knowledge/main_idea.md:main_idea.md"; do
+    prod_rel="${pair%%:*}"
+    pp_rel="${pair##*:}"
+    if [ ! -f "$PROD_LOC/$prod_rel" ]; then
+      CANON_DRIFT+=("MISSING prod: $prod_rel")
+      continue
+    fi
+    if [ ! -f "$PP_LOC/$pp_rel" ]; then
+      CANON_DRIFT+=("MISSING pp: $pp_rel")
+      continue
+    fi
+    # 計算 md5 — AGENTS.md 跳過 prod runtime 前 14 行 CANONICAL 標頭
+    if [ "$prod_rel" = "AGENTS.md" ]; then
+      PROD_MD5=$(tail -n +15 "$PROD_LOC/$prod_rel" 2>/dev/null | md5sum | awk '{print $1}')
+    else
+      PROD_MD5=$(md5sum "$PROD_LOC/$prod_rel" 2>/dev/null | awk '{print $1}')
+    fi
+    PP_MD5=$(md5sum "$PP_LOC/$pp_rel" 2>/dev/null | awk '{print $1}')
+    if [ -z "$PROD_MD5" ] || [ "$PROD_MD5" != "$PP_MD5" ]; then
+      CANON_DRIFT+=("DRIFT: $prod_rel ↔ $pp_rel")
+    fi
+  done
+
+  if [ ${#CANON_DRIFT[@]} -gt 0 ]; then
+    warn "production runtime canonical vs docs/production-prompt/2026-07-03 drift："
+    for f in "${CANON_DRIFT[@]}"; do
+      echo "    $f"
+    done
+    echo ""
+    echo "  修法：決定哪邊是 source of truth，然後同步"
+    echo "    - 若 prod runtime 對（已加 CANONICAL 標頭）：cp $PROD_LOC/<file> $PP_LOC/<file>"
+    echo "    - 若 docs/production-prompt 對：cp $PP_LOC/<file> $PROD_LOC/<file>"
+    echo "  詳見：docs/SYSTEM_AUDIT_2026-07-19.md §3.2"
+  else
+    pass "3 個 canonical files（AGENTS.md / SOUL.md / main_idea.md）prod runtime ↔ docs/production-prompt md5 同步"
+  fi
+fi
+
 # ─────────────────────────────────────────
 
 # 總結
