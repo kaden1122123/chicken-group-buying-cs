@@ -244,7 +244,7 @@ chmod 555 main/scripts/*.js main/src/  # restore
 | P9 Google Sheets sync | ✅ 實作完成 + 662 筆訂單寫入（commits d903098 + 057ed3e）|
 | B 方案 auto-create-order | ✅ 實作完成（commits c67eca3 + 3e998c9 + 756b859 + a42e362）|
 | LINE 月度額度 | ⚠️ 額滿（500/月用完，下個 reset = 2026-08-01）|
-| Gmail 整合（下次 session P0）| ⏳ 待做（用途：通知老闆，Hubert 04:55 確認）|
+| **Gmail 整合（P0 v0-v7）**| ✅ **完整實作**（commits `ee04932` / `ea64832` / `b823dd7` / `1dc9b4d` / `6cc05a8` / `e512e0d` / `9911485` / `0484bba`）— OAuth loopback + 永遠 LINE+Email 並行 + 4 種版型 + 中文付款標籤 + 後續自動化腳本 |
 
 ---
 

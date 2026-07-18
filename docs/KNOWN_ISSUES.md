@@ -20,19 +20,11 @@
 
 ---
 
-## 問題清單（0 個失敗 + 1 個警告）
+## 問題清單（0 個失敗 + 0 個警告）
 
-> **2026-07-01 Session D3+D4 修整完成**：原 5 個 hardcode + 9 個 dead config flag 全部解決。
-> F1~F4 + W1~W9 從「問題清單」移到「已修復問題」段。
-> W10（working tree 未提交）仍待 Session 結束時 commit。
-
-### 🟢 W10：working tree 有未提交變更
-
-**影響**：
-- Session 結束時未 push / rsync 的 commits 仍在本機
-- 不影響 production
-
-**建議修復**：Session 結束時 `git push origin main` + `bash scripts/sync-mirror.sh from-legacy`
+> **2026-07-18 Session 整理**：W10 已修復（commit `97cb3af` 08:09 已收尾）。
+> 全部問題移到「已修復問題」段，當前 working tree 乾淨。
+> 下一輪 audit 跑 `bash scripts/check-quality.sh` 後，本檔會自動驗證狀態。
 
 ---
 
@@ -126,5 +118,14 @@
 
 ---
 
+### ✅ W10：working tree 有未提交變更（2026-07-18 Session 整理修復）
+
+**問題**：Session 結束時未 push / rsync 的 commits 仍在本機（不影響 production）
+**修法**：commit `97cb3af`（08:09）docs 全檔收尾後 working tree 乾淨，sync-mirror.sh 已同步
+**commit**：`97cb3af docs: 全面更新狀態檔案 + 當日總結（Hubert 08:07）`
+**驗證**：`git status` 無未提交變更
+
+---
+
 _本檔由 check-quality.sh 自動驗證 + brtclaw 手動維護_
-_最後更新：2026-07-01 Session D3+D4 完成_
+_最後更新：2026-07-18 08:30 Session 整理（W10 移到已修復 + 全面對齊）_

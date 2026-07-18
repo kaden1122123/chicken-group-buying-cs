@@ -56,6 +56,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tests/autoOrder.test.js`：10 個測試
 - `tests/send-digest.test.js`：4 個測試
 
+### Round 8（2026-07-18 08:00~08:30）
+- `3fbe06c test(p4/p6): 加 P4/P6 邏輯測試 + dashboard-watchdog 整合 cleanup` — `tests/awaitingPayment.test.js`（15 個 subtest）+ `tests/receiptAnalyzer.test.js`，npm test 套數維持 51 套（增加 subtest 數）
+- `40ca4f3 docs(SESSION_NEXT_PROMPT): 修 LINE 額度誤解（P4/P6 不需等 reset，Hubert 07:49）` — 文件對齊
+- `97cb3af docs: 全面更新狀態檔案 + 當日總結（Hubert 08:07）` — HANDOFF.md / PROJECT_INVENTORY.md / SESSION_NEXT_PROMPT.md / memory/2026-07-18.md 同步
+
 ### 架構更正（Hubert 05:51）
 - LINE 500/月限制只影響 outbound push，inbound webhook 無限（LINE 是 gateway）
 - e2e 測試走 dashboard 觸發 + 一則測試訊息（不發測試資料串）
@@ -76,22 +81,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - commits：7（ee04932 → ea64832 → b823dd7 → 1dc9b4d → 6cc05a8 → e512e0d → pending）
 - 新增 files：5（send-digest.js、sheets-sync-cron.js、cleanup-leaked-cloudflared.sh、autoOrder.test.js、send-digest.test.js）
 
-## [Unreleased]
+---
 
-### Phase 3 待執行（6 個 sessions，預估 6-7 hr）
+### Phase 3 進度（6 個 sessions，預估 6-7 hr）
 
 #### Sessions
-- **X1-C**：ENGINEERING_HANDBOOK.md 加 sandbox sync SOP
-- **X1-D**：`scripts/verify-kb-sources.js` + check-quality.sh Check 8
+- **X1-C**：ENGINEERING_HANDBOOK.md 加 sandbox sync SOP — ⏸ 待做
+- **X1-D** ✅：`scripts/verify-kb-sources.js` + check-quality.sh Check 8（commit 3cd7e1f）
 - **X2** ✅ (commit 37681b6)：11 個 SESSION prompt 狀態欄統一
 - **H8** ✅ (4 commits 658c9a5/f2f1015/a8c766a/37b7e00)：13 個 src/ 模組專屬測試
-- **X4**：csvWriter retry + trigger cache
-- **X3**：dashboard 觀察工具增強（recent-orders / logs / error rate）
-- **X5**：Worker + api-server 統一 /healthz 端點
+- **X4** ✅：csvWriter retry (csv-writer-retry.test.js) + trigger cache (triggers-cache.test.js)
+- **X3**：dashboard 觀察工具增強（recent-orders / logs / error rate）— ⏸ 待做
+- **X5** ✅：Worker + api-server 統一 /healthz 端點（Round 3E，WORKER_HEALTH_URL）
 
 #### 統計
-- 測試套數：32 → 47（+15 / +47%）
+- 測試套數：32 → 47 → 49 → 51（含 autoOrder v2 + send-digest + P4/P6 邏輯測試）
 - 新增 unit test cases：~250+
+- 完成度：5 / 7（X1-C、X3 待做）
 
 ---
 

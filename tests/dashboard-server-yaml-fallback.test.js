@@ -107,7 +107,14 @@ const result = spawnSync('node', [tmpFile], {
   encoding: 'utf-8',
 });
 
-fs.unlinkSync(tmpFile);
+// cleanup：可能已被 spawnSync 移除或 parent 已關閉，加 try-catch 避免 ENOENT race
+try {
+  if (fs.existsSync(tmpFile)) {
+    fs.unlinkSync(tmpFile);
+  }
+} catch (e) {
+  // 忽略 cleanup 失敗（測試不依賴 tmpFile 是否存在）
+}
 
 console.log('  stdout:', result.stdout.substring(0, 200));
 console.log('  stderr:', result.stderr.substring(0, 200));

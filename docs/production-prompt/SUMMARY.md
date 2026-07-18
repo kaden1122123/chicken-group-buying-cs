@@ -1,14 +1,14 @@
 # Production Prompt 版本摘要
 
 > **目的**：讓接手者一眼看到當前使用哪個 prompt 版本、歷史變更
-> **最後更新**：2026-07-15
-> **對應 session**：X1-A（建立 symlink + SUMMARY） + 2026-07-15 audit 收尾（AGENTS.md 合併 + config drift）
+> **最後更新**：2026-07-18 08:30
+> **對應 session**：X1-A（建立 symlink + SUMMARY） + 2026-07-03 完整 codebase audit + 2026-07-15 收尾（AGENTS.md 合併 + config drift）+ 2026-07-18 開頭對齊修正
 
 ---
 
 ## 當前使用版本
 
-**`latest` symlink** → `2026-06-28/`（Session N / Session E A 方案決策後版本）
+**`latest` symlink** → `2026-07-03/`（Session P0 2026-07-15 audit 收尾 + 2026-07-03 完整 codebase audit 後版本）
 
 | 版本 | 日期 | 對應 Session | 狀態 | 觸發原因 |
 |------|------|---------------|------|----------|

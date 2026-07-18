@@ -1,7 +1,7 @@
 # 雞肉團購 AI 客服 — 文檔索引
 
 > 維護者：brtclaw
-> 最後更新：2026-07-01 10:10（Session D3+D4 文件一致性收尾）
+> 最後更新：2026-07-18 08:30（Session 整理 — 大規模文件 drift 修整 + 根目錄 .bak 歸檔 + production runtime 過時備份標記）
 
 ---
 
@@ -81,7 +81,7 @@ chicken-group-buying-customer-service/
 │   ├── states/
 │   ├── handoff/
 │   └── utils/
-├── tests/                        # 49 套 unit + 1 套 integration（共 50 套，2026-07-18 +B 方案 v2 +send-digest）
+├── tests/                        # 51 套（49 unit + 1 integration + 1 helpers/cleanup，npm test 全綠）
 │   ├── rules.test.js                       # 34+ 案例
 │   ├── states.test.js                      # 狀態機轉換
 │   ├── handoff.test.js                     # 14 種觸發條件
@@ -108,7 +108,7 @@ chicken-group-buying-customer-service/
 │   ├── session-j-architecture.test.js      # J regression test
 │   ├── d3-payment-options-dynamic.test.js  # Session D3
 │   ├── d4-phase2-stub.test.js              # Session D4 Phase 2
-│   └── ...（完整 49 套 unit test，2026-07-18 從 47 → 49（含 autoOrder v2 + send-digest））
+│   └── ...（完整 51 套 unit test，2026-07-18 含 P0 Gmail 整合 + P4/P6 邏輯測試後）
 ├── scripts/
 │   ├── api-server.js               # HTTP API（+ /api/docs Swagger UI · Session L）
 │   ├── dashboard.js                # 儀表板生成器
@@ -134,6 +134,6 @@ chicken-group-buying-customer-service/
 
 ---
 
-_最後更新：2026-07-01 12:40（Phase 3 全部 6 sessions 完成 + 測試套數 32→47）_
+_最後更新：2026-07-18 08:30（Session 整理 — Gmail 整合完成 + P4/P6 邏輯測試 + 文件 drift 全面修整）_
 _最近評估：見 [TODO_2026-06-26.md](./TODO_2026-06-26.md)_
-_Session 修整進度：見 [CLEANUP_PHASE_2_PLAN.md](./CLEANUP_PHASE_2_PLAN.md) §四 優先順序彙總_
+_Session 修整進度：見 [HANDOFF.md](../HANDOFF.md) §5 待辦清單_
