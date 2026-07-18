@@ -8,6 +8,20 @@
 
 ## 備份清單
 
+### 2026-07-19：Round 10 H/L 修整 — 重要備份紀錄
+
+| 備份檔案 | 位置 | 大小 | 備份時間 | 用途 |
+|----------|------|------|----------|------|
+| `AGENTS.md.bak.20260719-034307` | `/home/clawuser/.openclaw/agents/external-user/` | 9583 bytes | 2026-07-19 03:43 | Round 10 同步前備份 AGENTS.md |
+| `SOUL.md.bak.20260719-034307` | `/home/clawuser/.openclaw/agents/external-user/` | 13117 bytes | 2026-07-19 03:43 | Round 10 同步前備份 SOUL.md |
+| `knowledge/main_idea.md.bak.20260719-034307` | `/home/clawuser/.openclaw/agents/external-user/knowledge/` | 51540 bytes | 2026-07-19 03:43 | Round 10 同步前備份 main_idea.md |
+
+**備份原因**：Round 10 H2 擴展 Check 10 canonical drift 檢查發現 production runtime 跟 docs/production-prompt/ drift 12 天，撰寫 `scripts/sync-canonical.sh` 同步前自動備份。
+
+**驗證方式**：每個 .bak 的 md5 跟 git tracked 的 `docs/production-prompt/2026-07-03/` 對應檔案 md5 一致（已驗證）。
+
+**保留建議**：可保留 30 天（2026-08-19 後清理）。如需提早清理，詳見 `docs/SYSTEM_AUDIT_2026-07-19.md` §6 L2 待處理。
+
 ### 2026-06-27：Session C C2 變更前備份
 
 | 備份檔案 | 位置 | 大小 | 備份時間 | 用途 |

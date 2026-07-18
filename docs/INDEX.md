@@ -27,7 +27,9 @@
 ### 規劃與決策
 - [SOP.md](./SOP.md) — 完整標準作業流程
 - [MULTI_TENANT_DESIGN.md](./MULTI_TENANT_DESIGN.md) — 多租戶設計
-- [TODO_2026-06-26.md](./TODO_2026-06-26.md) — 2026-06-26 評估與修整 TODO（14 個問題、利弊分析、決策表）|
+- [TODO_2026-06-26.md](./TODO_2026-06-26.md) — 2026-06-26 評估與修整 TODO（14 個問題、利弊分析、決策表）
+- [GCP_ROTATION_SOP.md](./GCP_ROTATION_SOP.md) — GCP service account key 90 天 rotate SOP（2026-07-19 新增）
+- [SYSTEM_AUDIT_2026-07-19.md](./SYSTEM_AUDIT_2026-07-19.md) — 完整 audit 報告（2026-07-19，含 Round 10 修整紀錄）
 
 ### 進度與日誌
 - [../PHASE1_PROGRESS.md](../PHASE1_PROGRESS.md) — Phase 1 進度（最後更新 2026-06-29 15:45）
