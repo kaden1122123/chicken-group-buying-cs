@@ -142,13 +142,16 @@ LINE 月度額度（Free plan）：500 messages/month。當前可能額滿（7/1
 
 ### P1 — 立即可做（不受 LINE 額度限制）
 
-2. **P6 完整 e2e 測試**（不受 LINE 額度限制：P6 OCR 走 OpenClaw backend process，不對 LINE outbound）
-   - 修 autoOrder test 環境（修 setJKOQrCodeUrl 在 test 內未生效問題）
-   - 走 OpenClaw Gateway `/v1/vision/analyze`（如未提供則 stub fallback）
-   - 跑 minimax vision 流程：上傳截圖 → 標 likely_paid（不經 LINE push）
-3. **P4 完整 e2e 測試**（街口主動推 QR code，不受 LINE 額度限制：P4 走 OpenClaw 內建 image 推送機制 + cloudflare 過濾層）
-   - 客戶選街口付款 → dashboard 觸發 → 走 OpenClaw 內建推送 image（不經 LINE Messaging API）
-   - 客戶轉帳後傳截圖 → 系統接收（webhook inbound 無限）
+2. ✅ **P6 邏輯測試**（commit 待推送，tests/receiptAnalyzer.test.js）
+   - ✅ isAmountMatch 純函數測試（±1 元容差）
+   - ✅ buildVisionPrompt 純函數測試（含訂單金額 + JSON 格式）
+   - ✅ analyzeReceipt 純函數測試（現金跳過 + 圖片不存在 + 沒 imagePath）
+   - ⏸️ vision API 整合測試需 proxyquire 或 integration test（內部 closure binding 無法 mock）
+3. ✅ **P4 邏輯測試**（commit 待推送，tests/awaitingPayment.test.js）
+   - ✅ isPaymentConfirmed / isPaymentCancel 純函數測試
+   - ✅ handleAwaitingPayment 各 payment_method case（cash/transfer/jko/linepay/unknown）
+   - ✅ jko + linepay 回覆含 QR Code / LINE ID 提示
+   - ✅ context.paymentProofReceived=true 跳過確認關鍵字
 4. **P9 OAuth 啟用後續驗證**（Sheets API 已啟用，cron 已設，dryRun 測試中）
    - `bash scripts/sync-mirror.sh from-legacy` 確認 OK
    - `node scripts/sheets-sync-cron.js dryRun` 驗證
@@ -161,7 +164,7 @@ LINE 月度額度（Free plan）：500 messages/month。當前可能額滿（7/1
    - ✅ `scripts/cleanup-leaked-cloudflared.sh` 完成（>1hr 自動 kill，保護 PID 1543，10# 修 octal bug）
    - ✅ `scripts/dashboard-watchdog.sh` 整合 cleanup 觸發
    - ✅ 實戰效果：199 → 0 leaked（清理後又會慢慢累積，建議加獨立 cron 定期跑）
-   - ⚠️ **未完成**：尚無獨立 cron 定期跑 cleanup（依賴 watchdog 觸發頻率太低）
+   - ✅ **已完成**：Periodic cleanup cron `0 */1 * * *`（id `955d61c6-3da0-4bb9-8d46-f40a7927f1c6`，main agent + announce to discord，每小時跑一次）
 7. ✅ **日報/週報 cron 設定**（2026-07-18 完成，main agent + delivery announce to discord channel）
    - daily: `30 23 * * *` Asia/Taipei → `node scripts/send-digest.js daily`
    - weekly: `0 10 * * 0` Asia/Taipei → `node scripts/send-digest.js weekly`
@@ -424,13 +427,15 @@ cat docs/handoff/sessions/SESSION_NEXT_PROMPT.md
 
 ### P1 — 待做
 
-2. **89 cloudflared auto-cleanup 部署**：dashboard-watchdog.sh 已整合 cleanup 呼叫，但還沒設 cron 定期跑（依賴 watchdog 觸發頻率太慢）
+2. ✅ **89 cloudflared auto-cleanup 部署**（commit 待推送，2026-07-18 04:55）
+   - ✅ dashboard-watchdog.sh 整合 cleanup-leaked-cloudflared.sh（健康檢查前先跑 cleanup）
+   - ✅ Periodic cleanup cron `0 */1 * * *`（id `955d61c6-3da0-4bb9-8d46-f40a7927f1c6`，每小時跑 cleanup + announce to discord）
 3. **文件 reviewer 定期檢查**：HANDOFF.md / INDEX.md / CEO_DECISION_GUIDE.md 是否過時
-4. **P4/P6 e2e 測試立刻做**（不受 LINE 額度限制：LINE 500/月只影響 outbound push，P4/P6 走 OpenClaw 內建 backend）
+4. ✅ **P4/P6 邏輯測試完成**（commit 待推送，2026-07-18 04:55 完成，49 → 51 套測試）
 
 ### P2 — 環境清理
 
-5. **Dashboard watchdog 整合 periodic cleanup**：目前 watchdog 觸發時跑 cleanup，但若 watchdog 不觸發，leaked 會累積。建議加獨立 cron `0 */1 * * *` 每小時跑一次 cleanup
+5. ✅ **Dashboard watchdog 整合 + Periodic cleanup cron 部署**（commit 待推送，2026-07-18 04:55）— 已完成（見 P1-2）
 6. **真實訂單測試**：等 8/1 LINE 額度 reset 後，跑一次真實客戶 LINE → handoff → 老闆 Email 流程
 
 ### 下次 Session 第一件事（Hubert 07:24 指示）

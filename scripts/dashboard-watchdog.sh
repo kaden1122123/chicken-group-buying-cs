@@ -52,6 +52,11 @@ check_healthz
 HEALTH_OK=$?
 check_tunnel() { is_tunnel_up; }
 
+# Session P0 v7+（2026-07-18）：整合 cloudflared leaked processes cleanup
+# 在健康檢查前先跑 cleanup，避免 watchdog 重啟時累積 leaked
+echo "[watchdog] $(date -Iseconds) cleanup leaked cloudflared processes..." >> "$LOG"
+bash "$PROJECT_DIR/scripts/cleanup-leaked-cloudflared.sh" >> "$LOG" 2>&1 || true
+
 if [ $HEALTH_OK -eq 0 ] && check_tunnel; then
   echo "[watchdog] $(date -Iseconds) dashboard /healthz ok + tunnel 都活著" >> "$LOG"
 elif [ $HEALTH_OK -eq 0 ]; then
