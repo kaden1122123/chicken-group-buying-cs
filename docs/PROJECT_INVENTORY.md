@@ -142,14 +142,23 @@ disown
 | `docs/API_CURL.md` | api-server curl 範例 |
 | `docs/MULTI_TENANT_DESIGN.md` | multi-tenant 設計 |
 | `docs/KNOWN_ISSUES.md` | 已知問題 |
-| `docs/CLEANUP_PHASE_2_PLAN.md` | 之前清理計畫（已完成）|
+| ~~`docs/CLEANUP_PHASE_2_PLAN.md`~~ | **[LEGACY] 請勿 read（已標記，內容已由 CHANGELOG.md 取代）** |
 | `docs/handoff/sessions/SESSION_X_PROMPT.md` | 13+ 個 session prompts（X1-X5、D3-D4、E、F、G、H、H8、I、J、K、L、M、N、O、P、Q）|
-| `docs/handoff/sessions/SESSION_NEXT_PROMPT.md` | **下個 session 開始 prompt**（見本檔下個 section）|
+| `docs/handoff/sessions/SESSION_NEXT_PROMPT.md` | **下個 session 開始 prompt**（含接手者必跳過清單）|
 | `docs/handoff/SESSION_CLEANUP_PROMPT_*.md` | Session B/C/D cleanup prompts |
 | `docs/adr/*.md` | 5 個 Architecture Decision Records（0001-0005）|
 | `docs/architecture/NEW_ORDER_FLOW.md` | A/B/C 方案訂單流程設計 |
 | `docs/NOTES/2026-06-16-issues.md` | 6/16 實測問題紀錄 |
 | `docs/production-prompt/2026-07-03/` | LLM prompt 當前版本（AGENTS/SOUL/main_idea/CHANGELOG）|
+| `docs/SYSTEM_AUDIT_2026-07-19.md` | 完整 audit 報告（2026-07-19，含 Round 10 修整紀錄）|
+| `docs/GCP_ROTATION_SOP.md` | GCP service account key 90 天 rotate SOP |
+
+**⚠️ LEGACY 區塊**（已標記 `<!-- ⚠️ LEGACY -->` 開頭，接手者請勿 read 浪費 token）：
+- `PHASE1_PROGRESS.md` — Phase 1 進度報告（6/7/3 最後更新）
+- `docs/TODO_2026-06-26.md` — 評估與修整 TODO（6/26 最後更新）
+- `docs/CLEANUP_PHASE_2_PLAN.md` — Cleanup Phase 2 修整計畫（6/28 最後更新）
+
+**如果你要快速了解系統現狀**：直接讀 `CHANGELOG.md` + `HANDOFF.md` + `docs/SYSTEM_AUDIT_2026-07-19.md` 就夠了。
 
 ### 3.6 /tmp 的 chicken 服務檔（mode 600，永不 commit）
 

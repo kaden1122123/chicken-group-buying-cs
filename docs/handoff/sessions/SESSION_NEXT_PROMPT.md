@@ -339,6 +339,24 @@ cat docs/PROJECT_INVENTORY.md
 cat docs/handoff/sessions/SESSION_NEXT_PROMPT.md
 ```
 
+---
+
+## ⚠️ 接手者必跳過清單（LEGACY 區塊）
+
+**請勿 read 以下 3 個檔案**（已由 `CHANGELOG.md` 取代，讀這些只會浪費 session token）：
+
+1. `PHASE1_PROGRESS.md`（875 行，6/7/3 最後更新）— Phase 1 進度報告
+2. `docs/TODO_2026-06-26.md`（432 行，6/26 最後更新）— 評估與修整 TODO
+3. `docs/CLEANUP_PHASE_2_PLAN.md`（481 行，6/28 最後更新）— Cleanup Phase 2 修整計畫
+
+**判斷依據**：
+- 這 3 個檔案都已標 `<!-- ⚠️ LEGACY -->` 開頭標頭
+- 內容是舊 session 進度（2026-06~07），最新狀態以 `CHANGELOG.md` 為準
+- 完整 audit 報告見 `docs/SYSTEM_AUDIT_2026-07-19.md`
+- 詳見 `docs/SYSTEM_AUDIT_2026-07-19.md` §6 L1
+
+**如果你只是要快速了解系統現狀**：直接讀 `CHANGELOG.md` + `HANDOFF.md` + `docs/SYSTEM_AUDIT_2026-07-19.md` 就夠了。
+
 完成上述 5 步後，跟 Hubert 確認從 P0 開始（**Gmail 整合**是 P0 第一件事），然後依優先度執行。
 
 ---

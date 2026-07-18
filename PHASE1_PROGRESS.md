@@ -1,3 +1,5 @@
+<!-- ⚠️ LEGACY: 接手者請勿 read（舊 session 進度，已由 CHANGELOG.md 取代。詳見 docs/SYSTEM_AUDIT_2026-07-19.md §6 L1） -->
+<!-- 最後更新：2026-07-19 03:36+ Round 10 標記為 LEGACY，不再維護 -->
 # Phase 1 進度報告
 
 > 最後更新：2026-07-03 11:48（狀態檔 drift 修整 + Q/K 狀態對齊）
