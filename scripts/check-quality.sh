@@ -388,6 +388,24 @@ else
   fi
 fi
 
+
+# ────────────────────────────────────────────────
+# 檢查 11: Ignored Keywords 同步（Round 14，2026-07-19）
+# 用途：防止 Worker src/index.ts DEFAULT_IGNORED_KEYWORDS 與 chicken.yaml ignored_keywords drift
+# 對齊：docs/SYSTEM_AUDIT_2026-07-19.md §3.4
+# ────────────────────────────────────────────────
+section "Check 11/11: Ignored Keywords 同步"
+
+if [ -f "scripts/check-ignored-keywords-sync.js" ]; then
+  if node scripts/check-ignored-keywords-sync.js > /tmp/keywords-sync.log 2>&1; then
+    pass "Ignored Keywords 完全同步（Worker ↔ chicken.yaml）"
+  else
+    fail "Ignored Keywords drift"
+    cat /tmp/keywords-sync.log | tail -10
+  fi
+else
+  warn "scripts/check-ignored-keywords-sync.js 不存在（跳過）"
+fi
 # ────────────────────────────────────────────────
 # 2026-07-19 擴展：production runtime canonical drift 檢查（Hubert 03:36 指示）
 # 背景：docs/production-prompt/2026-07-03/ 是 git version control 副本，

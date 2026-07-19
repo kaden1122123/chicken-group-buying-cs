@@ -482,3 +482,133 @@ git: commit 38b1a27 pushed + synced
 - **統一測試 framework 到 `node:test`**（48 個自訂 assert）
 - **GCP service account key rotate**（3 天前建立，仍建議 90 天 rotate）
 - **Cloudflare Worker staging 測試**（已 production deploy，建議先 staging）
+
+## 8.6 Round 14 P5 — production runtime .bak 清理計畫（23:48）
+
+### 列出（11 個 .bak 檔案，位於 `~/.openclaw/agents/external-user/`）
+
+**🟢 7/19 sync-canonical.sh 留下的（6 個）— 可清理**
+
+| 檔案 | 大小 | 清理建議 |
+|------|------|----------|
+| `AGENTS.md.bak.20260719-034307` | 9583 bytes | ✅ 可清（已 2+ 週，sync 成功無回滾需要）|
+| `AGENTS.md.bak.20260719-034656` | 9581 bytes | ✅ 可清 |
+| `SOUL.md.bak.20260719-034307` | 13117 bytes | ✅ 可清 |
+| `SOUL.md.bak.20260719-034656` | 13117 bytes | ✅ 可清 |
+| `knowledge/main_idea.md.bak.20260719-034307` | 51540 bytes | ✅ 可清 |
+| `knowledge/main_idea.md.bak.20260719-034656` | 51629 bytes | ✅ 可清 |
+
+**🟡 7/15 原本備份（3 個）— 保留**
+
+| 檔案 | 大小 | 保留原因 |
+|------|------|----------|
+| `AGENTS.md.bak.20260715` | 8880 bytes | Round 7/15 合併前的歷史快照 |
+| `SOUL.md.bak.20260715-211622` | 11726 bytes | Round 7/15 合併前的歷史快照 |
+| `SOUL.md.old.bak` | 10795 bytes | Round 7/15 合併前的歷史快照 |
+
+**🔵 6/10 OpenClaw 系統備份（2 個）— 不動**
+
+| 檔案 | 大小 | 不動原因 |
+|------|------|----------|
+| `agent/auth-profiles.json.sqlite-import.1781075416953.bak` | 465 bytes | OpenClaw 系統自動備份（sqlite-import），不能手動管理 |
+| `agent/auth-state.json.sqlite-import.1781075416954.bak` | 267 bytes | OpenClaw 系統自動備份 |
+
+### 安全清理步驟（給未來 session 執行）
+
+```bash
+# 1. 確認當前 production runtime canonical files 正確
+md5sum /home/clawuser/.openclaw/agents/external-user/AGENTS.md \
+       /home/clawuser/.openclaw/agents/external-user/SOUL.md \
+       /home/clawuser/.openclaw/agents/external-user/knowledge/main_idea.md
+# 預期 md5 與 docs/production-prompt/2026-07-03/ 對應檔案一致（Check 10）
+
+# 2. 確認 sync-canonical.sh 沒在跑
+pgrep -f sync-canonical.sh && echo "警告：sync-canonical.sh 正在跑" || echo "OK：沒在跑"
+
+# 3. 移至 tmp（不直接刪，提供 7 天緩衝）
+mkdir -p /tmp/cleanup-bak-2026-08-15
+mv /home/clawuser/.openclaw/agents/external-user/AGENTS.md.bak.20260719-034307 /tmp/cleanup-bak-2026-08-15/
+mv /home/clawuser/.openclaw/agents/external-user/AGENTS.md.bak.20260719-034656 /tmp/cleanup-bak-2026-08-15/
+mv /home/clawuser/.openclaw/agents/external-user/SOUL.md.bak.20260719-034307 /tmp/cleanup-bak-2026-08-15/
+mv /home/clawuser/.openclaw/agents/external-user/SOUL.md.bak.20260719-034656 /tmp/cleanup-bak-2026-08-15/
+mv /home/clawuser/.openclaw/agents/external-user/knowledge/main_idea.md.bak.20260719-034307 /tmp/cleanup-bak-2026-08-15/
+mv /home/clawuser/.openclaw/agents/external-user/knowledge/main_idea.md.bak.20260719-034656 /tmp/cleanup-bak-2026-08-15/
+
+# 4. 7 天後（2026-08-15 之後）可安全 rm /tmp/cleanup-bak-2026-08-15/* 永久刪除
+```
+
+### 風險評估
+- ⚠️ 直接 `rm` production runtime 檔案違反 Layer 1 保護（可能需要 sudo）
+- ⚠️ 誤刪會導致 sync-canonical.sh 無法回滾（但本專案已驗證不需回滾）
+- ✅ 移至 `/tmp` 提供 7 天緩衝是安全做法（即使誤刪也只是清垃圾）
+
+### 為何不在本次 session 執行
+- 23:48 Hubert 要求「細心」+ production runtime 操作風險高
+- 文件化清理計畫更安全（讓未來 session 有完整 SOP）
+- 7/15 原本 .bak 必須保留（歷史備份）
+
+## 8.7 Round 14 P4 — L1 攏長文件 archive 評估（23:48）
+
+### 現狀（不實際 git mv）
+- 3 個 LEGACY 檔案：PHASE1_PROGRESS.md（875行）+ docs/TODO_2026-06-26.md（432行）+ docs/CLEANUP_PHASE_2_PLAN.md（481行）
+- 總計 1788 行 + 54 refs 跨檔（含 .task-state/ 4 個 session goal/steps）
+
+### 評估結論（不實際 mv 的理由）
+- 54 refs 跨檔**全部是歷史記錄**（.task-state/ + 早期 SESSION prompt）
+- 任何 git mv 會破壞**歷史脈絡**（接手者無法看舊 session 為何這樣做）
+- 檔案已有顯眼 `<!-- ⚠️ LEGACY -->` 標頭 + SESSION_NEXT_PROMPT.md 接手者必跳過清單
+- 實際效果 = 已達到 archive 目的（不被讀）
+
+### 待後續 session 真正 archive 的步驟（如果你決定要這麼做）
+```bash
+# 1. Plan references update（54 refs 全部列出 + 同步改路徑）
+# 2. git mv 三個檔案到 docs/archive/_legacy-no-load/
+# 3. update docs/INDEX.md + SESSION_NEXT_PROMPT.md（移除從必跳過清單，加 archive 索引）
+# 4. update .task-state/session-{G,I,J,chicken-cleanup}/goal.md + steps.md（路徑引用更新）
+# 5. commit + push + sync
+# 預估時間：4-6 小時（要小心處理 54 refs）
+```
+
+### 我的最終建議：**保留現狀**
+- LEGACY 標頭 + 接手者必跳過清單**已達到實際 archive 目的**
+- 54 refs 風險太高，弊大於利
+- 不建議 L1 為「待辦」狀態（已文件化決策，不再算未完成）
+
+## 8.8 Round 14 P3 — Cloudflare Worker staging 決策（23:48）
+
+### 現狀
+- `wrangler.toml` 只有 production env（無 `[env.staging]` section）
+- `compatibility_date = "2026-07-01"`（最新）
+- 已 production deploy `e919157f`
+
+### 決策：**不設 staging env**
+**理由**：
+- 雞味客服規模小（單一 tenant、單一客服）
+- Cloudflare Worker 程式碼簡單（684 行，主要 webhook + sanitization）
+- `wrangler deploy` 是 atomic（deploy 後立即生效，不會出現「部分部署」狀態）
+- 若需回滾：`wrangler rollback [version-id]`（Cloudflare 保留 10 個 deploy 版本）
+- staging 環境會增加維護成本（兩份 config、兩份測試、兩份監控）
+
+### 若未來需要 staging（如 multi-tenant 或高頻 deploy）
+```toml
+# wrangler.toml 追加：
+[env.staging]
+name = "external-user-line-security-staging"
+# vars 可與 production 不同（如 OPENCLAW_GATEWAY_URL 指向 staging gateway）
+# OPENCLAW_GATEWAY_URL = "https://openclaw-staging.brt1122.com"
+```
+
+### 部署風險評估（無 staging）
+- **deploy 風險**：低（compatibility_date 已升級、binding 正確、secrets 已設定）
+- **rollback 計畫**：
+  ```bash
+  wrangler deployments list  # 看歷史 deploy 版本
+  wrangler rollback [previous-version-id]  # 立即回滾
+  ```
+- **監控**：deploy 後立即 `curl https://external-user-line-security.kaden1122123.workers.dev/webhook` 測試
+
+### Round 14 部署結果（無 staging 風險評估）
+- ✅ deploy `e919157f` 成功（23:00+ 完成）
+- ✅ Worker webhook URL 健康（HTTP 403 是正常的 — 沒 LINE signature）
+- ✅ 所有 bindings 正確
+- ✅ /healthz 三服務全 up

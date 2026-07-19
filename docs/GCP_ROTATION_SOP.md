@@ -165,3 +165,84 @@ fi
 ---
 
 _本檔由 brtclaw 維護，每次 rotate 後更新 §3 歷史_
+
+---
+
+## 7. 自動化建議（Round 14 23:48 P2）
+
+### 7.1 提醒腳本（key_age_check.sh）
+
+```bash
+#!/bin/bash
+# scripts/key_age_check.sh
+# 每月 1 號檢查 GCP service account key age
+# 超過 60 天就 warn，超過 90 天就 critical（建議 rotate）
+
+KEY_FILE=/home/clawuser/.config/chicken/secrets/google-service-account.json
+WARN_DAYS=60
+CRITICAL_DAYS=90
+
+if [ ! -f "$KEY_FILE" ]; then
+  echo "❌ $KEY_FILE 不存在"
+  exit 1
+fi
+
+KEY_AGE_DAYS=$(( ($(date +%s) - $(stat -c %Y "$KEY_FILE")) / 86400 ))
+
+if [ "$KEY_AGE_DAYS" -ge "$CRITICAL_DAYS" ]; then
+  echo "🔴 CRITICAL: GCP service account key 已 ${KEY_AGE_DAYS} 天（>${CRITICAL_DAYS}天，建議立即 rotate）"
+  exit 2
+elif [ "$KEY_AGE_DAYS" -ge "$WARN_DAYS" ]; then
+  echo "🟡 WARN: GCP service account key 已 ${KEY_AGE_DAYS} 天（>${WARN_DAYS}天，建議 rotate）"
+  exit 1
+else
+  echo "🟢 OK: GCP service account key ${KEY_AGE_DAYS} 天（<${WARN_DAYS}天）"
+  exit 0
+fi
+```
+
+### 7.2 加進 OpenClaw cron（每月 1 號 09:00）
+
+```bash
+openclaw cron add \
+  --name "GCP service account key age check（每月提醒）" \
+  --schedule "cron 0 9 1 * *" \
+  --tz Asia/Taipei \
+  --agent-id agent:main:discord:channel:1512213273846485058 \
+  --payload agentTurn \
+  --message "bash /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service/scripts/key_age_check.sh" \
+  --delivery-mode announce \
+  --delivery-channel discord \
+  --delivery-to "channel:1528418702167638016"
+```
+
+### 7.3 自動 rotate 腳本（Round 14 future）
+
+**狀態**：未實作（需要 GCP 訪問權限 + 風險評估）
+
+**建議未來實作**：
+```bash
+#!/bin/bash
+# scripts/gcp-rotate-key.sh（Round 14 future）
+# 自動建立新 key + 替換 + 驗證 + 刪舊 key
+# 需要：gcloud CLI 安裝 + GCP 服務帳號 IAM 權限 + CLOUDFLARE_API_TOKEN 加密儲存
+```
+
+### 7.4 業界 best practices 整合（更新 §5）
+
+- **Google Cloud IAM Best Practices**：
+  - Service account key 90 天 rotate
+  - 最小權限原則（只用需要的 scope）
+  - 不要把 key commit 到 git
+- **OWASP Secrets Management**：
+  - 定期 rotate
+  - 使用 secret manager（如果預算允許）
+- **本專案現況**：
+  - Key 3 天前建立（仍 fresh）
+  - 用 XDG secrets 標準位置
+  - mode 600
+  - 定期提醒（建議加 cron）
+
+---
+
+_最後更新：2026-07-19 23:48（Round 14 P2 補自動化建議）_
