@@ -96,7 +96,10 @@ gcloud iam service-accounts keys delete \
 
 | 日期 | 舊 key 建立 | 新 key ID | 操作者 | 備註 |
 |------|------------|-----------|--------|------|
+| 2026-07-16 | 2026-07-16（3 天前）| `e4894458f811ee29b3c396f7dacac57dfcca684f` | Hubert | Hubert 在 2026-07-16 創建新 key（audit 誤判為「2+ 個月未 rotate」，修正見 §6）|
 | _（待 rotate）_ | 2026-05（建立）| _待建立_ | _待操作_ | 2+ 個月未 rotate（2026-07-19 audit 發現）|
+
+**注意**：Hubert 在 2026-07-16 已創建新 key 並在 Sheet 加編輯者權限，目前 `/home/clawuser/.config/chicken/secrets/google-service-account.json` 是 3 天前的 fresh key，**無需 rotate**。本檔§6 詳述 audit drift。
 
 ---
 
@@ -134,12 +137,30 @@ fi
 
 ## 6. 相關資源
 
-- `~/.config/chicken/secrets/google-service-account.json` — 目前 service account key（待 rotate）
+- `~/.config/chicken/secrets/google-service-account.json` — 目前 service account key（**3 天前建立，fresh，無需 rotate**）
 - `~/.config/chicken/secrets/gmail-credentials.json` — Gmail OAuth credentials（獨立於 service account）
 - `scripts/sheets-sync-cron.js` — P9 Sheets sync script
 - `scripts/setup-google-sheets.sh` — 初次 GCP setup script
 - GCP project：`chickencustomerservicesheets`
 - GCP Console：https://console.cloud.google.com/iam-admin/serviceaccounts
+
+---
+
+## 6.5 Audit Drift 說明（2026-07-19）
+
+**事件**：2026-07-19 03:36+ session audit 誤判 `google-service-account.json` 為「2+ 個月未 rotate」。
+
+**實際情況**：
+- Hubert 在 2026-07-16 已創建新 service account key（在 `chickencustomerservicesheets` project，`client_email: chicken-sheets-sync@chickencustomerservicesheets.iam.gserviceaccount.com`）
+- Hubert 在 Sheet 把 `chicken-sheets-sync@chickencustomerservicesheets.iam.gserviceaccount.com` 加為編輯者
+- 2026-07-19 08:14 驗證：原本 key 可訪問 Sheets（包含 600+ 筆訂單資料），**無需 rotate**
+
+**修法**：
+- §3 Rotate 歷史表更新（記錄 Hubert 2026-07-16 創建新 key）
+- §6 相關資源狀態改為「fresh，無需 rotate」
+- `docs/SYSTEM_AUDIT_2026-07-19.md` §6 待後續 session M2（**取消** GCP rotate 項目，改為「已驗證無需 rotate」）
+
+**教訓**：audit 時不要只看檔案 metadata（private_key_id），要實際驗證（curl Sheets API 確認能訪問）+ 詢問 user 最新狀態。
 
 ---
 

@@ -361,7 +361,7 @@ for f in scripts/dashboard-server.js scripts/api-server.js \
 | # | 項目 | 建議修法 | 工時 |
 |---|------|----------|------|
 | M1 | 測試 framework 不一致（5 node:test vs 48 自訂 assert）| 統一到 `node:test`（Node.js native，無外部依賴）| 4-6 hr |
-| M2 | GCP service account key rotate | 用 `gcloud iam service-accounts keys create` 建立新 key，rotate 雞味客服 secrets 內的檔案 | 0.5 hr |
+| ~~M2~~ | ~~GCP service account key rotate~~ | **2026-07-19 08:14 驗證：原本 key 為 2026-07-16 建立（3 天前），仍可訪問 Sheets + 600+ 筆訂單資料完整，無需 rotate**。詳見 `docs/GCP_ROTATION_SOP.md` §6.5 Audit Drift 說明 | ~~0.5 hr~~ |
 | M3 | `docs/handoff/sessions/SESSION_D3/D4/E/H8_PROMPT.md` 狀態欄未對應 commit | 對應到 commit hash，狀態更新為 ✅ | 0.5 hr |
 
 ### 6.3 L 級（低優先 · 待後續 session 決定）
