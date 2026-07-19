@@ -32,7 +32,7 @@ NAMED_CRED_FILE=/home/clawuser/.cloudflared/${NAMED_TUNNEL_NAME}.json
 NAMED_CONFIG_FILE=/home/clawuser/.cloudflared/config.yml
 NAMED_URL_FILE=/tmp/named-tunnel-url.txt
 NAMED_TUNNEL_LOG=/tmp/named-tunnel.log
-NAMED_DOMAIN=${NAMED_DOMAIN:-dashboard.brt1122.com}  # 由 Hubert 在 Cloudflare Dashboard 設定
+NAMED_DOMAIN=${NAMED_DOMAIN:-dashboard.brt1122.com}  # Cloudflare-managed 域名（Hubert 08:56 提供）
 
 # Quick Tunnel 設定（fallback）
 QUICK_URL_FILE=/tmp/quick-tunnel-url.txt
