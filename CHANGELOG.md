@@ -235,3 +235,26 @@ _本檔由 brtclaw 維護，每次新版本發布時更新_
 - Cloudflare Worker: deploy v `e919157f`（compatibility_date 2026-07-01）
 - Dashboard tunnel: `brt1122-System-09`（systemd 自動管理）
 - Dashboard URL: `https://dashboard.brt1122.com`（固定）
+
+### Round 14 Medium/Low 完成（2026-07-20 01:00，Hubert 23:38 指示）
+
+**`ed791d4` fix(system): Medium & Low 全部完成（Hubert 23:38 指示）**
+- P6: heartbeat-state.json 清理（移除 3+ 月過時 Moltbook 資料）
+- P7: `check-ignored-keywords-sync.js`（新）+ Check 11 加進 check-quality.sh
+  - 自動檢查 Worker src/index.ts DEFAULT_IGNORED_KEYWORDS ↔ chicken.yaml ignored_keywords
+  - 修 lint errors（arrow-parens + `\\Z` escape）
+  - 驗證：5 keywords 完全同步（無 drift）
+- P5: L2 production runtime `.bak` 清理計畫文件化（11 檔 SOP + 7 天緩衝）
+- P4: L1 archive 評估文件化（保留現狀決策）
+- P2: GCP rotate SOP §7 自動化建議（key_age_check.sh + cron）
+- P3: Cloudflare Worker staging 決策（不設 + 風險評估）
+- P1: 統一測試 framework → 半套轉換失敗 → 務實 revert → 留為下次 session
+
+**check-quality 改善**: 9 通過 / 3 警告 / 0 失敗（Round 10）→ **11 通過 / 2 警告 / 0 失敗**（現在）
+**每日總結**: `memory/2026-07-20.md`（8 KB）
+
+### 統計
+- 測試套數：53 個（48 自訂 assert + 5 node:test）
+- commits: Round 14 共 9 個（+ 1 個 external-user repo）
+- 狀態文件：8 個全部對齊（CHANGELOG / HANDOFF / PROJECT_INVENTORY / SYSTEM_AUDIT / SESSION_NEXT_PROMPT / HEARTBEAT / memory/2026-07-20.md / heartbeat-state.json）
+- check-quality: 12 checks（Round 14 加 Check 11）

@@ -554,3 +554,27 @@ bash scripts/manage-tunnel.sh start
 | 雞味客服 P9 Sheets 同步（測試中）| `6033de71` | `--to channel:1528418702167638016` ✅ |
 
 下次觸發（依各自排程）會正常 announce 到 channel `1528418702167638016`。
+
+
+---
+
+## 🆕 Round 14 + Medium/Low 完成（2026-07-20 01:00）
+
+**已 commit**: `ed791d4` (chicken) + `8f8d1f7` (external-user)
+**每日總結**: `memory/2026-07-20.md` (8 KB)
+**check-quality**: 11 通過 / 2 警告 / 0 失敗
+
+### Medium/Low 完成狀態
+- ✅ P6: heartbeat-state.json 清理
+- ✅ P7: check-ignored-keywords-sync.js + Check 11
+- ✅ P5: L2 .bak 清理計畫文件化
+- ✅ P4: L1 archive 評估文件化（保留現狀）
+- ✅ P2: GCP rotate SOP §7 自動化建議
+- ✅ P3: Cloudflare Worker staging 決策
+- ⚠️ P1: 統一測試 framework（下次 session 第一件事）
+
+### ⚠️ 下次 session 第一件事：P1 統一測試 framework
+- 嘗試半套轉換失敗（破壞 lint）已 revert
+- 完整 pattern 需先寫好（test() 包裝 + assert 在內）再批次轉換
+- 從最簡單的 5 個開始：date / timeUtils / state-trimmed-value / whitelist / address-handoff
+- 轉換完跑 `npm test` 驗證 + `npm run lint` 確認無 error

@@ -290,3 +290,17 @@ chmod 555 main/scripts/*.js main/src/  # restore
 - ✅ `dashboard-watchdog` cron 停用（Hubert 22:48）
 
 **狀態**：系統已穩定，下一步：Hubert 從 local 驗證 `curl https://dashboard.brt1122.com/healthz`
+
+## 9.6 Round 14 Medium/Low 完成狀態（2026-07-20 01:00）
+
+| Phase | 任務 | 結果 | 詳見 |
+|-------|------|------|------|
+| P6 | heartbeat-state.json 清理 | ✅ done | 移除 3+ 月過時 Moltbook 資料 |
+| P7 | check-ignored-keywords-sync.js + Check 11 | ✅ done | 自動檢查 keywords 同步 |
+| P5 | L2 .bak 清理計畫文件化 | ✅ done | 11 檔 SOP + 7 天緩衝 |
+| P4 | L1 archive 評估 | ✅ done | 保留現狀決策 |
+| P2 | GCP rotate SOP §7 自動化建議 | ✅ done | key_age_check.sh + cron |
+| P3 | Cloudflare Worker staging 決策 | ✅ done | 不設 + 風險評估 |
+| P1 | 統一測試 framework | ⚠️ deferred | 下次 session 第一件事（半套轉換 revert） |
+
+**下次 session 第一件事**：P1 統一測試 framework（完整 pattern 完整轉換）

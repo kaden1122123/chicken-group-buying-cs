@@ -612,3 +612,60 @@ name = "external-user-line-security-staging"
 - ✅ Worker webhook URL 健康（HTTP 403 是正常的 — 沒 LINE signature）
 - ✅ 所有 bindings 正確
 - ✅ /healthz 三服務全 up
+
+## 8.9 Round 14 Medium/Low 完成結果（2026-07-20 01:00）
+
+### P1-P7 完整狀態表
+
+| Phase | 狀態 | 詳見 |
+|-------|------|------|
+| P1 統一測試 framework | ⚠️ **deferred**（下次 session 第一件事）| §8.9.1 |
+| P2 GCP rotate SOP §7 | ✅ done | `docs/GCP_ROTATION_SOP.md` |
+| P3 Cloudflare Worker staging | ✅ done（決策）| §8.8 |
+| P4 L1 archive 評估 | ✅ done（決策）| §8.7 |
+| P5 L2 .bak 清理計畫 | ✅ done（文件化）| §8.6 |
+| P6 heartbeat-state.json 清理 | ✅ done | `~/.openclaw/workspace/memory/heartbeat-state.json` |
+| P7 check-ignored-keywords-sync | ✅ done | `scripts/check-ignored-keywords-sync.js` + Check 11 |
+
+### 8.9.1 P1 統一測試 framework 失敗教訓（留給下次 session）
+
+**嘗試**：用 Python script 批次轉換 5 個 sample 檔案（state-trimmed-value / date / timeUtils / whitelist / address-handoff）從自訂 `console.log ✓` + `assert` 風格到 `node:test` 風格
+
+**問題**：
+- Python script 太保守 — 只移除 custom runner 和 section headers
+- 沒把 `console.log('  ✓ description')` 包成 `test('description', () => { ... })`
+- 結果：加了 `const { test, describe } = require('node:test');` 但 `test/describe` 沒用 → ESLint `no-unused-vars` errors
+- `npm run lint --fix` 沒修（需手動 refactor）
+
+**最終決定**：務實 revert 5 個檔案（`git checkout HEAD --`），保留原 custom runner（仍能跑但不是 native node:test）
+
+**下次 session 正確做法**：
+```js
+// 完整 pattern — test() 包裝 + assert 在內
+const { test, describe } = require('node:test');
+const assert = require('node:assert');
+
+describe('Suite Name', () => {
+  test('description', () => {
+    assert.strictEqual(actual, expected);
+  });
+});
+```
+
+**預估時間**：4-6 小時（48 個檔案 × 5 分鐘/個 + 驗證）
+
+### 8.9.2 完整 Round 14 timeline
+
+| 時間 | 事件 | Commit |
+|------|------|--------|
+| 22:30 | Hubert 開始指示 Named Tunnel 轉移 | — |
+| 22:30 | Cloudflare Dashboard connector 已建立 brt1122-System-09 | — |
+| 22:55 | `fadb6ec` Named Tunnel 轉移 | `fadb6ec` |
+| 23:00 | `2cc89d1` + `c96214e` + `09ff830` 修整 | `2cc89d1` |
+| 23:00 | `38b1a27` scripts 改用 brt1122-System-09 + 4 cron 修 | `38b1a27` |
+| 23:01 | `8f8d1f7` external-user Worker audit v2 + deploy | `8f8d1f7` |
+| 23:12 | `a652fef` 狀態文件 drift 全面更新 | `a652fef` |
+| 23:14 | 4 個 cron delivery channel 統一修為 1528418702167638016 | — |
+| 23:38 | Hubert 指示「Medium & Low 全部做完」 | — |
+| 00:55 | `ed791d4` Medium & Low 全部完成 | `ed791d4` |
+| 01:00 | 狀態文件 drift 全面更新（HUBERT 01:01 指示）| 待 commit |
