@@ -341,6 +341,27 @@ cat docs/handoff/sessions/SESSION_NEXT_PROMPT.md
 
 ---
 
+## 🔑 Session 結束 SOP 觸發關鍵字
+
+當 user 訊息包含以下任一關鍵字時，**直接自動執行 `docs/SESSION_END_SOP.md`**（不需要確認）：
+
+```
+中文觸發：新 session / 新分頁 / 下次 / 下次見 / 明天見 / 晚點 / 待會 / 之後 /
+        關掉 / 結束 / close / end / goodbye / bye /
+        Session 結束 / 文件收尾 / drift 修整
+
+英文觸發：new session / next time / see you / goodbye / bye /
+        session end / doc cleanup / drift fix
+
+手動觸發：「跑 Session 結束 SOP」/「更新狀態文件」/「session close」
+```
+
+SOP 內容見 `docs/SESSION_END_SOP.md`（7 步 / 5 分鐘：check-quality → 更新 CHANGELOG/HANDOFF/PROJECT_INVENTORY/SESSION_NEXT_PROMPT → commit + push + sync）。
+
+**如果發現 drift**（文件與系統不一致）：立即執行 Session 結束 SOP 修正（drift 是高優先度）。
+
+---
+
 ## ⚠️ 接手者必跳過清單（LEGACY 區塊）
 
 **請勿 read 以下 3 個檔案**（已由 `CHANGELOG.md` 取代，讀這些只會浪費 session token）：
