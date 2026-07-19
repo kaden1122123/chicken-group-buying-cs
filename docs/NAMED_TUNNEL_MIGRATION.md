@@ -47,13 +47,19 @@
 ### 步驟 2：下載 credentials JSON
 
 ```
-10. 在 Tunnel 詳情頁面，找到「Use existing tunnel」段
-11. 找到「You can also download a JSON file for use with the command...」
-12. 點「Download」按鈕，下載 chicken-dashboard-xxxxx.json
+10. 在 Tunnel 詳情頁面，往下捲找到「Use existing tunnel」區段
+    ⚠️ 重要：不要用上面「Install and run a connector」區段的 token 指令（那是 remotely-managed tunnel 用的）
+11. 在「Use existing tunnel」區段，找到「You can also download a JSON file for use with the command...」文字
+12. 點旁邊的「Download」按鈕，下載 chicken-dashboard-xxxxx.json
 13. 重新命名為 chicken-dashboard.json
 14. 移到正確位置（在你本地 SSH 終端跑）：
     scp ~/Downloads/chicken-dashboard.json clawuser@100.114.197.9:/home/clawuser/.cloudflared/chicken-dashboard.json
     ssh clawuser@100.114.197.9 "chmod 600 /home/clawuser/.cloudflared/chicken-dashboard.json"
+
+**⚠️ 不能沿用舊 JSON**：每個 tunnel 有獨立 UUID 和 credentials。
+- 舊的 PID 1543 是 remotely-managed tunnel（用 --token 認證）
+- chicken-dashboard 是 locally-managed tunnel（用 JSON 認證）
+- 兩者完全不相容，必須重新下載
 ```
 
 ### 步驟 3：設定 Public Hostname
