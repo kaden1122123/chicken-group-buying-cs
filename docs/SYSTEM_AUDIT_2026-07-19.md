@@ -457,3 +457,28 @@ curl http://localhost:3000/healthz  # 應 dashboard:up, api_server:up, worker:up
 
 _本檔由 brtclaw 維護，每次大規模 audit 後更新_
 _下次 audit 建議時機：7 個待修整項目完成後、或下個 Phase 結束時_
+
+## 8.5 Round 14 收尾狀態（2026-07-19 23:25+）
+
+### 已完成
+- ✅ Dashboard tunnel 改用 `brt1122-System-09` named tunnel（PID 1543 從 5/02 跑 78+ 天）
+- ✅ Dashboard URL 固定為 `https://dashboard.brt1122.com`（不再變動）
+- ✅ `manage-tunnel.sh` 重寫（systemd 操作 5 個命令：start/stop/restart/status/info）
+- ✅ `dashboard-watchdog.sh` 重寫（監控 + 記錄，不再自動重啟）
+- ✅ 4 個 announce cron delivery channel 修復（從錯誤 ID 改為正確 `1528418702167638016`）
+- ✅ Cloudflare Worker 部署（version `e919157f`，Round 14 audit v2 + compatibility_date 升級）
+- ✅ `dashboard-watchdog` cron 停用（Hubert 22:48）
+
+### check-quality 最終狀態
+```
+11 通過 / 0 警告 / 0 失敗（雞味客服 repo）
+git: commit 38b1a27 pushed + synced
+/healthz: dashboard / api_server / worker 全 up
+```
+
+### 待後續 session 處理
+- **L1 攏長文件 archive**（54 refs 跨檔，待規劃 references update）
+- **L2 production runtime `.bak` 清理**
+- **統一測試 framework 到 `node:test`**（48 個自訂 assert）
+- **GCP service account key rotate**（3 天前建立，仍建議 90 天 rotate）
+- **Cloudflare Worker staging 測試**（已 production deploy，建議先 staging）

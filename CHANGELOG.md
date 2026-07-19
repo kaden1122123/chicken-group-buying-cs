@@ -202,3 +202,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 _本檔由 brtclaw 維護，每次新版本發布時更新_
+
+### Round 11（2026-07-19 08:00+，GCP drift 修正）
+- `a21353a docs(gcp): 修正 audit drift — 原本 key 3 天前建立無需 rotate` — 確認 Hubert 2026-07-16 創建新 service account key，原 audit 誤判「2+ 個月未 rotate」。修正 `docs/GCP_ROTATION_SOP.md §3 + §6.5` + 刪除 `google-service-account.json.new`
+
+### Round 12（2026-07-19 08:14+，L1 + watchdog 驗證）
+- `e1d4ddb docs(L1): 攏長檔案加 LEGACY 標頭 + 接手者必跳過清單` — L1 走 A+B+C 方案（最小改動，風險 0）
+- watchdog 自動驗證成功：2026-07-19 07:39 自動重啟 tunnel 4 秒內恢復
+
+### Round 13（2026-07-19 08:23+，Named Tunnel 規劃）
+- `36a8576 docs(session-end): 建立 Session 結束 SOP + 觸發關鍵字機制` — `docs/SESSION_END_SOP.md`（129 行 SOP）+ SESSION_NEXT_PROMPT.md 觸發關鍵字段
+
+### Round 14（2026-07-19 08:30+ → 22:30+，Named Tunnel 轉移）
+- `fadb6ec fix(tunnel): Dashboard tunnel 從 Quick Tunnel 升級 Named Tunnel（Round 14）` — manage-tunnel.sh + dashboard-watchdog.sh + NAMED_TUNNEL_MIGRATION.md
+- `2cc89d1 fix(tunnel): 更新 manage-tunnel.sh NAMED_DOMAIN 註解（brt1122.com 確認）`
+- `c96214e docs(tunnel): 修正 NAMED_TUNNEL_MIGRATION.md 步驟 2（精確 JSON 下載指引）`
+- `09ff830 docs(tunnel): 修正 NAMED_TUNNEL_MIGRATION — reuse brt1122-System-09（已 78 天穩定）`
+- `38b1a27 fix(tunnel+cron): dashboard tunnel 改用 brt1122-System-09 + 4 個 cron delivery 修復`
+
+### external-user/cloudflare-worker repo（Round 14）
+- `8f8d1f7 fix(worker): Cloudflare Worker audit v2 — compatibility_date + v4 部署指南` — wrangler.toml (compatibility_date 2024-01-01 → 2026-07-01, 移除 account_id) + DEPLOYMENT.md v2（6742 bytes）+ 實際 deploy `e919157f`
+
+### Round 14 重要發現
+- Cloudflare Dashboard connector 安裝建立了 tunnel `brt1122-System-09`（UUID `256e22ec-d01f-4f78-83f6-c929889173eb`），從 5/02 穩定跑 78+ 天（PID 1543 systemd service）
+- **不需要新建 chicken-dashboard tunnel**，直接 reuse 已穩定的 `brt1122-System-09`
+- Dashboard Public Hostname 已設定：`dashboard.brt1122.com` → `http://localhost:3000`
+- 4 個 announce cron delivery channel 從 `discord` 改為 `discord:channel:1528418702167638016`（23:14 修）
+- `dashboard-watchdog` cron 已停用（22:48 Hubert，改用 systemd 自動管理）
+
+### Round 14 系統狀態（最終）
+- `/healthz`: dashboard / api_server / worker 全 up
+- Cloudflare Worker: deploy v `e919157f`（compatibility_date 2026-07-01）
+- Dashboard tunnel: `brt1122-System-09`（systemd 自動管理）
+- Dashboard URL: `https://dashboard.brt1122.com`（固定）

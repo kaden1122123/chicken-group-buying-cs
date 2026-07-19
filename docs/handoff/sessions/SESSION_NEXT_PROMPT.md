@@ -506,3 +506,51 @@ nohup env DASHBOARD_USERNAME=admin \
   node scripts/dashboard-server.js > /tmp/dashboard-server.log 2>&1 &
 disown
 ```
+
+---
+
+## Dashboard Tunnel SOP（Round 14 22:50+ 修整）
+
+Dashboard tunnel 使用 `brt1122-System-09` named tunnel（systemd service 自動管理，PID 1543 從 5/02 穩定跑 78+ 天）。
+
+```bash
+# 查看 tunnel 狀態
+bash scripts/manage-tunnel.sh status
+
+# 查看完整 tunnel 資訊（包含 Dashboard hostname）
+bash scripts/manage-tunnel.sh info
+
+# 如 tunnel 異常，手動重啟 systemd service
+bash scripts/manage-tunnel.sh restart
+# 或：sudo systemctl restart cloudflared.service
+
+# 停止 tunnel
+bash scripts/manage-tunnel.sh stop
+
+# 啟動 tunnel
+bash scripts/manage-tunnel.sh start
+```
+
+**重要**：
+- Dashboard tunnel 不再用 Quick Tunnel（無 zombie）
+- `dashboard-watchdog` cron 已停用（22:48 Hubert）
+- 監控改為被動模式（`scripts/dashboard-watchdog.sh` 只記錄 + 檢查狀態，不重啟）
+- Dashboard URL: `https://dashboard.brt1122.com`（固定，不再變動）
+- 詳細 SOP：`docs/NAMED_TUNNEL_MIGRATION.md`
+
+---
+
+## 🔑 重要 Cron 狀態（22:48 + 23:14 修整）
+
+### 已停用
+- `雞味客服 dashboard watchdog` cron（`36d2ca19`）— 22:48 Hubert 停用（改用 systemd 自動管理）
+
+### 已修復（22:48 → 23:14 兩次修 delivery channel）
+| Cron | Job ID | 修法 |
+|------|--------|------|
+| 雞味客服 cloudflared leaked cleanup | `955d61c6` | `--to channel:1528418702167638016` ✅ |
+| 雞味客服日報彙總（測試中）| `796afb16` | `--to channel:1528418702167638016` ✅ |
+| 雞味客服週報彙總（測試中）| `dc5afd05` | `--to channel:1528418702167638016` ✅ |
+| 雞味客服 P9 Sheets 同步（測試中）| `6033de71` | `--to channel:1528418702167638016` ✅ |
+
+下次觸發（依各自排程）會正常 announce 到 channel `1528418702167638016`。

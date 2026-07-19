@@ -277,3 +277,16 @@ chmod 555 main/scripts/*.js main/src/  # restore
 - 統一測試 framework 到 `node:test`（48 個自訂 assert 風格）
 - GCP service account key 實 rotate
 - Cloudflare Worker DEPLOYMENT.md 更新（5/31 後沒更新）
+
+## 9.5 Round 14 修整狀態（2026-07-19 23:25+）
+
+**完成項目**：
+- ✅ Dashboard tunnel 改用 `brt1122-System-09` named tunnel（systemd 自動管理）
+- ✅ Dashboard URL 固定為 `https://dashboard.brt1122.com`
+- ✅ `scripts/manage-tunnel.sh` 重寫（systemd 操作）
+- ✅ `scripts/dashboard-watchdog.sh` 重寫（監控 + 記錄模式，不再重啟）
+- ✅ 4 個 announce cron delivery channel 修復（`discord:channel:1528418702167638016`）
+- ✅ Cloudflare Worker 部署（version `e919157f`，compatibility_date 2026-07-01）
+- ✅ `dashboard-watchdog` cron 停用（Hubert 22:48）
+
+**狀態**：系統已穩定，下一步：Hubert 從 local 驗證 `curl https://dashboard.brt1122.com/healthz`
