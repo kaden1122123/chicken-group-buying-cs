@@ -156,7 +156,7 @@
 ### Phase C 文件補齊（同 session）
 
 - ✅ **AGENTS.md drift 評估**：runtime `df9c63b7` ≠ docs `f4542f4c` — **但 Check 11 透過 `tail -n +15` 跳過 prod 故意多加的 14 行 CANONICAL 標頭**,by design 非 bug
-- ✅ **HANDOFF.md §2 修補**：加上 09:59 的 `967d475` HANDOFF.md 明確更新 commit + 本次 `98f1c0b` commit
+- ✅ **HANDOFF.md §2 修補**：加上 09:59 的 `967d475` HANDOFF.md 明確更新 commit + 本次 `a65c654` commit
 - ✅ **memory/2026-07-20.md 補本 session 工作段**（系統級 · 10.6KB → 14.5KB,+3.9KB）
 - ⏸ **Dev repo 5 個 `config.yaml.bak.2026*` 殘留**：untracked,留為下次低優先
 
@@ -192,7 +192,7 @@
 - [x] ✅ **dashboard-watchdog cron 停用**（systemd 自動接管）
 - [x] ✅ **check-quality 12 checks**（從 10 → 12，新增 Check 10 canonical drift + Check 11 Ignored Keywords）
 - [x] ✅ **Medium/Low 7 個 phase**（P1-P7 全部文件化或完成）
-- [x] ✅ **Check 1 npm test stale-state bug fix**（cleanup hardening + Phase C 補文件,commit `98f1c0b`）
+- [x] ✅ **Check 1 npm test stale-state bug fix**（cleanup hardening + Phase C 補文件,commit `a65c654`）
 
 ---
 
@@ -225,7 +225,7 @@
 | 2026-07-19 03:36+ | Round 10 | H/L 修整 + 重要修正（manage-tunnel.sh / Check 10 / sync-canonical.sh / GCP SOP / SESSION_H8） | `e280f90` |
 | 2026-07-19 22:30 → 20 01:00+ | **Round 14** | Named Tunnel 轉移 + 4 cron delivery 修復 + Cloudflare Worker 部署 + Medium/Low 全部完成 | `fadb6ec` → `b0513a6` |
 | 2026-07-20 09:55 | **本檔 2.0 更新** | 4 份必讀文檔明確更新（HANDOFF §1-§5 + 其他 3 份） | `967d475` |
-| 2026-07-20 10:08 → 10:35+ | **Check 1 fix + Phase C** | Phase A drift 全檢 → 誤判 csvWriter bug → 正確定位 stale-state → 修 cleanup hardening + HANDOFF §4/§5/§7 補 + memory/2026-07-20.md append | `98f1c0b` |
+| 2026-07-20 10:08 → 10:35+ | **Check 1 fix + Phase C** | Phase A drift 全檢 → 誤判 csvWriter bug → 正確定位 stale-state → 修 cleanup hardening + HANDOFF §4/§5/§7 補 + memory/2026-07-20.md append | `a65c654` |
 
 ---
 
