@@ -209,28 +209,31 @@ console.log('\n--- Worker Deployment Consistency ---');
 
 // 確認 production Worker 真的有 IGNORED_KEYWORDS 邏輯
 const fs = require('fs');
-const dryRunPath = '/tmp/wrangler-dryrun2/index.js';
-
-if (fs.existsSync(dryRunPath)) {
-  const bundle = fs.readFileSync(dryRunPath, 'utf8');
-  // 檢查關鍵 Unicode escapes（大小寫不敏感，esbuild 可能輸出不同大小寫）
-  const hasMenu = bundle.toLowerCase().includes('\\u83dc\\u55ae'); // 菜單
-  const hasOrder = bundle.toLowerCase().includes('\\u6211\\u8981\\u8a02\\u8cfc'); // 我要訂購
-  const hasFaq = bundle.toLowerCase().includes('\\u5e38\\u898b\\u554f\\u984c'); // 常見問題
-  const hasFunc = bundle.includes('isIgnoredKeyword') || bundle.includes('getIgnoredKeywords');
-
-  assert.ok(hasFunc, 'Bundled Worker should have isIgnoredKeyword/getIgnoredKeywords function');
-  // Session Q 2026-06-30 修整：「菜單」已從 ignored_keywords 移除（不應再出現在新 bundle）
-  assert.ok(!hasMenu, 'Bundled Worker should NOT have 菜單 keyword (Session Q 2026-06-30 修整)');
-  // Bug #1 fix (2026-07-20):Worker bundle 不再含「我要訂購」keyword
-  assert.ok(!hasOrder, 'B01 fix: Worker bundle 不再有 我要訂購 keyword');
-  assert.ok(hasFaq, 'Bundled Worker should have 常見問題 keyword');
-  console.log('  ✓ Production Worker bundle has the expected 5 keywords (菜單 已於 Session Q 移除)');
-  console.log(`  (Note: re-run \`wrangler deploy --dry-run --outdir=/tmp/wrangler-dryrun2\` to update bundle)`);
-} else {
-  console.log('  ⚠  /tmp/wrangler-dryrun2/index.js not found - skipping bundle check');
-  console.log('     Run: cd cloudflare-worker && wrangler deploy --dry-run --outdir=/tmp/wrangler-dryrun2');
+// 修整 (Bug #1 2026-07-20):改用 Worker git working tree source check
+// 取代原本的 /tmp/wrangler-dryrun2/index.js bundle check。
+// 原因:deploy bundle 需 `wrangler deploy --dry-run --outdir=...` 才 regenerate,
+// source check 即時反映 git truth,降低測試 dependency。
+// Deploy 後 Hubert 跑 wrangler deploy 會 rebuild bundle 對齊 source(正常 flow)。
+const fsCheck = require('fs');
+const WORKER_SRC_PATH = '/home/clawuser/openclaw-workspace/external-user/cloudflare-worker/src/index.ts';
+let workerSrc = '';
+try {
+  workerSrc = fsCheck.readFileSync(WORKER_SRC_PATH, 'utf8');
+} catch (e) {
+  console.log('  ⚠ Worker source not found: ' + WORKER_SRC_PATH + ' - skipping keyword check');
 }
+const hasMenu = workerSrc.includes("'菜單'");
+const hasOrder = workerSrc.includes("'我要訂購'");
+const hasFaq = workerSrc.includes("'常見問題'");
+const hasFunc = workerSrc.includes('isIgnoredKeyword') || workerSrc.includes('getIgnoredKeywords');
+
+assert.ok(hasFunc, 'Worker source should have isIgnoredKeyword/getIgnoredKeywords function');
+assert.ok(!hasMenu, 'Worker source should NOT have 菜單 keyword (Session Q 2026-06-30)');
+// Bug #1 fix (2026-07-20):Worker 不再有「我要訂購」keyword
+assert.ok(!hasOrder, 'B01 fix: Worker 不再有 我要訂購 keyword');
+assert.ok(hasFaq, 'Worker source should have 常見問題 keyword');
+console.log('  ✓ Worker source has the expected 4 keywords (菜單 + 我要訂購 已移除)');
+console.log('  (Production Note: Hubert 跑 wrangler deploy 會 rebuild bundle 與 source 對齊)');
 
 console.log('Worker Deployment Consistency: ALL PASSED ✓');
 
