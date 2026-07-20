@@ -659,6 +659,48 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // P0 #2: POST /api/orders/:orderId/clear-handoff — 解除 HUMAN_HANDOFF state
+  // 流程:從 handoffOrderIndex 找 userId → clearState(userId) → 更新 CSV order_status 為 confirmed (Hubert 已手動處理)
+  const clearHandoffMatch = url.match(/^\/api\/orders\/([^/]+)\/clear-handoff$/);
+  if (clearHandoffMatch && method === 'POST') {
+    const orderId = decodeURIComponent(clearHandoffMatch[1]);
+    try {
+      const { getUserIdByHandoffOrder, clearState, clearHandoffOrderIndex } = require('../src/states/stateMachine');
+      const allOrders = readAllOrders();
+      const order = allOrders.find((o) => o.order_id === orderId);
+      if (!order) {
+        sendJson(res, 404, { success: false, error: '找不到訂單', order_id: orderId });
+        return;
+      }
+      // 從 reverse index 找 userId,清掉該 user 的 state machine state
+      const userId = getUserIdByHandoffOrder(orderId);
+      if (userId) {
+        clearState(userId);
+        clearHandoffOrderIndex(orderId);
+      }
+      // 更新 CSV:order_status 從 pending_handoff 變 confirmed,加 staff_notes 紀錄
+      const updates = {
+        order_status: 'confirmed',
+        delivery_date: order._file_date,
+      };
+      updates.staff_notes = (order.staff_notes || '') + '; [Hubert 解除轉真人]';
+      const success = updateOrder(orderId, updates);
+      if (success) {
+        sendJson(res, 200, {
+          success: true,
+          message: '已解除轉真人,Hubert 已處理完成',
+          order_id: orderId,
+          userId: userId || null,
+        });
+      } else {
+        sendJson(res, 500, { success: false, error: '更新 CSV 失敗', order_id: orderId });
+      }
+    } catch (e) {
+      sendJson(res, 500, { success: false, error: `解除轉真人失敗: ${e.message}` });
+    }
+    return;
+  }
+
   // P2：POST /api/orders/:orderId/approve — Hubert 手動核准訂單（從 pending_handoff → confirmed）
   const approveMatch = url.match(/^\/api\/orders\/([^/]+)\/approve$/);
   if (approveMatch && method === 'POST') {

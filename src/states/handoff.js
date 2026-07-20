@@ -1,7 +1,7 @@
 'use strict';
 
 const logger = require('../utils/logger');
-const { STATES } = require('./stateMachine');
+const { STATES, setHandoffOrderIndex } = require('./stateMachine');
 const { textReply } = require('../utils/lineReply');
 const { writeOrderWithRetry } = require('../order/csvWriter');
 const { generatePendingOrderId } = require('../order/orderIdGenerator');
@@ -56,6 +56,9 @@ function shouldDebouncePush(userId, userMessage) {
 async function handleHandoff(userId, userMessage, orderData = {}, userProfile = {}, options = {}) {
   const handoffType = (await shouldTransfer(userMessage)).type || 'general_inquiry';
   const orderId = generatePendingOrderId();
+
+  // P0 #2 (Bug B11): 註冊 orderId ↔ userId 反向索引,dashboard 解除轉真人時可從 orderId 取回 userId
+  setHandoffOrderIndex(userId, orderId);
 
   // 決策 6：reason 寫入 staff_notes，Hubert 看通知知道為什麼轉真人
   // 與 src/rules/addressRule.js 的 reason 命名對齊（out_of_range / needs_confirmation）

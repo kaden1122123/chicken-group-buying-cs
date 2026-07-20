@@ -175,6 +175,23 @@ function buildCancelResult() {
   };
 }
 
+// P0 #2 (Bug B11): orderId ↔ userId 反向索引
+// 讓 dashboard 透過 orderId 找到對應 userId,clearState(userId) 解除 HUMAN_HANDOFF
+// 恢復到 IDLE（AI 可重新接客）。Hubert 處理完手動點 dashboard 「↩ 解除」按鈕即可。
+const handoffOrderIndex = new Map(); // orderId → userId
+
+function setHandoffOrderIndex(userId, orderId) {
+  if (userId && orderId) handoffOrderIndex.set(orderId, userId);
+}
+
+function getUserIdByHandoffOrder(orderId) {
+  return handoffOrderIndex.get(orderId) || null;
+}
+
+function clearHandoffOrderIndex(orderId) {
+  handoffOrderIndex.delete(orderId);
+}
+
 module.exports = {
   STATES,
   getState,
@@ -184,4 +201,8 @@ module.exports = {
   setStateDirectly,
   buildCancelResult,
   CANCEL_REPLY_TEXT,
+  // P0 #2
+  setHandoffOrderIndex,
+  getUserIdByHandoffOrder,
+  clearHandoffOrderIndex,
 };
