@@ -1,4 +1,4 @@
-order_id,created_at,user_line_name,user_phone,address,community,delivery_date,time_slot,chicken_items,side_items,extra_items,chicken_count,side_count,total_boxes,subtotal,delivery_fee,total_amount,payment_method,payment_status,order_status,staff_notes,customer_notes,customer_tags,handoff_type,handoff_logged_at,handoff_resolved_at,source,intent_confirmed
+order_id,created_at,user_line_name,user_phone,address,community,delivery_date,time_slot,chicken_items,side_items,extra_items,chicken_count,side_count,total_boxes,subtotal,delivery_fee,total_amount,payment_method,payment_status,order_status,staff_notes,customer_notes,customer_tags,handoff_type,handoff_logged_at,handoff_resolved_at,source,intent_confirmed,receipts_path,likely_paid,detected_amount,detected_account_last5,vision_confidence,vision_source,analyzed_at
 PENDING-1781333338789,2026-06-13T06:48:58.789Z,Unknown,,,,,,{},{},{},,,,,,,,pending,pending_handoff,,我想訂雞肉,,general_inquiry,2026-06-13T06:48:58.789Z,,line,
 PENDING-1781333379344,2026-06-13T06:49:39.344Z,Unknown,,,,,,{},{},{},,,,,,,,pending,pending_handoff,,我想訂雞肉,,general_inquiry,2026-06-13T06:49:39.344Z,,line,
 PENDING-1781333414875,2026-06-13T06:50:14.875Z,Unknown,,,,,,{},{},{},,,,,,,,pending,pending_handoff,,我想訂雞肉,,general_inquiry,2026-06-13T06:50:14.875Z,,line,
@@ -19,4 +19,4 @@ PENDING-1781333818233,2026-06-13T06:56:58.233Z,Unknown,,,,,,{},{},{},,,,,,,,pend
 PENDING-1781333829248,2026-06-13T06:57:09.248Z,Unknown,,,,,,{},{},{},,,,,,,,pending,pending_handoff,,我想訂雞�,,general_inquiry,2026-06-13T06:57:09.249Z,,line,
 PENDING-1781333875038,2026-06-13T06:57:55.038Z,Unknown,,,,,,{},{},{},,,,,,,,pending,pending_handoff,,我想訂雞肉,,general_inquiry,2026-06-13T06:57:55.038Z,,line,
 PENDING-1781333896341,2026-06-13T06:58:16.341Z,Unknown,,,,,,{},{},{},,,,,,,,pending,pending_handoff,,我想訂雞肉,,general_inquiry,2026-06-13T06:58:16.342Z,,line,
-PENDING-1781333917366,2026-06-13T06:58:37.366Z,Unknown,,,,,,{},{},{},,,,,,,,pending,pending_handoff,,我想訂雞肉,,general_inquiry,2026-06-13T06:58:37.366Z,,line,
+PENDING-1781333917366,2026-06-13T06:58:37.366Z,Unknown,,,,2026-06-13,,{},{},{},,,,,,,,confirmed,confirmed,,我想訂雞肉,,general_inquiry,2026-06-13T06:58:37.366Z,,line,
