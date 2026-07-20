@@ -41,7 +41,10 @@ assert.ok(Array.isArray(ignoredKeywords), 'ignoredKeywords should be array');
 // Session Q 修整（2026-06-30）：「菜單」從 ignored_keywords 移除，改由 LLM 依新版 main_idea.md 第十一節傳送 3 張菜單圖片。
 assert.ok(!ignoredKeywords.includes('菜單'), '菜單 應已從 ignored_keywords 移除（2026-06-30 Session Q 修整）');
 assert.ok(ignoredKeywords.includes('常見問題'), 'Should include 常見問題');
-assert.ok(ignoredKeywords.includes('我要訂購'), 'Should include 我要訂購');
+// Bug #1 fix (2026-07-20):「我要訂購」從 ignored_keywords 移除,
+// 改由 src/states/idle.js 的 ORDER_INTENT_PATTERNS 接管。
+// 客戶輸入「我要訂購」現在會走 IDLE → handleIdle → buildOrderFormatReply(),不再被攔截。
+assert.ok(!ignoredKeywords.includes('我要訂購'), 'Bug #1 fix: 我要訂購 不應再在 ignored_keywords');
 assert.ok(ignoredKeywords.includes('黑羽放山雞介紹'), 'Should include 黑羽放山雞介紹');
 assert.ok(ignoredKeywords.includes('蔥鹽醬介紹'), 'Should include 蔥鹽醬介紹');
 assert.ok(ignoredKeywords.includes('吃法介紹'), 'Should include 吃法介紹');
@@ -61,7 +64,9 @@ function testIgnored(input, expected, description) {
 // 100% 完全比對 — 命中
 // 「菜單」已從 ignored_keywords 移除（Session Q 2026-06-30），不再作為 exact match 測試案例。
 testIgnored('常見問題', true, 'exact match');
-testIgnored('我要訂購', true, 'exact match');
+// Bug #1 fix (2026-07-20):客戶輸入「我要訂購」不再被 isIgnoredKeyword() 攔截,
+// 改由 idle.js ORDER_INTENT_PATTERNS 識別為訂單意圖。
+testIgnored('我要訂購', false, 'B01 fix: 我要訂購 不再被攔截');
 testIgnored('黑羽放山雞介紹', true, 'exact match');
 
 // 帶前後空白 → 應該 trim 後命中

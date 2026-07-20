@@ -79,7 +79,9 @@ function testIgnoredIntercept(input, expected, description) {
 
 // Session Q 2026-06-30 修整：「菜單」已從 ignored_keywords 移除，改由 LLM 接手傳送 3 張圖片。
 testIgnoredIntercept('常見問題', true, 'Rich menu 常見問題');
-testIgnoredIntercept('我要訂購', true, 'Rich menu 我要訂購');
+// Bug #1 fix (2026-07-20):Worker 不再攔截「我要訂購」
+// 改由 chicken 端的 src/states/idle.js ORDER_INTENT_PATTERNS 接管。
+testIgnoredIntercept('我要訂購', false, 'B01 fix: 我要訂購 不再被 Worker 攔截');
 testIgnoredIntercept('黑羽放山雞介紹', true, 'Keyword reply 黑羽放山雞介紹');
 testIgnoredIntercept('蔥鹽醬介紹', true, 'Keyword reply 蔥鹽醬介紹');
 testIgnoredIntercept('吃法介紹', true, 'Keyword reply 吃法介紹');
@@ -220,7 +222,8 @@ if (fs.existsSync(dryRunPath)) {
   assert.ok(hasFunc, 'Bundled Worker should have isIgnoredKeyword/getIgnoredKeywords function');
   // Session Q 2026-06-30 修整：「菜單」已從 ignored_keywords 移除（不應再出現在新 bundle）
   assert.ok(!hasMenu, 'Bundled Worker should NOT have 菜單 keyword (Session Q 2026-06-30 修整)');
-  assert.ok(hasOrder, 'Bundled Worker should have 我要訂購 keyword');
+  // Bug #1 fix (2026-07-20):Worker bundle 不再含「我要訂購」keyword
+  assert.ok(!hasOrder, 'B01 fix: Worker bundle 不再有 我要訂購 keyword');
   assert.ok(hasFaq, 'Bundled Worker should have 常見問題 keyword');
   console.log('  ✓ Production Worker bundle has the expected 5 keywords (菜單 已於 Session Q 移除)');
   console.log(`  (Note: re-run \`wrangler deploy --dry-run --outdir=/tmp/wrangler-dryrun2\` to update bundle)`);
