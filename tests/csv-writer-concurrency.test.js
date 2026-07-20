@@ -59,7 +59,18 @@ console.log('\n--- 跨 process 併發寫入 ---');
 // 注意：csvWriter.js 預設用 TENANT_ID 環境變數指向 data/orders/<tenant>/
 //       loader.js 預期 knowledge/tenants/<tenant>/ 存在
 //       兩者都是 csvWriter.js module load 時檢查，所以必須在 spawn worker 前建立
-console.log('\n--- 準備測試 tenant 目錄 ---');
+//
+// Stale state 清理（2026-07-20 fix）：
+// - proper-lockfile lock 在 TEST_DIR sibling 創建 _csv_concurrency_test.lock/ (DIR)
+// - 前次 run 失敗/中斷 → lock DIR 殘留 + TEST_DIR 殘留 → 下次 setup 只清 TEST_DIR 不清 .lock
+// - 結果下次 run child busy-wait 5000ms 等 stale lock，然後 file 累積寫兩輪 = 122 rows
+// - 解法：setup 先清掉 stale .lock DIR（若存在）+ TEST_DIR（若存在）
+console.log('\n--- 準備測試 tenant 目錄（含 stale state 清理） ---');
+const LOCK_DIR_SIBLING = path.join(ORDERS_ROOT, TEST_TENANT + '.lock');
+if (fs.existsSync(LOCK_DIR_SIBLING)) {
+  fs.rmSync(LOCK_DIR_SIBLING, { recursive: true, force: true });
+  console.log('  ✓ 清理 stale lock dir: ' + LOCK_DIR_SIBLING);
+}
 if (fs.existsSync(TEST_DIR)) {
   fs.rmSync(TEST_DIR, { recursive: true, force: true });
 }
@@ -193,13 +204,23 @@ console.log('  ✓ 所有 ' + expectedOrderIds.length + ' 個 order_id 都唯一
 // ─── 4. 清理測試資料 ───
 console.log('\n--- 清理測試資料 ---');
 // 只刪除 _csv_concurrency_test tenant（不碰 chicken tenant 任何檔案）
+//
+// Stale state 完整清理（2026-07-20 fix）：
+// - TEST_DIR 必清（測試 dir）
+// - TEST_KB_DIR 必清（KB dir）
+// - LOCK_DIR_SIBLING 必清（proper-lockfile 的 lock DIR，前次 crash 會殘留）
+// - workerScript 必清（測試 spawn 的 dynamic script）
 fs.rmSync(TEST_DIR, { recursive: true, force: true });
 fs.rmSync(TEST_KB_DIR, { recursive: true, force: true });
+if (fs.existsSync(LOCK_DIR_SIBLING)) {
+  fs.rmSync(LOCK_DIR_SIBLING, { recursive: true, force: true });
+}
 fs.unlinkSync(workerScript);
 assert.ok(!fs.existsSync(TEST_DIR), '_csv_concurrency_test 訂單目錄應已刪除');
 assert.ok(!fs.existsSync(TEST_KB_DIR), '_csv_concurrency_test KB 目錄應已刪除');
+assert.ok(!fs.existsSync(LOCK_DIR_SIBLING), 'lock dir 應已刪除');
 assert.ok(!fs.existsSync(workerScript), 'worker script 應已刪除');
-console.log('  ✓ _csv_concurrency_test tenant 與 worker script 已清理');
+console.log('  ✓ _csv_concurrency_test tenant + lock dir + worker script 已清理');
 
 console.log('\n========================================');
 console.log('ALL CSV WRITER CONCURRENCY TESTS PASSED ✓');

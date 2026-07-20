@@ -102,7 +102,7 @@
 
 ---
 
-## 4. 此 Session 完成（2026-07-19 22:30 → 2026-07-20 09:55 — Round 14 + Medium/Low）
+## 4. 此 Session 完成（2026-07-19 22:30 → 2026-07-20 10:35+ — Round 14 + Medium/Low + Check 1 fix）
 
 ### Round 14 Named Tunnel 轉移
 
@@ -131,11 +131,38 @@
 - ✅ `HANDOFF.md`（本檔）：§1-§5 全部更新到 Round 14 + Medium/Low 完整狀態
 - ✅ `docs/handoff/sessions/SESSION_NEXT_PROMPT.md`：加 Dashboard Tunnel SOP + Round 14 + Medium/Low 完成段
 - ✅ `docs/SYSTEM_AUDIT_2026-07-19.md`：加 §8.5-§8.9（Round 14 收尾 + P5/P4/P3/P2/P7 + Medium/Low 全部完成）
-- ✅ `memory/2026-07-20.md`（system-level）：8 KB 今日份完整總結
+- ✅ `memory/2026-07-20.md`（system-level）：8 KB Round 14 紀錄
+
+### Check 1 Stale-State Bug Fix（Hubert 10:08 指示 — 2026-07-20 10:08 → 10:35）
+
+- **症狀**：`check-quality Check 1/10 npm test` 失敗 → `csv-writer-concurrency.test.js:150` 預期 61 行 實際 122 行（122 = 61 × 2）
+- **誤判初向**：以為 `src/order/csvWriter.js` proper-lockfile 鎖失效,production 有重複寫入風險
+- **真正 root cause**：`tests/csv-writer-concurrency.test.js` 的 cleanup 不完整 — 只 `rmSync` 資料目錄 `data/orders/_csv_concurrency_test/`,**沒刪** sibling `_csv_concurrency_test.lock/`（proper-lockfile 的 lock 鎖目錄）
+- **fail 時間軸**：
+  1. 前次 run crash → `data/orders/_csv_concurrency_test.lock/` 殘留 + `data/orders/_csv_concurrency_test/` 殘留
+  2. 下次 setup rmSync 資料目錄 → 重建空目錄 → `isNewFile=true` → 第一個 writeOrder 又寫 header
+  3. lock 殘留 → acquireLockSync busy-wait 5000ms 等 stale lock → 期間 child 之間順序亂掉,前次 60 筆被當成「上次跑殘留」append 兩次
+  4. 結果 CSV 122 行 = 當次 61 + 前次 61
+- **驗證（按此序）**：
+  1. 單獨 `node tests/csv-writer-concurrency.test.js`（clean env）→ **PASS 61 行** exit 0
+  2. 注入 stale state（手動 mkdir `_csv_concurrency_test.lock/` + 寫 60-row CSV）+ 跑全套 npm test → **PASS**（cleanup hardening 起作用）
+  3. 3 次連跑 csv-writer-concurrency → **全 PASS**
+- **修法**：`tests/csv-writer-concurrency.test.js` 兩處加固
+  - **Setup**：新增 `LOCK_DIR_SIBLING = data/orders/_csv_concurrency_test.lock` 預先清除 stale state（在 rmSync TEST_DIR 之前）
+  - **Cleanup**：新增清 `LOCK_DIR_SIBLING`（防止下次 run 受影響）
+- **生產影響評估**：**0** — csvWriter.js 本來就 OK,沒有真實 race condition 風險
+- **設計決策保留**：`spawnSync` sequential 設計 + 「concurrency」測試名 — 從 main_idea.md 註解看,此測試守護「同 process 多次 writeOrder 鎖正確釋放」,**不是真測跨 process 並發**
+
+### Phase C 文件補齊（同 session）
+
+- ✅ **AGENTS.md drift 評估**：runtime `df9c63b7` ≠ docs `f4542f4c` — **但 Check 11 透過 `tail -n +15` 跳過 prod 故意多加的 14 行 CANONICAL 標頭**,by design 非 bug
+- ✅ **HANDOFF.md §2 修補**：加上 09:59 的 `967d475` HANDOFF.md 明確更新 commit + 本次 `98f1c0b` commit
+- ✅ **memory/2026-07-20.md 補本 session 工作段**（系統級 · 10.6KB → 14.5KB,+3.9KB）
+- ⏸ **Dev repo 5 個 `config.yaml.bak.2026*` 殘留**：untracked,留為下次低優先
 
 ---
 
-## 5. ⚠️ 待修整項目（依緊急度排序 · 2026-07-20 09:55）
+## 5. ⚠️ 待修整項目（依緊急度排序 · 2026-07-20 10:35+）
 
 ### 🔴 最高（下次 session 第一件事）
 - [ ] **P1 統一測試 framework 到 `node:test`**（48 個自訂 assert 風格 → node:test）
@@ -155,8 +182,9 @@
 - [ ] **GCP service account key rotate**（3 天前建立仍 fresh，建議 90 天 rotate，SOP §7 已寫）
 - [ ] **Cloudflare Worker staging 測試**（決策：不需要，文件化風險評估）
 - [ ] **LINE 月度額度 reset**（8/1 後 inbound 不影響，可考慮主動測試 outbound 恢復）
+- [ ] **Dev repo 5 個 `config.yaml.bak.2026*` 殘留**（untracked, 留為低優先清理）
 
-### ✅ 已完成（Round 14 + Medium/Low）
+### ✅ 已完成（Round 14 + Medium/Low + Check 1 fix）
 - [x] ✅ **Dashboard tunnel 升級到 Named Tunnel**（brt1122-System-09 + systemd 自動管理）
 - [x] ✅ **Dashboard URL 固定**（`https://dashboard.brt1122.com`）
 - [x] ✅ **4 個 cron delivery channel 修復**（`1528418702167638016`）
@@ -164,6 +192,7 @@
 - [x] ✅ **dashboard-watchdog cron 停用**（systemd 自動接管）
 - [x] ✅ **check-quality 12 checks**（從 10 → 12，新增 Check 10 canonical drift + Check 11 Ignored Keywords）
 - [x] ✅ **Medium/Low 7 個 phase**（P1-P7 全部文件化或完成）
+- [x] ✅ **Check 1 npm test stale-state bug fix**（cleanup hardening + Phase C 補文件,commit `98f1c0b`）
 
 ---
 
@@ -195,7 +224,8 @@
 | 2026-07-19 03:00+ | Round 9 | 完整 audit 報告 + 補 README + 標記 SESSION_BACKGROUND | `e7bcac7` |
 | 2026-07-19 03:36+ | Round 10 | H/L 修整 + 重要修正（manage-tunnel.sh / Check 10 / sync-canonical.sh / GCP SOP / SESSION_H8） | `e280f90` |
 | 2026-07-19 22:30 → 20 01:00+ | **Round 14** | Named Tunnel 轉移 + 4 cron delivery 修復 + Cloudflare Worker 部署 + Medium/Low 全部完成 | `fadb6ec` → `b0513a6` |
-| 2026-07-20 09:55 | **本檔更新** | 4 份必讀文檔明確更新（HANDOFF §1-§5 + 其他 3 份） | 待 commit |
+| 2026-07-20 09:55 | **本檔 2.0 更新** | 4 份必讀文檔明確更新（HANDOFF §1-§5 + 其他 3 份） | `967d475` |
+| 2026-07-20 10:08 → 10:35+ | **Check 1 fix + Phase C** | Phase A drift 全檢 → 誤判 csvWriter bug → 正確定位 stale-state → 修 cleanup hardening + HANDOFF §4/§5/§7 補 + memory/2026-07-20.md append | `98f1c0b` |
 
 ---
 
