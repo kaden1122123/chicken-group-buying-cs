@@ -187,6 +187,10 @@ function formatOrderDetail(orderData) {
 module.exports = {
   calculatePrice,
   formatItemsDisplay,
+  // P1 B16 修法 + Bug fix:formatCustomerReply 是 src/index.js + src/states/confirming.js
+  // 預期匯入的 function,以前的 module exports 只有 formatOrderSummary → production crash。
+  // 加 alias 維持向後相容(兩個 function 都給)。
   formatOrderSummary,
+  formatCustomerReply: formatOrderSummary,
   formatOrderDetail,
 };

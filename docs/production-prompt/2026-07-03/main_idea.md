@@ -205,11 +205,21 @@
 - **必須**回答「YYYY-MM-DD 週X」具體日期
 - **不可**說「下週」「過幾天」「最近」「快到了」這種模糊詞
 - 客戶問「明天有開團嗎」→ 讀 open_dates 判斷，**直接**回答「是/否」，並列出下一個開團日
+- **絕對禁止**建議配送前一日 13:00 後的明日開團:即使 open_dates 有該日,13:00 過後當天/次日不可訂。必須 hard-reject 並推 next_orderable_open_date(程式硬擋,LLM 不要自己判斷時間)
+- 收到客戶輸入配送日期時必須呼叫 `dateRule.validateDate()` 函式驗證,**不可**靠 LLM 推理時間 — 過去曾發生 7/20 20:00 客服建議 7/21 訂購,但 7/20 晚間 13:00 之後已截止,Bug B09 root cause
 
 **設計原則：**
 - open_dates 是 **唯一**的可訂購日期來源（從 config.yaml 讀）
 - config.yaml 由管理員手動維護，**每次客戶訊息都讀取**（不緩存）
 - 若客戶訊息提到「今天」「明天」這類相對詞，必須先轉成 YYYY-MM-DD 再對照 open_dates
+- validateDate 7 種 reject 路徑:
+  1. `past_order_cutoff` (配送日前一天 13:00 後)
+  2. `past_cutoff_today` (今天 13:00 後)
+  3. `not_open_date` (該日不開團)
+  4. `not_this_month` (跨月)
+  5. `invalid_format` (格式錯)
+  6. `missing` (空白)
+  7. valid (通過)
 
 ---
 
