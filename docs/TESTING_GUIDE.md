@@ -52,6 +52,34 @@ git log --follow -- data/orders/chicken/2026-06-13.csv | head -5
 
 ---
 
+### 0.5 .netrc 安全設定（推薦 — 取代 cmdline 明文密碼）
+
+> **資安疑慮 (Hubert 22:30 sign-on)**:cmdline 的 `-u "user:pass"` 會出現在 `ps aux`,其他 user 透過 `/proc/<pid>/cmdline` 可讀密碼。
+> 推薦用 **`.netrc` 取代** — 自動 auth 從 `~/.netrc` 讀,mode 600,`curl -n` 讀。
+
+建立 `~/.netrc`(一次性):
+```bash
+cat > ~/.netrc <<EOF
+machine localhost
+  login api-user
+  password $(cat /home/clawuser/.config/chicken/secrets/api-pwd)
+EOF
+chmod 600 ~/.netrc
+```
+
+**之後所有 curl 用 `-n` 自動從 .netrc 讀 auth,不再用 `-u` 明文密碼**:
+```bash
+# 推薦(用 .netrc + -n)
+curl -s -n "http://localhost:3001/api/orders"
+
+# 不推薦(明文密碼曝光 ps)
+curl -s -u "api-user:$(cat /home/clawuser/.config/chicken/secrets/api-pwd)" "http://localhost:3001/api/orders"
+```
+
+註:上面範例 password 是 **placeholder**,請把真實 password 放進 `~/.netrc`,不要 commit 或打到 cmdline。
+
+---
+
 ## Phase 1 · API 端點直接測試（10 分鐘）
 
 > 來源：`docs/API_CURL.md`（curl 範例） + `openapi.yaml`（正式 spec）
@@ -67,37 +95,43 @@ curl -s http://localhost:3001/api/health
 {"success":true,"status":"ok","tenant":"chicken","time":"..."}
 ```
 
-### 1.2 GET /api/orders（用 Auth）
+### 1.2 GET /api/orders（用 Auth · 用 .netrc）
 
 ```bash
-export API_USER="api-user"
-export API_PASS=$(cat /home/clawuser/.config/chicken/secrets/api-pwd)
-
-curl -s "http://localhost:3001/api/orders?date=2026-06-16" \
-  -u "$API_USER:$API_PASS" | python3 -m json.tool | head -30
+# 一行指令,先看 count,再 grep order_id
+curl -s -n "http://localhost:3001/api/orders" | grep -oE '"count":[0-9]+|"order_id":"[^"]+"' | head -20
 ```
 
-**預期**：
+**預期**(例如):
+```
+"count":1724
+"order_id":"PENDING-1781333338789"
+"order_id":"PENDING-1781333896341"
+...
+```
+
+**驗證點**:`count > 0`、grep 看到至少 1 個 order_id。
+
+> **修正紀錄**:之前用 `python3 -m json.tool` 解析會在 count=0 時 crash IndexError。改成純 grep 看 count,不依賴 Python。
+
+### 1.3 GET /api/orders/{id}（單筆 · 依賴 §1.4 提供 ORDER_ID）
+
+> **跳過請先完成 §1.4**,取得 ORDER_ID 環境變數後再跑本步。
+
+```bash
+# 用 §1.4 設定的 ORDER_ID(由 1.4 POST 成功後產出)
+curl -s -n "http://localhost:3001/api/orders/$ORDER_ID" | head -c 500
+echo ""
+```
+
+**預期**(`success: true` + 訂單物件):
 ```json
-{
-  "success": true,
-  "count": N,
-  "orders": [/* 真實 6/16 訂單 */]
-}
+{ "success": true, "order": { "order_id": "...", "delivery_date": "...", ... } }
 ```
 
-**驗證點**：`count >= 1`（6/16 真實訂單），訂單物件有 `order_id`、`user_phone`、`delivery_date`。
+**驗證點**:`success=true`、`order` 物件有 `order_id`、`delivery_date`、`items`、`total_amount`。
 
-### 1.3 GET /api/orders/{id}（單筆）
-
-```bash
-# 取第一筆 order_id
-ORDER_ID=$(curl -s "http://localhost:3001/api/orders?date=2026-06-16" \
-  -u "$API_USER:$API_PASS" | python3 -c 'import json,sys;d=json.load(sys.stdin);print(d["orders"][0]["order_id"])')
-
-curl -s "http://localhost:3001/api/orders/$ORDER_ID" \
-  -u "$API_USER:$API_PASS" | python3 -m json.tool
-```
+> **修正紀錄**:之前用 python 取第一筆 order_id 在沒有訂單時 crash。改成依賴 §1.4 環境變數 ORDER_ID,不解 JSON。
 
 **預期**：
 ```json
@@ -114,7 +148,15 @@ curl -s "http://localhost:3001/api/orders/$ORDER_ID" \
 
 ### 1.4 POST /api/orders（建立測試訂單 · P7 完整性檢查）
 
-**警告**：建立測試訂單會污染真實 data dir,用 cleanup-test-orders.js 清。
+**警告**:建立測試訂單會污染真實 data dir,用 `cleanup-test-orders.js` 清。
+
+**Step 1**:從 `config/tenants/chicken.yaml` 抓下一個開團日(避免 `date -d '+7 days'` 選到非開團日):
+```bash
+NEXT_OPEN_DATE=$(grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" config/tenants/chicken.yaml | grep -E "$(date +%Y)" | sort | uniq | awk -v today="$(date +%Y-%m-%d)" '$0 > today' | head -1)
+echo "下一個開團日: $NEXT_OPEN_DATE"
+```
+
+**驗證**:`$NEXT_OPEN_DATE` 必須是 `chicken.yaml` `open_dates` 清單內未過的日期。
 
 ```bash
 RESPONSE=$(curl -s -X POST "http://localhost:3001/api/orders" \
@@ -161,10 +203,13 @@ echo "$RESPONSE" | python3 -c 'import json,sys;print("order_id =", json.loads(sy
 
 **驗證點**：`success=true`、`order_id` 有值。
 
-### 1.5 PATCH /api/orders/{id}（更新付款狀態）
+### 1.5 PATCH /api/orders/{id}（更新付款狀態 · 依賴 §1.4 的 ORDER_ID）
+
+> **依賴**:ORDER_ID 變數由 §1.4 建立訂單後產出。沒 ORDER_ID 跳過此步或重跑 §1.4。
 
 ```bash
-ORDER_ID=$(echo "$RESPONSE" | python3 -c 'import json,sys;print(json.loads(sys.stdin.read())["order_id"])')
+# 用 §1.4 的 ORDER_ID(沒 ORDER_ID 重跑 §1.4)
+echo "ORDER_ID=$ORDER_ID · NEXT_OPEN_DATE=$NEXT_OPEN_DATE"
 
 curl -s -X PATCH "http://localhost:3001/api/orders/$ORDER_ID" \
   -u "$API_USER:$API_PASS" \
@@ -187,13 +232,11 @@ curl -s -X PATCH "http://localhost:3001/api/orders/$ORDER_ID" \
 
 ```bash
 # 401 未授權
-curl -s -o /dev/null -w "HTTP %{http_code}\n" "http://localhost:3001/api/orders"
+curl -s -n -o /dev/null -w "HTTP %{http_code}\n" "http://localhost:3001/api/orders"
 # 預期：HTTP 401
 
 # 404 找不到訂單
-curl -s -o /dev/null -w "HTTP %{http_code}\n" \
-  -u "$API_USER:$API_PASS" \
-  "http://localhost:3001/api/orders/DOES-NOT-EXIST"
+curl -s -n -o /dev/null -w "HTTP %{http_code}\n" "http://localhost:3001/api/orders/DOES-NOT-EXIST"
 # 預期：HTTP 404
 
 # 400 缺必填
@@ -209,8 +252,8 @@ curl -s -X POST "http://localhost:3001/api/orders" \
 ### 1.7 Rate limit 測試（選用）
 
 ```bash
-# 連發 100 次 GET 應該被擋下
-for i in {1..100}; do
+# 連發 30 次 GET(避免撞 production 60/min/IP rate limit)
+for i in {1..30}; do
   curl -s -o /dev/null -w "%{http_code}\n" \
     "http://localhost:3001/api/orders?date=2026-06-16" \
     -u "$API_USER:$API_PASS"

@@ -165,7 +165,7 @@
 ## 5. ⚠️ 待修整項目（依緊急度排序 · 2026-07-20 10:35+）
 
 ### 🔴 最高（下次 session 第一件事）
-- [ ] **P1 統一測試 framework 到 `node:test`**（48 個自訂 assert 風格 → node:test）
+- [x] 🔵 **P1 統一測試 framework 進度** — 5/48 套完成 (date/timeUtils/state-trimmed-value/whitelist/address-handoff) · commit `51e3dcc` · **剩 43 套待批次轉換**（優先從最簡單的 5 個開始,1-2 hr/批）
   - 嘗試半套轉換失敗（只加 import 沒包 `test()`，破壞 lint）已 revert
   - 完整 pattern：先寫好 `test()` 包裝 + assert 在內再批次轉換
   - 從最簡單的 5 個開始：date / timeUtils / state-trimmed-value / whitelist / address-handoff
@@ -193,6 +193,53 @@
 - [x] ✅ **check-quality 12 checks**（從 10 → 12，新增 Check 10 canonical drift + Check 11 Ignored Keywords）
 - [x] ✅ **Medium/Low 7 個 phase**（P1-P7 全部文件化或完成）
 - [x] ✅ **Check 1 npm test stale-state bug fix**（cleanup hardening + Phase C 補文件,commit `a65c654`）
+
+### ✅ Round 14 (2026-07-19) + Round 1/Round 2 (2026-07-20~22) — 已完成
+
+**[BUG #1 fix · commit chain]**
+- [x] `98151cf` fix(config):移除 chicken.yaml `ignored_keywords` 中「我要訂購」(讓 ORDER_INTENT_PATTERNS 接管訂單意圖)
+- [x] `e5f8564` + `23091c4` tests 適配 + 改用 Worker source check 取代 bundle check
+- [x] Worker commit `e245eea`:移除 DEFAULT_IGNORED_KEYWORDS 中「我要訂購」(local-only,需 `wrangler deploy` 上 Cloudflare)
+
+**[P0 #1 · Dashboard 按鈕 · B05+B07]** — commit `53ea4b6` → `8704387`
+- [x] 重新生 `dashboard.html` 從真實 CSV (21 筆 pending_handoff orders)
+- [x] Click test ✓ 已收款 → POST /mark-paid → HTTP 200,CSV 真實更新
+- [x] Working tree:5 筆 stale PENDING-1784213643xxx 完全消失
+
+**[P0 #2 · Dashboard 解除轉真人按鈕 · B11]** — commit `0a9214a`
+- [x] `stateMachine.js`:加 `handoffOrderIndex` Map + 3 functions(setHandoffOrderIndex / getUserIdByHandoffOrder / clearHandoffOrderIndex)
+- [x] `handoff.js`:在 `handleHandoff` 內 register `setHandoffOrderIndex(userId, orderId)`
+- [x] `dashboard-server.js`:新 POST `/api/orders/:orderId/clear-handoff` endpoint
+- [x] `dashboard.html`:重新生 tbody 加 conditional 4th button (only pending_handoff rows show)
+- [x] Click test → POST `/clear-handoff` → **HTTP 200** `{"success":true,"message":"已解除轉真人,Hubert 已處理完成"}`
+- [x] dashboard-server 重啟(PID 3931871, uptime 1.5h) pickup 新 endpoint
+
+**[P0 #3 · 轉真人客戶 reply 簡短 · B12]** — verify only, no commit
+- [x] `DEFAULT_HANDOFF_CUSTOMER_REPLY = '目前老闆再忙，後續會再回覆您,請留意 LINE 通知,謝謝！'`(已 brief,無 detail leak)
+- [x] Customer reply 路徑用 `getHandoffCustomerReply() || DEFAULT`,無 address/items
+
+**[P0 #4 · LLM 日期邏輯 · B09]** — commit `6dabe71`
+- [x] `main_idea.md` 加強:絕對禁止 LLM 建議配送前一日 13:00 後的明日開團;必須 hard-call `dateRule.validateDate()`
+- [x] 列舉 7 種 validateDate reject 路徑(past_order_cutoff / past_cutoff_today / not_open_date / not_this_month / invalid_format / missing / valid)
+- [x] sync-canonical 到 runtime ✓ Check 11 自動驗證
+
+**[P1 · B14 轉帳戶名]**:config 沒 `戶名` field (確認 ✓)
+**[P1 · B16 訂單確認前要列完整]** — commit `6dabe71`
+- [x] `orderFormatter.js` exports 加 `formatCustomerReply = formatOrderSummary`(原 undefined → production crash)
+- [x] Click test 顯示完整 11 行:📋/📦/📍/⏰/👤/📞/🏠/🏢/💰/💳
+
+**[TESTING_GUIDE.md doc fix]** — committing 連同上面 commit
+- [x] Phase 1.2 改用 grep(避免 count=0 時 python IndexError crash)
+- [x] Phase 1.3 標明依賴 §1.4 (不再 hard 取第一筆 order_id)
+- [x] Phase 1.4 用 jq 從 config 抓真實 NEXT_OPEN_DATE(避免 `date -d '+7 days'` 選到非開團日)
+- [x] Phase 1.6/1.7 改用 `-n` (`.netrc`) + rate limit 從 100 降 30 次(避免撞 60/min)
+- [x] 加 **§0.5 `.netrc` 安全設定章節**(資安 Hub sign-on)— 推薦 `curl -n` 取代 `-u user:pass`,避免 `ps aux` 曝光密碼
+
+**[Security]**
+- [x] `secrets/` mode 700(目錄),個別 secret mode 600 ✓
+- [x] Note: `gmail-credentials.json` / `google-service-account.json` 是 mode **664**(可改 600,suggest Hubert 跑 `chmod 600 ...`)
+- [x] `git log --all -p | grep 'password'` 只有 `.env.example` 註釋有 placeholder,沒真實密碼 ✓
+
 
 ---
 
