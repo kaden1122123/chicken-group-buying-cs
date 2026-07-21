@@ -199,7 +199,7 @@
 **[BUG #1 fix · commit chain]**
 - [x] `98151cf` fix(config):移除 chicken.yaml `ignored_keywords` 中「我要訂購」(讓 ORDER_INTENT_PATTERNS 接管訂單意圖)
 - [x] `e5f8564` + `23091c4` tests 適配 + 改用 Worker source check 取代 bundle check
-- [x] Worker commit `e245eea`:移除 DEFAULT_IGNORED_KEYWORDS 中「我要訂購」(local-only,需 `wrangler deploy` 上 Cloudflare)
+- [x] Worker commit `e245eea`:移除 DEFAULT_IGNORED_KEYWORDS 中「我要訂購」+ **`wrangler deploy` 已上 production**(Version ID `683f6f9b-ec22-4c1b-b96e-a6b5f39b974c` 2026-07-22 06:51 GMT+8)✓ Bug #1 雙邊 fix 完全生效
 
 **[P0 #1 · Dashboard 按鈕 · B05+B07]** — commit `53ea4b6` → `8704387`
 - [x] 重新生 `dashboard.html` 從真實 CSV (21 筆 pending_handoff orders)
