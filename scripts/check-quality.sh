@@ -427,11 +427,13 @@ else
   # AGENTS.md / SOUL.md 兩邊都在根目錄
   # main_idea.md 在 prod 內是 knowledge/main_idea.md，在 docs 內是根目錄 main_idea.md
   #
-  # AGENTS.md 特殊處理：prod runtime 版本會比 docs 多 14 行 CANONICAL 標頭
+  # AGENTS.md 特殊處理：prod runtime 版本會比 docs 多 13 行 CANONICAL 標頭
   # （這是 expected design — 提醒 session「這是 production runtime」）
-  # 比較內容時跳過這 14 行（用 tail -n +15）
+  # 比較內容時跳過這 13 行（用 tail -n +14）
   # Trade-off：如果 prod AGENTS.md 的 CANONICAL 標頭被意外移除，Check 10 不會抓到
   # 但如果 sync-canonical.sh 沒跑（內容真的 drift），Check 10 會 warn
+  # 2026-07-23 02:55+ Round 15 Sign G：sync-canonical.sh 改用 printf '%s\n' 確保 header 結尾有 newline
+  #                                          Check 10 tail -n +15 改為 +14（header 嚴格 13 content 行）
   for pair in "AGENTS.md:AGENTS.md" \
               "SOUL.md:SOUL.md" \
               "knowledge/main_idea.md:main_idea.md"; do
@@ -445,9 +447,9 @@ else
       CANON_DRIFT+=("MISSING pp: $pp_rel")
       continue
     fi
-    # 計算 md5 — AGENTS.md 跳過 prod runtime 前 14 行 CANONICAL 標頭
+    # 計算 md5 — AGENTS.md 跳過 prod runtime 前 13 行 CANONICAL 標頭
     if [ "$prod_rel" = "AGENTS.md" ]; then
-      PROD_MD5=$(tail -n +15 "$PROD_LOC/$prod_rel" 2>/dev/null | md5sum | awk '{print $1}')
+      PROD_MD5=$(tail -n +14 "$PROD_LOC/$prod_rel" 2>/dev/null | md5sum | awk '{print $1}')
     else
       PROD_MD5=$(md5sum "$PROD_LOC/$prod_rel" 2>/dev/null | awk '{print $1}')
     fi

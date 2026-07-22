@@ -78,9 +78,9 @@ if [ ! -f "$PP_LOC/AGENTS.md" ]; then
   exit 1
 fi
 backup_if_exists "$PROD_LOC/AGENTS.md"
-# 確保 CANONICAL 標頭結尾有 newline（不然會跟 docs AGENTS.md line 1 黏住）
-# 2026-07-19 03:36+ session 修整
-{ printf '%s' "$AGENTS_CANONICAL_HEADER"; echo; cat "$PP_LOC/AGENTS.md"; } > "$PROD_LOC/AGENTS.md"
+# 確保 CANONICAL 標頭結尾有 newline（不依賴 heredoc，printf '%s\n' 強制加）
+# 2026-07-23 02:55+ session 修整（Round 15 Sign G）：用 printf '%s\n' 取代 echo + printf '%s' 確保正確分隔
+{ printf '%s\n' "$AGENTS_CANONICAL_HEADER"; cat "$PP_LOC/AGENTS.md"; } > "$PROD_LOC/AGENTS.md"
 echo "  ✓ AGENTS.md synced（含 CANONICAL 標頭 + docs/production-prompt/2026-07-03/AGENTS.md 內容）"
 echo ""
 
