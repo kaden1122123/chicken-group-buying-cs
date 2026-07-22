@@ -146,8 +146,8 @@ test('6. level threshold filter — LOG_LEVEL=warn 時 debug/info 被過濾', ()
   try {
     const captured = captureStreams(() => {
       l.logger.debug('debug msg'); // 過濾
-      l.logger.info('info msg');   // 過濾
-      l.logger.warn('warn msg');   // 應輸出
+      l.logger.info('info msg'); // 過濾
+      l.logger.warn('warn msg'); // 應輸出
       l.logger.error('error msg'); // 應輸出
     });
     assert.strictEqual(captured.stdout, '');
