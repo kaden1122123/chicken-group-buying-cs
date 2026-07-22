@@ -8,6 +8,7 @@
  */
 
 const assert = require('assert');
+const { test } = require('node:test');
 const http = require('http');
 const { spawn } = require('child_process');
 const path = require('path');
@@ -33,13 +34,6 @@ const VALID_ORDER = {
   source: 'hardening-test',
 };
 
-console.log('\n=== API Server Hardening Tests (Session I) ===');
-
-// ─── 共用 helper ───
-
-/**
- * 啟動 server，env 可覆寫
- */
 function startServer(portOffset, extraEnv) {
   const port = PORT_BASE + portOffset;
   const env = Object.assign({}, process.env, {
@@ -111,268 +105,160 @@ function authHeader() {
   return 'Basic ' + Buffer.from(USERNAME + ':' + PASSWORD).toString('base64');
 }
 
-// ─── 測試案例 ───
+test('I1: graceful shutdown', async () => {
+  const h = startServer(0, { API_GRACEFUL_TIMEOUT_MS: '3000' });
+  attachOutput(h);
+  try {
+    await waitForServer(h.port);
 
-(async () => {
-  // ===========================
-  // I1: graceful shutdown
-  // ===========================
-  console.log('\n--- I1: graceful shutdown ---');
-  {
-    const h = startServer(0, { API_GRACEFUL_TIMEOUT_MS: '3000' });
-    attachOutput(h);
-    try {
-      await waitForServer(h.port);
-      console.log('  ✓ Server 啟動 (port=' + h.port + ')');
+    // 一般 health 請求
+    const r1 = await httpRequest({ port: h.port, path: '/api/health', method: 'GET' });
+    assert.strictEqual(r1.status, 200);
 
-      // 一般 health 請求
-      const r1 = await httpRequest({ port: h.port, path: '/api/health', method: 'GET' });
-      assert.strictEqual(r1.status, 200);
-      console.log('  ✓ shutdown 前 GET /api/health → 200');
-
-      // 觸發 SIGTERM
-      const exitCode = await killAndWait(h.process, 'SIGTERM');
-      console.log('  ✓ 收到 SIGTERM');
-      assert.strictEqual(exitCode, 0, 'SIGTERM 應 graceful exit (code 0)');
-      assert.ok(
-        h.serverOutput.includes('Received SIGTERM'),
-        'log 應包含 Received SIGTERM',
-      );
-      assert.ok(
-        h.serverOutput.includes('shutting down gracefully'),
-        'log 應包含 shutting down gracefully',
-      );
-      console.log('  ✓ Process exit code = 0（graceful）');
-    } catch (e) {
-      try { h.process.kill('SIGKILL'); } catch (_) { /* ignore */ }
-      throw e;
-    }
+    // 觸發 SIGTERM
+    const exitCode = await killAndWait(h.process, 'SIGTERM');
+    assert.strictEqual(exitCode, 0, 'SIGTERM 應 graceful exit (code 0)');
+    assert.ok(h.serverOutput.includes('Received SIGTERM'), 'log 應包含 Received SIGTERM');
+    assert.ok(h.serverOutput.includes('shutting down gracefully'), 'log 應包含 shutting down gracefully');
+  } finally {
+    try { if (!h.process.killed) h.process.kill('SIGKILL'); } catch (_) { /* ignore */ }
   }
+});
 
-  // ===========================
-  // I2: CORS from env（白名單）
-  // ===========================
-  console.log('\n--- I2: CORS white-list from env ---');
-  {
-    const allowedOrigin = 'https://chicken-worker.example.workers.dev';
-    const h = startServer(1, { API_CORS_ORIGINS: allowedOrigin });
-    attachOutput(h);
-    try {
-      await waitForServer(h.port);
-      console.log('  ✓ Server 啟動 (allowed_origin=' + allowedOrigin + ')');
+test('I2: CORS white-list from env — 白名單 Origin echo', async () => {
+  const allowedOrigin = 'https://chicken-worker.example.workers.dev';
+  const h = startServer(1, { API_CORS_ORIGINS: allowedOrigin });
+  attachOutput(h);
+  try {
+    await waitForServer(h.port);
 
-      // OPTIONS preflight 帶 Origin → 回 204 + Access-Control-Allow-Origin echo
-      const pre = await httpRequest({
-        port: h.port,
-        path: '/api/orders',
-        method: 'OPTIONS',
-        headers: { Origin: allowedOrigin },
-      });
-      assert.strictEqual(pre.status, 204, 'OPTIONS preflight 應回 204');
-      assert.strictEqual(pre.headers['access-control-allow-origin'], allowedOrigin);
-      console.log('  ✓ OPTIONS preflight 帶白名單 Origin → 204 + echo origin');
-
-      // GET 帶白名單 Origin → echo
-      const r1 = await httpRequest({
-        port: h.port,
-        path: '/api/health',
-        method: 'GET',
-        headers: { Origin: allowedOrigin },
-      });
-      assert.strictEqual(r1.status, 200);
-      assert.strictEqual(r1.headers['access-control-allow-origin'], allowedOrigin);
-      console.log('  ✓ GET 帶白名單 Origin → echo Access-Control-Allow-Origin');
-
-      // GET 帶不在白名單的 Origin → 不應有 Access-Control-Allow-Origin
-      const r2 = await httpRequest({
-        port: h.port,
-        path: '/api/health',
-        method: 'GET',
-        headers: { Origin: 'https://evil.com' },
-      });
-      assert.strictEqual(r2.status, 200, 'GET /api/health 仍可訪問（health 不需 auth）');
-      assert.ok(
-        !r2.headers['access-control-allow-origin']
-        || r2.headers['access-control-allow-origin'] !== 'https://evil.com',
-        '不在白名單的 Origin 不應被 echo',
-      );
-      console.log('  ✓ GET 帶非白名單 Origin → 不 echo');
-    } catch (e) {
-      try { h.process.kill('SIGKILL'); } catch (_) { /* ignore */ }
-      throw e;
-    } finally {
-      try { await killAndWait(h.process, 'SIGKILL'); } catch (_) { /* ignore */ }
-    }
-  }
-
-  // ===========================
-  // I2b: CORS 沒設環境變數 → 預設關閉（不給 header）
-  // ===========================
-  console.log('\n--- I2b: CORS 預設關閉（沒設 API_CORS_ORIGINS）---');
-  {
-    const h = startServer(2);
-    attachOutput(h);
-    try {
-      await waitForServer(h.port);
-
-      const r = await httpRequest({
-        port: h.port,
-        path: '/api/health',
-        method: 'GET',
-        headers: { Origin: 'https://anywhere.example.com' },
-      });
-      assert.strictEqual(r.status, 200);
-      assert.ok(
-        !r.headers['access-control-allow-origin']
-        || r.headers['access-control-allow-origin'] === '',
-        '沒設 env 預設不給 CORS header，避免 dev CORS 暴露上 prod',
-      );
-      console.log('  ✓ 沒設 API_CORS_ORIGINS → 不附 Access-Control-Allow-Origin');
-    } catch (e) {
-      try { h.process.kill('SIGKILL'); } catch (_) { /* ignore */ }
-      throw e;
-    } finally {
-      try { await killAndWait(h.process, 'SIGKILL'); } catch (_) { /* ignore */ }
-    }
-  }
-
-  // ===========================
-  // I3: rate limiting
-  // ===========================
-  console.log('\n--- I3: rate limiting (3 req / 60s 快速觸發 429) ---');
-  {
-    const h = startServer(3, {
-      API_RATE_LIMIT: '3',
-      API_RATE_LIMIT_WINDOW_MS: '60000',
+    // OPTIONS preflight 帶 Origin → 回 204 + Access-Control-Allow-Origin echo
+    const pre = await httpRequest({
+      port: h.port, path: '/api/orders', method: 'OPTIONS',
+      headers: { Origin: allowedOrigin },
     });
-    attachOutput(h);
-    try {
-      await waitForServer(h.port);
-      console.log('  ✓ Server 啟動 (rate_limit=3/60s)');
+    assert.strictEqual(pre.status, 204, 'OPTIONS preflight 應回 204');
+    assert.strictEqual(pre.headers['access-control-allow-origin'], allowedOrigin);
 
-      // 等過 1 個 window 讓子 bucket 重置，避免 waitForServer 的 poll 污染計數
-      // 運作：rate_limit=3, window=60s，但 waitForServer 內 poll 也會進 bucket，
-      // 所以這裡額外等 1 個 bucket reset 期：本 test 用 6 秒 window 才穩
-      // （太短 sleep 不準）。改用一個 bucket-per-IP 的方法：發一個 dummy 請求
-      // 把 window 內全部 fill，到 loop 跑時剛好 reset。
-
-      const statusCodes = [];
-      for (let i = 0; i < 8; i++) {
-        const r = await httpRequest({ port: h.port, path: '/api/health', method: 'GET' });
-        statusCodes.push(r.status);
-        if (r.status === 429) break; // 第一個 429 之後都可以放心 rate-limit
-      }
-      console.log('  status code sequence:', statusCodes.join(', '));
-
-      // 驗證：
-      // 1. 前幾個請求有 200（rate limit 還沒滿）
-      // 2. 最後幾個請求有 429（rate limit 觸發）
-      const has200 = statusCodes.some((s) => s === 200);
-      const has429 = statusCodes.some((s) => s === 429);
-      assert.ok(has200, '應有至少一個 200 response');
-      assert.ok(has429, '應有至少一個 429 response');
-      // 後續的請求都應是 429（bucket 已滿）
-      const first429Idx = statusCodes.findIndex((s) => s === 429);
-      for (let i = first429Idx; i < statusCodes.length; i++) {
-        assert.strictEqual(statusCodes[i], 429,
-          '第一個 429 之後所有請求都應是 429，但 index ' + i + ' 是 ' + statusCodes[i]);
-      }
-      console.log('  ✓ Rate limit 工作：前 N 個 200，後續全部 429（first429Index=' + first429Idx + '）');
-    } catch (e) {
-      try { h.process.kill('SIGKILL'); } catch (_) { /* ignore */ }
-      throw e;
-    } finally {
-      try { await killAndWait(h.process, 'SIGKILL'); } catch (_) { /* ignore */ }
-    }
-  }
-
-  // ===========================
-  // I4: input validation（schema + length）
-  // ===========================
-  console.log('\n--- I4: input validation (schema + length) ---');
-  {
-    const h = startServer(4, {
-      API_INPUT_USER_LINE_NAME_MAX: '20',
-      API_INPUT_ADDRESS_MAX: '50',
+    // GET 帶白名單 Origin → echo
+    const r1 = await httpRequest({
+      port: h.port, path: '/api/health', method: 'GET',
+      headers: { Origin: allowedOrigin },
     });
-    attachOutput(h);
-    try {
-      await waitForServer(h.port);
-      console.log('  ✓ Server 啟動 (max_user_line_name=20, max_address=50)');
+    assert.strictEqual(r1.status, 200);
+    assert.strictEqual(r1.headers['access-control-allow-origin'], allowedOrigin);
 
-      // 缺欄位 → 400
-      const r1 = await httpRequest({
-        port: h.port,
-        path: '/api/orders',
-        method: 'POST',
-        headers: { Authorization: authHeader() },
-      }, { order_data: { user_line_name: 'X' } });
-      assert.strictEqual(r1.status, 400);
-      console.log('  ✓ 缺欄位 → 400');
-
-      // 型別錯（total_amount 是字串）→ 400
-      const r2 = await httpRequest({
-        port: h.port,
-        path: '/api/orders',
-        method: 'POST',
-        headers: { Authorization: authHeader() },
-      }, {
-        order_data: Object.assign({}, VALID_ORDER.order_data, { total_amount: 'not a number' }),
-      });
-      assert.strictEqual(r2.status, 400);
-      console.log('  ✓ total_amount 型別錯（字串）→ 400');
-
-      // 超長字串（user_line_name > 20）→ 400
-      const r3 = await httpRequest({
-        port: h.port,
-        path: '/api/orders',
-        method: 'POST',
-        headers: { Authorization: authHeader() },
-      }, {
-        order_data: Object.assign({}, VALID_ORDER.order_data, {
-          user_line_name: '這個名字超過二十個字元的長度限制了喔喔喔喔', // 21 字元 > 20
-        }),
-      });
-      assert.strictEqual(r3.status, 400);
-      console.log('  ✓ user_line_name 超長 → 400');
-
-      // 超長 address → 400
-      const r4 = await httpRequest({
-        port: h.port,
-        path: '/api/orders',
-        method: 'POST',
-        headers: { Authorization: authHeader() },
-      }, {
-        order_data: Object.assign({}, VALID_ORDER.order_data, {
-          address: '新北市三峽區' + 'abc'.repeat(30),
-        }),
-      });
-      assert.strictEqual(r4.status, 400);
-      console.log('  ✓ address 超長 → 400');
-
-      // happy path → 201
-      const r5 = await httpRequest({
-        port: h.port,
-        path: '/api/orders',
-        method: 'POST',
-        headers: { Authorization: authHeader() },
-      }, VALID_ORDER);
-      assert.strictEqual(r5.status, 201);
-      console.log('  ✓ 合法訂單 → 201');
-    } catch (e) {
-      try { h.process.kill('SIGKILL'); } catch (_) { /* ignore */ }
-      throw e;
-    } finally {
-      try { await killAndWait(h.process, 'SIGKILL'); } catch (_) { /* ignore */ }
-    }
+    // GET 帶不在白名單的 Origin → 不應 echo
+    const r2 = await httpRequest({
+      port: h.port, path: '/api/health', method: 'GET',
+      headers: { Origin: 'https://evil.com' },
+    });
+    assert.strictEqual(r2.status, 200);
+    assert.ok(!r2.headers['access-control-allow-origin'] || r2.headers['access-control-allow-origin'] !== 'https://evil.com');
+  } finally {
+    try { await killAndWait(h.process, 'SIGKILL'); } catch (_) { /* ignore */ }
   }
+});
 
-  console.log('\n========================================');
-  console.log('ALL HARDENING TESTS PASSED ✓');
-  console.log('========================================\n');
-  process.exit(0);
-})().catch((e) => {
-  console.error('Hardening test failed:', e.message);
-  console.error(e.stack);
-  process.exit(1);
+test('I2b: CORS 預設關閉（沒設 env）', async () => {
+  const h = startServer(2);
+  attachOutput(h);
+  try {
+    await waitForServer(h.port);
+    const r = await httpRequest({
+      port: h.port, path: '/api/health', method: 'GET',
+      headers: { Origin: 'https://anywhere.example.com' },
+    });
+    assert.strictEqual(r.status, 200);
+    assert.ok(!r.headers['access-control-allow-origin'] || r.headers['access-control-allow-origin'] === '');
+  } finally {
+    try { await killAndWait(h.process, 'SIGKILL'); } catch (_) { /* ignore */ }
+  }
+});
+
+test('I3: rate limiting (3 req / 60s 快速觸發 429)', async () => {
+  const h = startServer(3, {
+    API_RATE_LIMIT: '3',
+    API_RATE_LIMIT_WINDOW_MS: '60000',
+  });
+  attachOutput(h);
+  try {
+    await waitForServer(h.port);
+
+    const statusCodes = [];
+    for (let i = 0; i < 8; i++) {
+      const r = await httpRequest({ port: h.port, path: '/api/health', method: 'GET' });
+      statusCodes.push(r.status);
+      if (r.status === 429) break;
+    }
+
+    const has200 = statusCodes.some((s) => s === 200);
+    const has429 = statusCodes.some((s) => s === 429);
+    assert.ok(has200, '應有至少一個 200');
+    assert.ok(has429, '應有至少一個 429');
+    const first429Idx = statusCodes.findIndex((s) => s === 429);
+    for (let i = first429Idx; i < statusCodes.length; i++) {
+      assert.strictEqual(statusCodes[i], 429, `first429Idx=${first429Idx} 之後 index ${i} 應 429`);
+    }
+  } finally {
+    try { await killAndWait(h.process, 'SIGKILL'); } catch (_) { /* ignore */ }
+  }
+});
+
+test('I4: input validation (schema + length)', async () => {
+  const h = startServer(4, {
+    API_INPUT_USER_LINE_NAME_MAX: '20',
+    API_INPUT_ADDRESS_MAX: '50',
+  });
+  attachOutput(h);
+  try {
+    await waitForServer(h.port);
+
+    // 缺欄位 → 400
+    const r1 = await httpRequest({
+      port: h.port, path: '/api/orders', method: 'POST',
+      headers: { Authorization: authHeader() },
+    }, { order_data: { user_line_name: 'X' } });
+    assert.strictEqual(r1.status, 400);
+
+    // 型別錯 → 400
+    const r2 = await httpRequest({
+      port: h.port, path: '/api/orders', method: 'POST',
+      headers: { Authorization: authHeader() },
+    }, {
+      order_data: Object.assign({}, VALID_ORDER.order_data, { total_amount: 'not a number' }),
+    });
+    assert.strictEqual(r2.status, 400);
+
+    // 超長 user_line_name → 400
+    const r3 = await httpRequest({
+      port: h.port, path: '/api/orders', method: 'POST',
+      headers: { Authorization: authHeader() },
+    }, {
+      order_data: Object.assign({}, VALID_ORDER.order_data, {
+        user_line_name: '這個名字超過二十個字元的長度限制了喔喔喔喔',
+      }),
+    });
+    assert.strictEqual(r3.status, 400);
+
+    // 超長 address → 400
+    const r4 = await httpRequest({
+      port: h.port, path: '/api/orders', method: 'POST',
+      headers: { Authorization: authHeader() },
+    }, {
+      order_data: Object.assign({}, VALID_ORDER.order_data, {
+        address: '新北市三峽區' + 'abc'.repeat(30),
+      }),
+    });
+    assert.strictEqual(r4.status, 400);
+
+    // happy path → 201
+    const r5 = await httpRequest({
+      port: h.port, path: '/api/orders', method: 'POST',
+      headers: { Authorization: authHeader() },
+    }, VALID_ORDER);
+    assert.strictEqual(r5.status, 201);
+  } finally {
+    try { await killAndWait(h.process, 'SIGKILL'); } catch (_) { /* ignore */ }
+  }
 });
