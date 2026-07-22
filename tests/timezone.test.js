@@ -5,7 +5,7 @@
  */
 
 const assert = require('assert');
-const { test } = require('node:test';
+const { test } = require('node:test');
 
 const originalTZ = process.env.TZ;
 const originalAllowOverride = process.env.ALLOW_TIMEZONE_OVERRIDE;
