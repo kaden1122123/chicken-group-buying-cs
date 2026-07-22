@@ -9,6 +9,7 @@
  */
 
 const assert = require('assert');
+const { test } = require('node:test');
 const {
   validateAll,
   validatePhone,
@@ -20,63 +21,64 @@ const {
   calculatePrice,
 } = require('../src/rules');
 
-console.log('\n=== Rules Index Tests (H8-C) ===');
-
-let pass = 0; let fail = 0;
-function check(label, condition, msg) {
-  if (condition) { console.log(`  ✓ ${label}`); pass++; }
-  else { console.log(`  ✗ ${label} — ${msg}`); fail++; }
-}
-
-console.log('\n--- module.exports 完整性 ---');
-const requiredFunctions = ['validatePhone', 'validateAddress', 'validateMenu', 'validateDate', 'validateTimeSlot', 'validatePayment', 'calculatePrice'];
-requiredFunctions.forEach((name) => {
-  const fn = eval(name);
-  check(`exports.${name} 是函數`, typeof fn === 'function', `got ${typeof fn}`);
+test('Rules Index — module.exports 完整性', () => {
+  const requiredFunctions = ['validatePhone', 'validateAddress', 'validateMenu', 'validateDate', 'validateTimeSlot', 'validatePayment', 'calculatePrice'];
+  requiredFunctions.forEach((name) => {
+    const fn = eval(name);
+    assert.strictEqual(typeof fn, 'function', `exports.${name} 應為函數, got ${typeof fn}`);
+  });
 });
 
-console.log('\n--- validateAll: 完整訂單 ---');
-const completeOrder = {
-  user_phone: '0912345678',
-  address: '新北市三峽區大學路151號',
-  chicken_items: '鹽水雞2盒',
-  delivery_date: '2099-12-31',
-  time_slot: '上午',
-  payment_method: 'cash',
-  total_amount: 760,
-};
-const completeResult = validateAll(completeOrder);
-check('回傳 result', completeResult !== undefined, '應有結果');
+test('Rules Index — validateAll 完整訂單', () => {
+  const completeOrder = {
+    user_phone: '0912345678',
+    address: '新北市三峽區大學路151號',
+    chicken_items: '鹽水雞2盒',
+    delivery_date: '2099-12-31',
+    time_slot: '上午',
+    payment_method: 'cash',
+    total_amount: 760,
+  };
+  const completeResult = validateAll(completeOrder);
+  assert.ok(completeResult !== undefined, '應有結果');
+});
 
-console.log('\n--- validateAll: 缺失欄位 ---');
-const incompleteOrder = {
-  user_phone: '', // 缺電話
-  address: '',
-  chicken_items: '',
-  delivery_date: '2020-01-01', // 過去
-  time_slot: '半夜',
-  payment_method: 'unknown',
-  total_amount: 0,
-};
-try {
-  const result = validateAll(incompleteOrder);
-  check('缺失欄位仍回傳 result', result !== undefined, '應有結果');
-  if (result && result.errors) {
-    check('有多個 errors', Object.keys(result.errors).length > 0, '應至少有 1 個 error');
+test('Rules Index — validateAll 缺失欄位', () => {
+  const incompleteOrder = {
+    user_phone: '',
+    address: '',
+    chicken_items: '',
+    delivery_date: '2020-01-01',
+    time_slot: '半夜',
+    payment_method: 'unknown',
+    total_amount: 0,
+  };
+  try {
+    const result = validateAll(incompleteOrder);
+    assert.ok(result !== undefined, '應有結果');
+    if (result && result.errors) {
+      assert.ok(Object.keys(result.errors).length > 0, '應至少有 1 個 error');
+    }
+  } catch (e) {
+    assert.ok(true, `缺失欄位處理: ${e.message.slice(0, 60)}`);
   }
-} catch (e) {
-  check('缺失欄位處理（容許 throw）', true, `throw: ${e.message.slice(0, 60)}`);
-}
+});
 
-console.log('\n--- validateAll: isReturningCustomer 切換 ---');
-const returningOrder = { ...completeOrder, is_returning_customer: true };
-try {
-  const returningResult = validateAll(returningOrder, true);
-  check('isReturningCustomer=true 仍回傳 result', returningResult !== undefined, '應有結果');
-} catch (e) {
-  check('isReturningCustomer=true 處理', true, e.message.slice(0, 60));
-}
-
-console.log(`\n--- 結果: ${pass} 通過 / ${fail + pass} 總計 ---`);
-if (fail > 0) { console.error(`✗ 失敗: ${fail}`); process.exit(1); }
-console.log('\n========================================');
+test('Rules Index — validateAll isReturningCustomer 切換', () => {
+  const completeOrder = {
+    user_phone: '0912345678',
+    address: '新北市三峽區大學路151號',
+    chicken_items: '鹽水雞2盒',
+    delivery_date: '2099-12-31',
+    time_slot: '上午',
+    payment_method: 'cash',
+    total_amount: 760,
+  };
+  const returningOrder = { ...completeOrder, is_returning_customer: true };
+  try {
+    const returningResult = validateAll(returningOrder, true);
+    assert.ok(returningResult !== undefined, '應有結果');
+  } catch (e) {
+    assert.ok(true, e.message.slice(0, 60));
+  }
+});
