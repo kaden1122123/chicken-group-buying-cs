@@ -1,9 +1,10 @@
 # Session Handoff — 雞味客服專案
 
-> **最後更新**：2026-07-20 09:55+ session（Round 14 收尾 + Medium/Low 全部完成 + 4 份必讀文檔明確更新）
-> **最後 commit**：`b0513a6` (chicken) + `8f8d1f7` (external-user/cloudflare-worker)
-> **check-quality**：12 通過 / 1 警告 / 0 失敗
+> **最後更新**：2026-07-24 21:10+ session（Round 15-19 全部完成 — 8 個 task + 4 個補齊任務執行）
+> **最後 commit**：`7ec11ac` (chicken AGENT_PROJECT_SOP.md) + `aa31757` (Worker synonyms.ts)
+> **check-quality**：13 通過 / 1 警告 / 0 失敗（Round 19 完成後）
 > **/healthz**：dashboard / api_server / worker 全 up
+> **Worker deploy**：`f2458aee-3dd2-4aca-8431-4e6c89fb4d2c`（45 KB entries + synonym expansion + LRU cache + inverted index）
 
 ## 🎯 用途（Purpose）
 
@@ -255,6 +256,10 @@
 | 6 | `docs/SESSION_END_SOP.md` | 7 步 Session 結束 SOP |
 | 7 | `docs/NAMED_TUNNEL_MIGRATION.md` | Named Tunnel 轉移 SOP |
 | 8 | `docs/GCP_ROTATION_SOP.md` | GCP service account key rotate SOP |
+| 9 | `docs/TESTING_TROUBLESHOOTING.md` | **Round 19 新** — 測試中遇到奇怪地方時的排查 SOP |
+| 10 | `docs/LINE_BOT_SETUP.md` | **Round 19 新** — LINE bot 換本體完整 7 步 SOP |
+| 11 | `docs/AGENT_PROJECT_SOP.md` | **Round 19 新** — 新 linebot/客服專案建置 SOP（18 步 + 完成清單）|
+| 12 | `docs/STAGING.md` | **Round 19 新**（Worker repo）— staging 環境 deploy SOP |
 
 **舊必讀**（**LEGACY 標頭**，接手者**請勿 read**）：
 - `PHASE1_PROGRESS.md`（875 行）
@@ -273,8 +278,14 @@
 | 2026-07-19 22:30 → 20 01:00+ | **Round 14** | Named Tunnel 轉移 + 4 cron delivery 修復 + Cloudflare Worker 部署 + Medium/Low 全部完成 | `fadb6ec` → `b0513a6` |
 | 2026-07-20 09:55 | **本檔 2.0 更新** | 4 份必讀文檔明確更新（HANDOFF §1-§5 + 其他 3 份） | `967d475` |
 | 2026-07-20 10:08 → 10:35+ | **Check 1 fix + Phase C** | Phase A drift 全檢 → 誤判 csvWriter bug → 正確定位 stale-state → 修 cleanup hardening + HANDOFF §4/§5/§7 補 + memory/2026-07-20.md append | `a65c654` |
+| 2026-07-20 22:30 → 07-22 06:43 | **Round 1+2** | Bug #1 cascade + P0 #1-#4 + P1 B14/B16 + 文件清理 + 資安 + 11 commits | `98151cf` → `810c91b` |
+| 2026-07-22 06:55 → 07:00 | **Round Sign B** | Worker Bug #1 fix 部署（`e245eea` + v `683f6f9b`）| `e55767c` |
+| 2026-07-22 07:00 → 07:22 23:08 | **Round 15+16** | Sign C-all 48/48 套 test framework 統一 + Bug 1+2 fix + 25 個 unit tests + Bug 1+3 真因 | `15fd6ad` → `03afb64` |
+| 2026-07-23 04:30+ → 07-23 04:50 | **Round 18** | Bug 1+2 修法（bestScore `-Infinity` → `minCombined 0.2` + effectiveMaxDistance）+ Bug 3 unit tests | `45bec2c` |
+| 2026-07-24 10:49 → 21:10+ | **Round 19** | Task A (TESTING_TROUBLESHOOTING.md) + Task B (LINE bot config 整合含 LINE_BOT_TOKEN drift fix) + Task C1-C5 (semantic scoring via synonyms + 客戶標籤 + L2 .bak cleanup + Worker staging + KB inverted index + LRU cache) + Task D (AGENT_PROJECT_SOP.md) + Task E (狀態文件更新防 drift) | `9efdb1a` → `7ec11ac` |
+| 2026-07-24 21:10+ | **Round 20 (本 session)** | 4 個補齊任務：wrangler staging KV + deploy、Workers AI embeddings 取代 synonym、/api/customer-tags endpoint、7/26 cleanup-baks.sh verification + 主目錄狀態文件防 drift | (TBD) |
 
 ---
 
 _本檔由 brtclaw 維護，每次大規模 session 結束時更新_
-_下次 audit 建議時機：P1 統一測試 framework 完成後_
+_下次 audit 建議時機：Workers AI embeddings 上線 + 真實 LINE Bot 帳號測試 24hr 後_

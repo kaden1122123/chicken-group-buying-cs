@@ -258,3 +258,100 @@ _本檔由 brtclaw 維護，每次新版本發布時更新_
 - commits: Round 14 共 9 個（+ 1 個 external-user repo）
 - 狀態文件：8 個全部對齊（CHANGELOG / HANDOFF / PROJECT_INVENTORY / SYSTEM_AUDIT / SESSION_NEXT_PROMPT / HEARTBEAT / memory/2026-07-20.md / heartbeat-state.json）
 - check-quality: 12 checks（Round 14 加 Check 11）
+
+
+---
+
+## [Round 15-19 — 2026-07-20 ~ 07-24 全部完成]（Hubert 04:00+04:20+10:49+18:37 指示）
+
+### Round 1+2（2026-07-20 22:30 → 07-22 06:43，11 個 commits）
+- **Bug #1 cascade fix** (`98151cf` + `e5f8564` + `23091c4` + Worker `e245eea`)：移除「我要訂購」from `ignored_keywords` (chicken.yaml + Worker `DEFAULT_IGNORED_KEYWORDS`)
+- **P0 #1 Dashboard 按鈕** (`53ea4b6` → `8704387`)：重新生 `dashboard.html` 從真實 CSV
+- **P0 #2 解除轉真人按鈕** (`0a9214a`)：stateMachine `handoffOrderIndex` Map + `/api/orders/:orderId/clear-handoff` endpoint
+- **P0 #4 LLM 日期邏輯** (`6dabe71`)：`main_idea.md` hard-call `validateDate()` 修
+- **P1 B16 訂單確認前要列完整** (`6dabe71`)：production crash fix — `formatCustomerReply = formatOrderSummary` alias
+- **P2 文件清理 + 資安 .netrc** (`810c91b`)：TESTING_GUIDE.md + HANDOFF.md §5 + memory/2026-07-20.md
+
+### Round 15+16（2026-07-22 → 07-23 04:30+，8 個 commits）
+- **Sign B Worker deploy** (`e55767c` + deploy v `683f6f9b`)：Bug #1 fix 雙邊生效
+- **Sign C-all** (8 commits：`0a9cd0a` → `a649467` + `5ca4aba`)：統一 `node:test` 風格 48/48 套
+- **Phase 3 sync-config.sh 修法** (`2bdc831`)：awk 提取舊 header bug fix（19 → 1 separator）
+- **Phase 4 KB 整合** (Worker `969ea0f` + deploy v `2332e491`)：11 個 KB 檔 → 37 entries
+- **Phase 5 Fuzzy match** (同 commit)：Levenshtein + Jaccard n-gram (maxDistance=3)
+
+### Round 18（2026-07-23 04:50+，Worker `45bec2c` + deploy v `0141d117`）
+- **Bug 1 fix**：`fuzzyMatchKB` `bestScore` 從 `-Infinity` → `minCombined 0.2`（避免微弱 fuzzy 誤觸發）
+- **Bug 2 fix**：加 `effectiveMaxDistance` 動態調整（length ≤2 → 0；length 3-5 → 1；6-8 → 2；9+ → 3）
+- **Bug 3 fix**：`tests/kb-matching.test.mjs`（25 個 unit tests，全部 pass）
+
+### Round 19 — 8 個 Task 全部完成（2026-07-24 10:49+）
+
+#### Task A: TESTING_TROUBLESHOOTING.md（commit `9efdb1a`）
+- 7 種常見問題 + 排查 SOP
+- P0/P1/P2 緊急程度分級
+- 問題回報格式模板
+
+#### Task B: LINE bot config 整合（commit `8ef89be` + Worker deploy v `dfa555f4`）
+- 發現 drift：`LINE_BOT_TOKEN` vs `LINE_ACCESS_TOKEN` 名稱不一致
+- 修法：Worker code 改為 `env.LINE_BOT_TOKEN || env.LINE_ACCESS_TOKEN` fallback
+- 新檔：`docs/LINE_BOT_SETUP.md`（7 步換 bot SOP）
+- `.env.example` 完整版（10 section）
+
+#### Task C1: Semantic scoring via synonyms（Worker commit `aa31757` + deploy v `f2458aee`）
+- 新檔 `src/synonyms.ts`：23 個標準詞 + 60+ 同義詞變體
+- Worker integration：query 進入 matching 前先 expand
+- `expandSynonyms(query)` 函式
+- 涵蓋：運費/付款/配送/雞肉/小菜/訂單/客服/投訴/時間/其他
+
+#### Task C2: 客戶標籤自動判斷（commit `d5a7604`）
+- 新檔 `scripts/customer-tags.js`：rule-based + 5 類 23 規則
+- 從 order history CSV 計算 + 應用 23 個規則函數
+- CLI: `node scripts/customer-tags.js <user_line_id> [--json]`
+
+#### Task C3: L2 .bak cleanup（commit `846fc76`）
+- 新檔 `scripts/cleanup-baks.sh`：7-day buffer
+- 模式：dry-run 預設，--force 才真清
+- 下次可清 = 2026-07-26（7/19 files 到 7 天）
+
+#### Task C4: Worker staging 環境（Worker commit `23bf5da`）
+- 新檔 `wrangler.staging.toml`：name = external-user-line-security-staging
+- 新檔 `docs/STAGING.md`：3 環境 SOP + 第一次設定 + 日常 deploy + rollback
+- TBD：KV namespace ID（待 `wrangler kv:namespace create RATE_LIMIT_KV --env staging`）
+
+#### Task C5: KB inverted index + LRU cache（Worker commit `6c3e2a7`）
+- `KEYWORD_TO_ENTRIES` Map<string, KBEntry[]> at module load
+- `MATCH_CACHE` LRU cache (max 100 entries)
+- 30/30 tests pass（含 Round 18 Bug 1+2 fix + Round 19 C5 測試）
+
+#### Task D: AGENT_PROJECT_SOP.md（commit `7ec11ac`）
+- 新檔 `docs/AGENT_PROJECT_SOP.md`（15113 bytes）
+- 18 個完整建置步驟（從基礎設施到 docs/ 完整文件）
+- 完成清單（18 個 checkbox）
+- Reference：雞味客服現況
+
+#### Task E: 狀態文件更新防 drift
+- `~/.openclaw/workspace/HEARTBEAT.md`（Round 17+19 區塊）
+- `~/.openclaw/workspace/memory/heartbeat-state.json`（roundCompletion 全部 ✅）
+- `~/.openclaw/workspace/.task-state/active-tasks.md`（Round 19 完成 + 下次 session）
+- `~/.openclaw/workspace/memory/2026-07-24.md`（今日 session summary）
+
+### 統計（Round 19 close 2026-07-24 21:10）
+- 測試套數：30 個（全部 node:test，含 Round 19 C5 inverted index + cache 測試）
+- commits: chicken 7 個 + Worker 4 個 = **11 個 total**
+- 狀態文件：4 個全部對齊（HEARTBEAT + heartbeat-state + active-tasks + memory/2026-07-24）
+- check-quality: 13 pass / 1 warn / 0 fail
+- 新增 docs: TESTING_TROUBLESHOOTING.md, LINE_BOT_SETUP.md, AGENT_PROJECT_SOP.md, STAGING.md, customer-tags.js
+- 部署: Worker v `f2458aee`（45 KB entries + synonym expansion + LRU cache）
+
+### Round 19 task breakdown
+| Task | Commit | Status |
+|------|--------|--------|
+| A: TESTING_TROUBLESHOOTING.md | `9efdb1a` | ✅ |
+| B: LINE bot config 整合 | `8ef89be` | ✅ |
+| C1: Semantic scoring (synonyms) | Worker `aa31757` | ✅ |
+| C2: 客戶標籤自動判斷 | `d5a7604` | ✅ |
+| C3: L2 .bak cleanup | `846fc76` | ✅ |
+| C4: Worker staging | Worker `23bf5da` | ✅ |
+| C5: KB inverted index + LRU | Worker `6c3e2a7` | ✅ |
+| D: AGENT_PROJECT_SOP.md | `7ec11ac` | ✅ |
+| E: 狀態文件更新 | (system-level) | ✅ |

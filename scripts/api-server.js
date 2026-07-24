@@ -856,6 +856,41 @@ const server = http.createServer((req, res) => {
     }
   }
 
+  // Round 20 (2026-07-24) Task 4: GET /api/customer-tags/:userId
+  // 客戶標籤自動判斷（依訂單歷史 + 規則：身份/訂單狀態/注意/偏好/成交機會）
+  const tagMatch = path.match(/^\/api\/customer-tags\/([^/]+)$/);
+  if (tagMatch && method === 'GET') {
+    const userLineId = decodeURIComponent(tagMatch[1]);
+    try {
+      const orderHistory = loadOrderHistory(userLineId);
+      const currentOrder = orderHistory[orderHistory.length - 1] || null;
+      const ctx = buildTagContext(userLineId, orderHistory, currentOrder);
+      const tags = determineTags(ctx);
+      // 按 category 分組
+      const byCategory = {};
+      tags.forEach(t => {
+        if (!byCategory[t.category]) byCategory[t.category] = [];
+        byCategory[t.category].push(t.tag);
+      });
+      return sendJson(res, 200, {
+        success: true,
+        userLineId,
+        orderCount: orderHistory.length,
+        currentOrder: currentOrder ? {
+          order_id: currentOrder.order_id,
+          total_amount: currentOrder.total_amount,
+          payment_status: currentOrder.payment_status,
+        } : null,
+        tags,
+        tagCount: tags.length,
+        byCategory,
+      });
+    } catch (e) {
+      logger.error('[/api/customer-tags] error:', e);
+      return sendJson(res, 500, { success: false, error: e.message });
+    }
+  }
+
   send404(res);
 });
 
