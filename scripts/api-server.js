@@ -26,6 +26,8 @@ const { writeOrderWithRetry, updateOrder } = require('../src/order/csvWriter');
 const { getOrdersByDate, getRecentOrders } = require('../src/order/csvReader');
 const { analyzeReceipt } = require('../src/handoff/receiptAnalyzer');
 const { triggerAutoOrder, isStrictConfirmation } = require('../src/handoff/autoOrder');
+// Round 20 (2026-07-24) Task 4: 客戶標籤 API endpoint
+const { buildTagContext, determineTags, loadOrderHistory } = require('./customer-tags');
 
 // 決策 4：MOCK_TODAY 環境變數支援，讓測試可以控制「今天」是哪一天
 // 用途：api-server.test.js 用 delivery_date: '2026-06-18'，但今天是 2026-06-26
