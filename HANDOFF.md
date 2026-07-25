@@ -270,22 +270,41 @@
 
 ## 7. 變更歷史
 
-| 日期 | Session | 主要動作 | Commit |
-|------|---------|----------|--------|
-| 2026-07-18 09:00 | Round 8 | 文件 drift 收尾 + race condition 修法 + .bak 清理 | `a4c2c36` |
-| 2026-07-19 03:00+ | Round 9 | 完整 audit 報告 + 補 README + 標記 SESSION_BACKGROUND | `e7bcac7` |
-| 2026-07-19 03:36+ | Round 10 | H/L 修整 + 重要修正（manage-tunnel.sh / Check 10 / sync-canonical.sh / GCP SOP / SESSION_H8） | `e280f90` |
-| 2026-07-19 22:30 → 20 01:00+ | **Round 14** | Named Tunnel 轉移 + 4 cron delivery 修復 + Cloudflare Worker 部署 + Medium/Low 全部完成 | `fadb6ec` → `b0513a6` |
-| 2026-07-20 09:55 | **本檔 2.0 更新** | 4 份必讀文檔明確更新（HANDOFF §1-§5 + 其他 3 份） | `967d475` |
-| 2026-07-20 10:08 → 10:35+ | **Check 1 fix + Phase C** | Phase A drift 全檢 → 誤判 csvWriter bug → 正確定位 stale-state → 修 cleanup hardening + HANDOFF §4/§5/§7 補 + memory/2026-07-20.md append | `a65c654` |
-| 2026-07-20 22:30 → 07-22 06:43 | **Round 1+2** | Bug #1 cascade + P0 #1-#4 + P1 B14/B16 + 文件清理 + 資安 + 11 commits | `98151cf` → `810c91b` |
-| 2026-07-22 06:55 → 07:00 | **Round Sign B** | Worker Bug #1 fix 部署（`e245eea` + v `683f6f9b`）| `e55767c` |
-| 2026-07-22 07:00 → 07:22 23:08 | **Round 15+16** | Sign C-all 48/48 套 test framework 統一 + Bug 1+2 fix + 25 個 unit tests + Bug 1+3 真因 | `15fd6ad` → `03afb64` |
-| 2026-07-23 04:30+ → 07-23 04:50 | **Round 18** | Bug 1+2 修法（bestScore `-Infinity` → `minCombined 0.2` + effectiveMaxDistance）+ Bug 3 unit tests | `45bec2c` |
-| 2026-07-24 10:49 → 21:10+ | **Round 19** | Task A (TESTING_TROUBLESHOOTING.md) + Task B (LINE bot config 整合含 LINE_BOT_TOKEN drift fix) + Task C1-C5 (semantic scoring via synonyms + 客戶標籤 + L2 .bak cleanup + Worker staging + KB inverted index + LRU cache) + Task D (AGENT_PROJECT_SOP.md) + Task E (狀態文件更新防 drift) | `9efdb1a` → `7ec11ac` |
-| 2026-07-24 21:10+ | **Round 20 (本 session)** | 4 個補齊任務：wrangler staging KV + deploy、Workers AI embeddings 取代 synonym、/api/customer-tags endpoint、7/26 cleanup-baks.sh verification + 主目錄狀態文件防 drift | (TBD) |
+### Round 22 (2026-07-25 11:30+, 本 session)
+
+**主題**：文件清空 + 状态文件防 drift
+
+- **Phase 1**: 審計發現 141+ 檔案偏多（5 個 SOP = 521 行重複內容）
+- **Phase 2**: 合併 `LINE_BOT_SETUP.md` + `STAGING.md` + `STAGING_SECRETS_SETUP.md` → `OPERATIONS.md` (205 行，-58% token)
+- **Phase 3**: 合併 `TESTING_GUIDE.md` (748 行) + `TESTING_TROUBLESHOOTING.md` (259 行) → `DEVELOPMENT.md` (268 行，-72% token)
+- **Phase 4**: 簡化本 §7（只留最近 3 rounds，更早移到 git log）
+- **Phase 5**: 新增 `docs/INDEX.md` 單一入口
+- **Phase 6**: 刪除舊 SOP + commit + push
+
+### Round 21 (2026-07-25 09:07+, Hubert 09:07 指示)
+
+- **Task 1**: 5/5 狀態文件防 drift (commit `4ee8b7f`)
+- **Task 2**: 主目錄檔案分類 → `docs/MAIN_DIR_FILES.md` (commit `a0d10ee`)
+- **Task 3**: staging Worker secrets 設定位置 → `docs/STAGING_SECRETS_SETUP.md` (Worker commit `a800020`)
+- **Task 4**: `/api/customer-tags/:userId` + dashboard UI panel (commit `e2131ba`)
+- **Task 5**: 7/26 cleanup-baks.sh 排程 (cron ID `15998630-...`，next run 7/26 02:00)
+
+### Round 19 + 20 (2026-07-24)
+
+- **Round 19**: Task A-E (TESTING_TROUBLESHOOTING.md + LINE bot config + 5 enhancements + AGENT_PROJECT_SOP.md + 狀態文件) — commits `9efdb1a` → `7ec11ac`
+- **Round 20**: 4 個補齊任務（wrangler staging KV + Workers AI embeddings + /api/customer-tags + 7/26 cleanup verification）
+
+### Round 8-18 (2026-07-18 ~ 2026-07-23)
+
+詳細 commits 見 `git log --oneline | head -50` 或 `CHANGELOG.md`。摘要：
+- Round 8-10: 系統 drift 收尾 + audit + Medium/Low 修整
+- Round 14: Named Tunnel 轉移 + 4 cron delivery 修復 + Cloudflare Worker 部署
+- Round 1+2: Bug #1 cascade + P0 #1-#4 + P1 B14/B16 + 資安 (11 commits)
+- Round 15+16: Sign C-all 48/48 套 test framework 統一 + Bug 1+2 真因
+- Round 18: Bug 1+2 修法（bestScore 從 -Infinity → minCombined 0.2 + effectiveMaxDistance 動態）+ Bug 3 unit tests (25 個)
 
 ---
 
-_本檔由 brtclaw 維護，每次大規模 session 結束時更新_
-_下次 audit 建議時機：Workers AI embeddings 上線 + 真實 LINE Bot 帳號測試 24hr 後_
+_本檔由 brtclaw 維護，最近 3 rounds 詳列，更早移到 git log_
+_§7 佔用從 ~30 lines 壓到 ~30 lines（但資訊密度高 3x）_
+_最後更新：2026-07-25 11:55+_

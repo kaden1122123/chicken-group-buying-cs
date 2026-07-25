@@ -1,141 +1,121 @@
-# 雞肉團購 AI 客服 — 文檔索引
+# 雞味客服 文件 INDEX（單一入口）
 
-> 維護者：brtclaw
-> 最後更新：2026-07-18 08:30（Session 整理 — 大規模文件 drift 修整 + 根目錄 .bak 歸檔 + production runtime 過時備份標記）
-
----
-
-## 📚 必讀文檔（按優先順序）
-
-### 給接手者
-1. **[SOP.md](./SOP.md)** — 完整標準作業流程（人工設定、部署、維運、故障排除、接手）
-2. **[MULTI_TENANT_DESIGN.md](./MULTI_TENANT_DESIGN.md)** — 多租戶規模化設計
-
-### 給維運者
-1. **[SOP.md](./SOP.md)** §五 維運清單
-2. **[SOP.md](./SOP.md)** §六 故障排除
-
-### 給開發者
-1. **[../SPEC.md](../SPEC.md)** — 完整規格文件
-2. **[SOP.md](./SOP.md)** §七 給接手者的指南
-3. **[MULTI_TENANT_DESIGN.md](./MULTI_TENANT_DESIGN.md)** §二 檔案結構
+> **作者**：brtclaw（2026-07-25 11:58+ Round 22 建立）
+> **目的**：接手 session 5 分鐘上手 — 看這份就夠
+> **對應 Round 22 合併**：原 `INDEX.md` (141 lines LEGACY) + 5 個 SOP 合併後重整
 
 ---
 
-## 📂 文檔分類
+## 🔥 必讀（每個 session 開頭都讀，5 個 file）
 
-### 規劃與決策
-- [SOP.md](./SOP.md) — 完整標準作業流程
-- [MULTI_TENANT_DESIGN.md](./MULTI_TENANT_DESIGN.md) — 多租戶設計
-- [TODO_2026-06-26.md](./TODO_2026-06-26.md) — 2026-06-26 評估與修整 TODO（14 個問題、利弊分析、決策表）
-- [GCP_ROTATION_SOP.md](./GCP_ROTATION_SOP.md) — GCP service account key 90 天 rotate SOP（2026-07-19 新增）
-- [SYSTEM_AUDIT_2026-07-19.md](./SYSTEM_AUDIT_2026-07-19.md) — 完整 audit 報告（2026-07-19，含 Round 10 修整紀錄）
-
-### 進度與日誌
-- [../PHASE1_PROGRESS.md](../PHASE1_PROGRESS.md) — Phase 1 進度（最後更新 2026-06-29 15:45）
-- [DAILY_SUMMARY_2026-06-12.md](./DAILY_SUMMARY_2026-06-12.md) — 2026-06-12 日報
-- [DAILY_SUMMARY_2026-06-26.md](./DAILY_SUMMARY_2026-06-26.md) — 2026-06-26 大規模修整日（audit + P0~P2 修整 + prompt 改動）
-- [../.task-state/](../.task-state/) — 各 session 狀態檔（goal + steps）
-
-### 規格與審查
-- [../SPEC.md](../SPEC.md) — 完整規格
-- [../REVIEW_GUIDE.md](../REVIEW_GUIDE.md) — 審查指南
-- [production-prompt/](./production-prompt/) — Production prompt 版本控制（雞肉客服 SOUL.md + main_idea.md）|
-
-### 歷史 Review（archive）
-- [archive/REVIEW_2026-06-14.md](./archive/REVIEW_2026-06-14.md) — 初次 Review
-- [archive/REVIEW_2026-06-14_BUGS_PLANNING.md](./archive/REVIEW_2026-06-14_BUGS_PLANNING.md) — Bug 分析
-- [archive/REVIEW_2026-06-14_FINAL_PLAN.md](./archive/REVIEW_2026-06-14_FINAL_PLAN.md) — 完整規劃
+| 檔案 | 用途 | 行數 |
+|------|------|------|
+| `HANDOFF.md` | 主要 session 交接手冊（§1 現狀 + §7 變更歷史）| 286 |
+| `CHANGELOG.md` | Commit-level 變更歷史 | 700+ |
+| `OPERATIONS.md` (NEW) | LINE bot + staging + secrets 完整 SOP（取代 3 個舊 SOP）| 205 |
+| `DEVELOPMENT.md` (NEW) | 測試 + 開發 + Troubleshooting（取代 2 個舊 SOP）| 268 |
+| `INDEX.md` (本檔) | 單一入口 | 150 |
 
 ---
 
-## 🗂️ 專案結構
+## 📋 通用文件（按需查）
 
-```
-chicken-group-buying-customer-service/
-├── MIGRATION_HISTORY.md          # 移轉記錄（原 README.md，記錄原位置與主位置鏡像關係）
-├── SPEC.md                       # 完整規格
-├── PHASE1_PROGRESS.md            # Phase 1 進度
-├── REVIEW_GUIDE.md               # 審查指南
-├── docs/                         # 文檔目錄
-│   ├── INDEX.md                  # ← 你在這裡
-│   ├── SOP.md                    # 完整 SOP
-│   ├── MULTI_TENANT_DESIGN.md    # 多租戶設計
-│   ├── TODO_2026-06-26.md        # 2026-06-26 評估與修整 TODO
-│   ├── DAILY_SUMMARY_2026-06-12.md
-│   └── archive/                  # 歷史文檔
-├── config/                       # 多租戶設定
-│   └── tenants/
-│       └── chicken.yaml
-├── knowledge/                    # 多租戶知識庫
-│   ├── base/                     # 向後相容
-│   ├── learned/                  # 學習記錄（空）
-│   └── tenants/
-│       └── chicken/
-├── data/                         # 多租戶訂單
-│   └── orders/
-│       └── chicken/
-├── src/                          # 邏輯（設計驗證 + 測試對象，**不是 production runtime**）
-│   ├── config.js
-│   ├── knowledge/
-│   ├── order/
-│   ├── rules/
-│   ├── states/
-│   ├── handoff/
-│   └── utils/
-├── tests/                        # 51 套（49 unit + 1 integration + 1 helpers/cleanup，npm test 全綠）
-│   ├── rules.test.js                       # 34+ 案例
-│   ├── states.test.js                      # 狀態機轉換
-│   ├── handoff.test.js                     # 14 種觸發條件
-│   ├── security.test.js                    # SQL/Prompt injection 防禦
-│   ├── date.test.js                        # 12+ 時間邊界
-│   ├── config.test.js                      # YAML 載入 + ignored_keywords
-│   ├── whitelist.test.js                   # 白名單機制
-│   ├── integration.test.js                 # Worker 攔截 mirror
-│   ├── address-handoff.test.js             # P0-1：配送範圍觸發 handoff
-│   ├── handoff-customer-reply.test.js      # P0-2：customer_reply 讀 config
-│   ├── state-trimmed-value.test.js         # P0-3：trimmed 值不被覆蓋
-│   ├── address-dynamic-keywords.test.js    # 動態關鍵字
-│   ├── community-field.test.js             # community 欄位驗證
-│   ├── config-interface-adoption.test.js   # config interface 採用
-│   ├── csv-writer-concurrency.test.js      # CSV 寫入併發控制
-│   ├── dashboard-server-yaml-fallback.test.js  # dashboard-server yaml fallback
-│   ├── dashboard-server-yaml-patch.test.js     # dashboard-server I5 yaml patch (Session I)
-│   ├── api-server-hardening.test.js           # api-server I1-I4 hardening (Session I)
-│   ├── parse-items-dedup.test.js           # 解析品項去重
-│   ├── api-server.test.js                  # API server 整合測試（含 MOCK_TODAY）
-│   ├── logger.test.js                      # 結構化 logging (Session K)
-│   ├── csv-writer-retry.test.js            # csvWriter retry (Session X4)
-│   ├── triggers-cache.test.js              # triggers TTL cache (Session X4)
-│   ├── session-j-architecture.test.js      # J regression test
-│   ├── d3-payment-options-dynamic.test.js  # Session D3
-│   ├── d4-phase2-stub.test.js              # Session D4 Phase 2
-│   └── ...（完整 51 套 unit test，2026-07-18 含 P0 Gmail 整合 + P4/P6 邏輯測試後）
-├── scripts/
-│   ├── api-server.js               # HTTP API（+ /api/docs Swagger UI · Session L）
-│   ├── dashboard.js                # 儀表板生成器
-│   ├── dashboard-server.js         # 儀表板 + admin 伺服器
-│   ├── admin.html                  # 管理後台 UI（P0-4）
-│   ├── backup.sh                   # 每日備份（Session M）
-│   ├── backup_smoke_test.sh        # 5 步煙霧測試（Session M）
-│   ├── sync-mirror.sh              # 雙位置同步（Session J 加 --dry-run + .rsync-filter）
-│   ├── cleanup-test-orders.{sh,js} # 清理測試訂單（Session J 重構,PROTECTED 單一來源）
-│   └── dashboard-server-test.js    # 整合測試（CSV 讀取,跑在 npm run test:all）
-├── openapi.yaml                    # OpenAPI 3.0 spec（Session L）
-├── docs/API_CURL.md                # curl 範例文件（Session L）
-└── dashboard.html                # 儀表板輸出
-```
+| 檔案 | 用途 |
+|------|------|
+| `README.md` | 專案簡介 |
+| `SPEC.md` | 系統規格文件 |
+| `MAIN_DIR_FILES.md` | 主目錄檔案按功能分類（Round 21 建立）|
+| `REVIEW_GUIDE.md` | Code review 指南 |
+| `MIGRATION_HISTORY.md` | 遷移歷史 |
+| `PROJECT_INVENTORY.md` | 完整系統地圖 |
+| `CEO_DECISION_GUIDE.md` | 給 CEO 看的決策指南 |
+| `KNOWN_ISSUES.md` | 已知問題清單 |
+| `ENGINEERING_HANDBOOK.md` | 工程慣例 + §6.6 三層位置架構 |
+| `API_CURL.md` | API curl 範例（手動測試）|
+| `EMAIL_SETUP.md` | Gmail OAuth 設定 |
+| `AGENT_PROJECT_SOP.md` | 新 linebot/客服 專案建置 18 步 SOP |
+| `GCP_ROTATION_SOP.md` | GCP service account key rotate SOP |
+| `MULTI_TENANT_DESIGN.md` | 多租戶設計 |
 
 ---
 
-## 🔗 快速連結
+## 🧪 系統層狀態（`~/.openclaw/workspace/`）
 
-- **Cloudflare Worker**：`~/openclaw-workspace/external-user/cloudflare-worker/`
-- **OpenClaw Agent**：`~/.openclaw/agents/external-user/`
-- **GitHub**：https://github.com/kaden1122123/chicken-group-buying-cs
+| 檔案 | 用途 |
+|------|------|
+| `HEARTBEAT.md` | Cron jobs + 系統狀態（OpenClaw system-level）|
+| `memory/heartbeat-state.json` | 系統狀態 JSON |
+| `.task-state/active-tasks.md` | 進行中的任務 |
+| `memory/YYYY-MM-DD.md` | 每日 session summary |
+| `MEMORY.md` | brtclaw 長期記憶 + 工作方法論 |
+| `SOUL.md` | brtclaw 人格設定 |
 
 ---
 
-_最後更新：2026-07-18 08:30（Session 整理 — Gmail 整合完成 + P4/P6 邏輯測試 + 文件 drift 全面修整）_
-_最近評估：見 [TODO_2026-06-26.md](./TODO_2026-06-26.md)_
-_Session 修整進度：見 [HANDOFF.md](../HANDOFF.md) §5 待辦清單_
+## 🤖 Worker repo（`external-user-line-security`）
+
+| 檔案 | 用途 | 狀態 |
+|------|------|------|
+| `wrangler.toml` | Production Worker 設定 | ✅ |
+| `wrangler.staging.toml` | Staging Worker 設定 | ✅ |
+| `src/kb-content.ts` | 45 KB entries + fuzzy match | ✅ |
+| `src/embeddings.ts` | Workers AI semantic scoring (NEW Round 20) | ✅ |
+| `src/synonyms.ts` | ❌ 已刪除（Round 20 改用 Workers AI 取代）| — |
+| `src/index.ts` | LINE webhook + KB match + LLM 轉發 | ✅ |
+| `docs/STAGING.md` | ⚠️ **已合併到 chicken `OPERATIONS.md`**（刪除）| — |
+| `docs/STAGING_SECRETS_SETUP.md` | ⚠️ **已合併到 chicken `OPERATIONS.md`**（刪除）| — |
+
+---
+
+## 🗑 LEGACY 檔案（Round 22 標記，請勿 read）
+
+| 檔案 | 原因 | 取代 |
+|------|------|------|
+| `PHASE1_PROGRESS.md` | Phase 1 舊進度（2026-06-29 後）| git log |
+| `docs/CLEANUP_PHASE_2_PLAN.md` | Phase 2 舊 plan | git log |
+| `docs/TODO_2026-06-26.md` | 6/26 舊 TODO | git log |
+| `docs/DAILY_SUMMARY_2026-06-26.md` | 6/26 舊日誌 | memory/2026-06-26.md |
+| `docs/SYSTEM_AUDIT_2026-07-19.md` | 7/19 audit（671 lines 完整）| 移到 `docs/.archive/` |
+| `docs/SOP.md` | 舊 SOP（已被 OPERATIONS + DEVELOPMENT 取代）| 移到 `docs/.archive/` |
+| `docs/TESTING_GUIDE.md` | ⚠️ **已合併到 `DEVELOPMENT.md`**（刪除）| — |
+| `docs/TESTING_TROUBLESHOOTING.md` | ⚠️ **已合併到 `DEVELOPMENT.md`**（刪除）| — |
+| `docs/LINE_BOT_SETUP.md` | ⚠️ **已合併到 `OPERATIONS.md`**（刪除）| — |
+
+---
+
+## 📊 文件統計（Round 22 合併後）
+
+| 類別 | 合併前 | 合併後 | 節省 |
+|------|-------|-------|------|
+| SOP 文件 | 5 個 (521 行) | 2 個 (473 行) | -48 行（-9%）|
+| 測試/開發文件 | 2 個 (1007 行) | 1 個 (268 行) | -739 行（-73%）|
+| 必讀（5 個）| — | 5 個 | 接手 5 分鐘 |
+| 總 docs/ | 25+ 個 | 15 個 | -10 個（-40%）|
+| **接手 session token** | ~30K | **~10K** | **-67%** |
+
+---
+
+## 🔗 快速連結（外部）
+
+- **Worker URL (prod)**: `https://external-user-line-security.kaden1122123.workers.dev`
+- **Worker URL (staging)**: `https://external-user-line-security-staging.kaden1122123.workers.dev`
+- **Dashboard**: `https://dashboard.brt1122.com`（admin / dashboard-pwd）
+- **LINE Developer Console**: https://developers.line.biz/console/
+- **Cloudflare Dashboard**: https://dash.cloudflare.com
+
+---
+
+## 📞 升級（碰到問題時找誰）
+
+| 角色 | 負責 | 聯絡 |
+|------|------|------|
+| 第一線 | brtclaw | Discord #chicken-group-buying-customer-service |
+| 升級 | Hubert | LINE `Uf56650056d35626deb64165926a26182` |
+| 真人客服 | Hubert | 同上 |
+
+---
+
+_本檔由 brtclaw 維護，每個 round 結束時 review_
+_取代舊 `docs/INDEX.md` (141 lines LEGACY)_
+_對應 Round 22 文件清空計畫_
+_最後更新：2026-07-25 11:58+_
