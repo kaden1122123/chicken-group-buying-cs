@@ -1,6 +1,7 @@
 # knowledge/learned/
 
 > **建立時間**：2026-06-28（Session F）
+> **last_updated**：2026-07-25（Round 26 — 明確保留決議，無內容變動）
 > **維護者**：brtclaw
 > **狀態**：⏸ **保留但目前未使用**
 

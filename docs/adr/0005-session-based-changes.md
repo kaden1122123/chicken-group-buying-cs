@@ -3,7 +3,7 @@
 > **狀態**：Accepted
 > **日期**：2026-06-27（Session C C2 事故後）
 > **決策者**：Hubert
-> **背景文件**：[MEMORY.md §I 結構性變更 SOP](../../MEMORY.md)
+> **背景文件**：[MEMORY.md §I 結構性變更 SOP](../../../../.openclaw/workspace/MEMORY.md)（系統層檔案，不在本 repo 內）
 
 ---
 
@@ -80,7 +80,7 @@ $ git show HEAD --stat                # 立即驗證 commit 包含預期檔案
 
 ### 緩解
 
-- MEMORY.md 把 3 個 SOP 整合成可操作步驟
+- MEMORY.md（系統層）把 3 個 SOP 整合成可操作步驟
 - Session 啟動 prompt 強調「必跑 SOP」
 - Session 結束時統一 push，commit 數多不影響
 

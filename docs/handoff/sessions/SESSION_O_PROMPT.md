@@ -32,8 +32,8 @@
 ## 必讀文件
 
 1. [SESSION_N_PROMPT.md](./SESSION_N_PROMPT.md) — A 方案現況
-2. [../architecture/NEW_ORDER_FLOW.md v2.1](../architecture/NEW_ORDER_FLOW.md) — 架構演化
-3. [../production-prompt/2026-06-28/CHANGELOG.md](../production-prompt/2026-06-28/CHANGELOG.md) — A 方案 prompt 改動
+2. [../../architecture/NEW_ORDER_FLOW.md v2.1](../../architecture/NEW_ORDER_FLOW.md) — 架構演化
+3. [../../production-prompt/2026-06-28/CHANGELOG.md](../../production-prompt/2026-06-28/CHANGELOG.md) — A 方案 prompt 改動
 4. OpenClaw 雞肉 agent 設定（`~/.openclaw/agents/external-user/agent/`）
 
 ---

@@ -3,7 +3,7 @@
 > **狀態**：Accepted
 > **日期**：2026-06-27（Session C C3）
 > **決策者**：Hubert
-> **背景文件**：[scripts/sync-config.sh](../../scripts/sync-config.sh), [MULTI_TENANT_DESIGN.md](../../MULTI_TENANT_DESIGN.md)
+> **背景文件**：[scripts/sync-config.sh](../../scripts/sync-config.sh), [MULTI_TENANT_DESIGN.md](../MULTI_TENANT_DESIGN.md)
 
 ---
 

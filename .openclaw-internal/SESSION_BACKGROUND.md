@@ -2,7 +2,7 @@
 
 > ⚠️ **本檔為 LEGACY** — 最後更新 2026-06-27（內容仍是可用的 background prompt 模板）
 > **當前 session 入口請用**：[`docs/handoff/sessions/SESSION_NEXT_PROMPT.md`](../docs/handoff/sessions/SESSION_NEXT_PROMPT.md)（2026-07-18 持續更新）
-> **最新 audit 報告**：[`docs/SYSTEM_AUDIT_2026-07-19.md`](../docs/SYSTEM_AUDIT_2026-07-19.md)
+> **最新 audit 報告**：[`docs/.archive/SYSTEM_AUDIT_2026-07-19.md`](../docs/.archive/SYSTEM_AUDIT_2026-07-19.md)（已歸檔）
 > 用途：新 session 開始時，把「背景 Prompt」區段複製貼到第一則訊息，brtclaw 就會銜接所有上下文。
 > 更新時間：2026-06-16 19:15（檔案本身） / 2026-07-19 03:00+（LEGACY 標頭 + 指向新入口）
 

@@ -3,6 +3,7 @@
 > **目標讀者**：新工程師 / brtclaw 新 session / 未來接手者
 > **閱讀時間**：30 分鐘內掌握全貌
 > **建立時間**：2026-06-28（Session P0）
+> **last_updated**：2026-07-25（Round 26 — 連結修補）
 > **維護者**：brtclaw
 > **版本**：v1.0
 
@@ -410,16 +411,16 @@ tests/csv-writer-concurrency.test.js   ← Session D D2: CSV race condition
 
 ### 開發者必讀
 
-4. [SOP.md](./SOP.md) — 完整標準作業流程
+4. [SOP.md](./.archive/SOP.md) — 標準作業流程（已歸檔）
 5. [REVIEW_GUIDE.md](../REVIEW_GUIDE.md) — 19 套測試審查指南
 6. [MULTI_TENANT_DESIGN.md](./MULTI_TENANT_DESIGN.md) — 多租戶規模化設計
 7. [docs/adr/](./adr/) — 5 個關鍵架構決策
 
 ### 維運者必讀
 
-8. [PHASE1_PROGRESS.md](../PHASE1_PROGRESS.md) — Phase 1 進度
-9. [TODO_2026-06-26.md](./TODO_2026-06-26.md) — 6/26 audit 報告
-10. [CLEANUP_PHASE_2_PLAN.md](./CLEANUP_PHASE_2_PLAN.md) — 多 sessions 修整計畫
+8. [PHASE1_PROGRESS.md](./.archive/PHASE1_PROGRESS.md) — Phase 1 進度（已歸檔）
+9. [TODO_2026-06-26.md](./.archive/TODO_2026-06-26.md) — 6/26 audit 報告（已歸檔）
+10. [CLEANUP_PHASE_2_PLAN.md](./.archive/CLEANUP_PHASE_2_PLAN.md) — 多 sessions 修整計畫（已歸檔）
 
 ### 架構決策記錄（ADR）
 
@@ -441,7 +442,7 @@ tests/csv-writer-concurrency.test.js   ← Session D D2: CSV race condition
 - [ ] 跑 `npm test` 確認 19 套全綠
 - [ ] 跑 `bash scripts/check-quality.sh` 看結果
 - [ ] 看 [docs/adr/](./adr/) 5 個架構決策
-- [ ] 看 [CLEANUP_PHASE_2_PLAN.md](./CLEANUP_PHASE_2_PLAN.md) 了解待修整項目
+- [ ] 看 [CLEANUP_PHASE_2_PLAN.md](./.archive/CLEANUP_PHASE_2_PLAN.md) 了解待修整項目
 - [ ] 確認 `.env`（主位置）有真實 LINE Bot Token
 - [ ] 確認 `data/orders/chicken/` 有 2026-06-13.csv 與 2026-06-16.csv 真實訂單
 - [ ] 確認 git remote 是 `kaden1122123/chicken-group-buying-cs`

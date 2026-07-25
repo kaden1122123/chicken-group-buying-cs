@@ -2,7 +2,7 @@
 更新時間：2026-06-27（v1.1 partial update）
 維護者：brtclaw
 
-> ⚠️ **本文件為 Phase 1 規格書**，最新進度見 [`PHASE1_PROGRESS.md`](./PHASE1_PROGRESS.md)。
+> ⚠️ **本文件為 Phase 1 規格書**，最新進度見 [`docs/.archive/PHASE1_PROGRESS.md`](./docs/.archive/PHASE1_PROGRESS.md)（已歸檔）。
 > **Source of truth**：`src/order/csvWriter.js`（CSV schema）、`config/tenants/chicken.yaml`（狀態值）、`src/knowledge/loader.js`（知識庫路徑）。
 
 ---

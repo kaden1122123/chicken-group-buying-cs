@@ -38,8 +38,8 @@
 
 1. [SESSION_N_PROMPT.md](./SESSION_N_PROMPT.md) — A 方案現況
 2. [SESSION_O_PROMPT.md](./SESSION_O_PROMPT.md) — B 方案設計
-3. [../architecture/NEW_ORDER_FLOW.md v2.1](../architecture/NEW_ORDER_FLOW.md) — 架構演化
-4. [~/openclaw-workspace/external-user/cloudflare-worker/src/index.ts](../../../openclaw-workspace/external-user/cloudflare-worker/src/index.ts) — Worker 程式碼（line 558 缺 `handlePostbackEvent` 實作）
+3. [../../architecture/NEW_ORDER_FLOW.md v2.1](../../architecture/NEW_ORDER_FLOW.md) — 架構演化
+4. [~/openclaw-workspace/external-user/cloudflare-worker/src/index.ts](../../../../openclaw-workspace/external-user/cloudflare-worker/src/index.ts) — Worker 程式碼（line 558 缺 `handlePostbackEvent` 實作）
 
 ---
 

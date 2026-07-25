@@ -9,9 +9,9 @@
 > - 訂單流程方向：**D 純 postback** → 19:30 修正為 **A 方案**（LLM 純文字 + Hubert 手動建單，因 D 方案 Worker 拿不到 LLM 對話歷史）
 > - api-server 啟動方式：**systemd**
 > **證據文件**：
-> - [docs/NOTES/2026-06-16-issues.md](../../NOTES/2026-06-16-issues.md) — 決策結果段
+> - [docs/.archive/2026-06-16-issues.md](../../.archive/2026-06-16-issues.md) — 決策結果段（已歸檔）
 > - [docs/architecture/NEW_ORDER_FLOW.md](../../architecture/NEW_ORDER_FLOW.md) v2.1 — A 方案已上線
-> - [docs/CLEANUP_PHASE_2_PLAN.md](../../CLEANUP_PHASE_2_PLAN.md) §三 — Session E ✅ 完成標記
+> - [docs/.archive/CLEANUP_PHASE_2_PLAN.md](../../.archive/CLEANUP_PHASE_2_PLAN.md) §三 — Session E ✅ 完成標記（已歸檔）
 
 ---
 
@@ -22,7 +22,7 @@
 
 ## 必讀文件（依序讀）
 1. CEO 決策指南：docs/CEO_DECISION_GUIDE.md（看 Session E 段）
-2. 6/16 issues：docs/NOTES/2026-06-16-issues.md（5 個方向 A~E）
+2. 6/16 issues：docs/.archive/2026-06-16-issues.md（5 個方向 A~E，已歸檔）
 3. NEW_ORDER_FLOW：docs/architecture/NEW_ORDER_FLOW.md（為何失敗）
 4. 修整計畫：docs/CLEANUP_PHASE_2_PLAN.md（§三 Session E）
 5. MEMORY.md §I（SOP）
@@ -58,7 +58,7 @@
 2. 給 Hubert 看 CEO 視角決策（問 1 + 問 2）→ 等回覆
 3. 決策後落實到文件：
    - E1：重寫 docs/architecture/NEW_ORDER_FLOW.md v2 反映新方向
-   - E2：更新 docs/NOTES/2026-06-16-issues.md 標記決策完成
+   - E2：更新 docs/.archive/2026-06-16-issues.md 標記決策完成
    - E3：更新 docs/CLEANUP_PHASE_2_PLAN.md 標記 Session E 完成
 4. 跑 bash scripts/check-quality.sh
 5. 統一 push + rsync

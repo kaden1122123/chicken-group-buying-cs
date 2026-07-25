@@ -5,7 +5,9 @@ All notable changes to the chicken-group-buying-customer-service project will be
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-> **最後更新**：2026-07-18 06:15（Session P0 v7 Gmail 整合完成）
+> **最後更新**：2026-07-25（Round 26 — docs 連結修補 + 測試殘留清理 + 文件補齊）
+> **last_updated**：2026-07-25
+> 2026-07-18 06:15（Session P0 v7 Gmail 整合完成）
 > **維護者**：brtclaw
 > **對應 Session**：P0 v0→v7（Gmail 整合完整實作）
 

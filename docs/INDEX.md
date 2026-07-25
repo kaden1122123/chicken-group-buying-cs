@@ -1,4 +1,4 @@
-# 雞味客服 文件 INDEX（自動生成於 2026-07-25 11:41:15）
+# 雞味客服 文件 INDEX（自動生成於 2026-07-25 13:51:50）
 
 > **本檔由 `scripts/generate-docs-index.sh` 自動生成**（Round 23）
 > **手動編輯請注意**：下次跑 script 會被覆蓋
@@ -8,10 +8,10 @@
 
 | 類別 | 檔案數 | 行數 |
 |------|-------|------|
-| Chicken repo docs/ (md, 不含 INDEX) | 19 | 6211 |
+| Chicken repo docs/ (md, 不含 INDEX) | 16 | 4301 |
 | System-level (~/.openclaw/workspace/) | 13 | - |
 | Worker repo docs/ | 0 | - |
-| **總計** | 32 | - |
+| **總計** | 29 | - |
 
 ---
 
@@ -29,25 +29,22 @@
 
 ## 📋 Chicken repo docs/
 
-| `AGENT_PROJECT_SOP.md` | 📋 SOP | 622 行 |
+| `AGENT_PROJECT_SOP.md` | 📋 SOP | 623 行 |
 | `API_CURL.md` | 🛠 開發 | 241 行 |
 | `CEO_DECISION_GUIDE.md` | 📄 其他 | 503 行 |
-| `CLEANUP_PHASE_2_PLAN.md` | 🗑 LEGACY（不讀） | 483 行 |
-| `DAILY_SUMMARY_2026-06-26.md` | 🗑 LEGACY（不讀） | 202 行 |
+| `CLI_TOOLS.md` | 📄 其他 | 200 行 |
 | `DEVELOPMENT.md` | 🔥 必讀 | 268 行 |
 | `EMAIL_SETUP.md` | 🛠 開發 | 306 行 |
-| `ENGINEERING_HANDBOOK.md` | 📄 其他 | 488 行 |
+| `ENGINEERING_HANDBOOK.md` | 📄 其他 | 489 行 |
 | `GCP_ROTATION_SOP.md` | 📋 SOP | 248 行 |
+| `INTERNAL_MODULES.md` | 📄 其他 | 133 行 |
 | `KNOWN_ISSUES.md` | 📄 其他 | 131 行 |
 | `MAIN_DIR_FILES.md` | 📚 通用 | 196 行 |
 | `MULTI_TENANT_DESIGN.md` | 🛠 開發 | 232 行 |
 | `NAMED_TUNNEL_MIGRATION.md` | 📚 通用 | 89 行 |
-| `OPERATIONS.md` | 🔥 必讀 | 205 行 |
+| `OPERATIONS.md` | 🔥 必讀 | 206 行 |
 | `PROJECT_INVENTORY.md` | 📚 通用 | 306 行 |
-| `SESSION_END_SOP.md` | 🔥 必讀 | 129 行 |
-| `SOP.md` | 📋 SOP | 457 行 |
-| `SYSTEM_AUDIT_2026-07-19.md` | 🗑 LEGACY（不讀） | 671 行 |
-| `TODO_2026-06-26.md` | 🗑 LEGACY（不讀） | 434 行 |
+| `SESSION_END_SOP.md` | 🔥 必讀 | 130 行 |
 
 ---
 

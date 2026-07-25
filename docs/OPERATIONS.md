@@ -1,6 +1,7 @@
 # 雞味客服 Operations SOP（LINE Bot + Staging + Secrets）
 
 > **作者**：brtclaw（2026-07-25 11:40+ Round 22 合併建立）
+> **last_updated**：2026-07-25（Round 26 — STAGING 內容已併入 §4）
 > **目的**：合併 `LINE_BOT_SETUP.md` + `STAGING.md` + `STAGING_SECRETS_SETUP.md` 為單一文件
 > **來源**：3 個 SOP 共 521 行 → 合併後 220 行（**58% 節省**）
 > **適用對象**：Hubert（owner）、新客戶 linebot 建置 SOP 範本

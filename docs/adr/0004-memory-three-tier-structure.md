@@ -3,7 +3,7 @@
 > **狀態**：Accepted
 > **日期**：2026-06-23
 > **決策者**：Hubert
-> **背景文件**：[MEMORY.md](../../MEMORY.md)
+> **背景文件**：[MEMORY.md (~/.openclaw/workspace/MEMORY.md)](../../../../.openclaw/workspace/MEMORY.md)（系統層檔案，不在本 repo 內）
 
 ---
 

@@ -1,6 +1,7 @@
 # Session 結束 SOP（觸發式自動文件收尾）
 
 > **作者**：brtclaw（2026-07-19 08:23 session）
+> **last_updated**：2026-07-25（Round 26 — 加入 last_updated SOP 規則）
 > **觸發**：Hubert 指示建立觸發關鍵字機制，AI 自動執行 Session 結束 SOP
 > **目的**：每次 session 結束前（無論主動結束或預期下次繼續），確保系統狀態文件與實際系統對齊，後續 session 開局時能無 drift 跟上
 

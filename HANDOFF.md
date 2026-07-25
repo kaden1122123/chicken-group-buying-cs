@@ -1,5 +1,6 @@
 # Session Handoff — 雞味客服專案
 
+> **last_updated**：2026-07-25（Round 26 — 連結修補、測試殘留清理、文件補齊）
 > **最後更新**：2026-07-24 21:10+ session（Round 15-19 全部完成 — 8 個 task + 4 個補齊任務執行）
 > **最後 commit**：`7ec11ac` (chicken AGENT_PROJECT_SOP.md) + `aa31757` (Worker synonyms.ts)
 > **check-quality**：13 通過 / 1 警告 / 0 失敗（Round 19 完成後）

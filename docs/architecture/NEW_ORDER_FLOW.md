@@ -165,7 +165,7 @@
 - OpenClaw 雞肉 agent 沒有 tool calling 機制
 - `handlePostbackEvent` 函式從未實作（隱藏 bug）
 
-詳見 [docs/NOTES/2026-06-16-issues.md](../NOTES/2026-06-16-issues.md)。
+詳見 [docs/.archive/2026-06-16-issues.md](../.archive/2026-06-16-issues.md)（已歸檔）。
 
 ### 升級 Session Reference
 

@@ -1,6 +1,7 @@
 # AGENT_PROJECT_SOP — AI 客服專案建置 SOP
 
 > **作者**：brtclaw（2026-07-24 Round 19 Task D 建立）
+> **last_updated**：2026-07-25（Round 26 — 確認仍適用，無改動）
 > **目的**：未來建新的 LINE Bot + AI 客服專案的完整步驟
 > **範例**：雞味客服 (`chicken-group-buying-customer-service`) 已建置完成，作為 reference
 

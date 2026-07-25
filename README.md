@@ -1,6 +1,7 @@
 # 雞味客服 (Chicken Customer Service)
 
 > **LINE 官方帳號「雞味研究所」AI 客服系統** — Cloudflare Worker + OpenClaw Agent + Node.js 多層架構
+> **last_updated**：2026-07-25（Round 26 — 連結修補、文件補齊）
 
 [![Status](https://img.shields.io/badge/status-production-brightgreen)](#)
 [![Node](https://img.shields.io/badge/node-22-blue)](.nvmrc)
@@ -197,7 +198,7 @@ bash scripts/check-quality.sh
 
 - 📖 [`docs/ENGINEERING_HANDBOOK.md`](./docs/ENGINEERING_HANDBOOK.md) — 工程慣例 + §6.6 三層位置架構
 - 🗺 [`docs/PROJECT_INVENTORY.md`](./docs/PROJECT_INVENTORY.md) — 完整系統目錄與檔案清單
-- 🔍 [`docs/SYSTEM_AUDIT_2026-07-19.md`](./docs/SYSTEM_AUDIT_2026-07-19.md) — 完整 audit 報告（2026-07-19 最新）
+- 🔍 [`docs/.archive/SYSTEM_AUDIT_2026-07-19.md`](./docs/.archive/SYSTEM_AUDIT_2026-07-19.md) — 完整 audit 報告（2026-07-19 已歸檔）
 - 📚 [`docs/INDEX.md`](./docs/INDEX.md) — 文檔總索引
 - 🏛 [`docs/adr/`](./docs/adr/) — 5 個 Architecture Decision Records
 
@@ -251,7 +252,7 @@ OpenClaw Agent (external-user)
 1. 📘 [`HANDOFF.md`](./HANDOFF.md) — 系統狀態摘要
 2. 🗺 [`docs/PROJECT_INVENTORY.md`](./docs/PROJECT_INVENTORY.md) — 完整系統目錄
 3. 🎯 [`docs/handoff/sessions/SESSION_NEXT_PROMPT.md`](./docs/handoff/sessions/SESSION_NEXT_PROMPT.md) — 下個 session 開局 prompt
-4. 🔍 [`docs/SYSTEM_AUDIT_2026-07-19.md`](./docs/SYSTEM_AUDIT_2026-07-19.md) — 最新 audit 報告
+4. 🔍 [`docs/.archive/SYSTEM_AUDIT_2026-07-19.md`](./docs/.archive/SYSTEM_AUDIT_2026-07-19.md) — audit 報告（已歸檔）
 5. 🏛 [`docs/ENGINEERING_HANDBOOK.md`](./docs/ENGINEERING_HANDBOOK.md) — 工程慣例
 
 開始 session 第一件事：
@@ -266,7 +267,7 @@ curl http://localhost:3000/healthz  # 應 dashboard:up, api_server:up, worker:up
 
 ## 📄 License
 
-MIT — 見 [LICENSE](./LICENSE)（如有）。
+MIT — 本專案以內部使用為主，無公開 LICENSE 檔。
 
 ---
 
