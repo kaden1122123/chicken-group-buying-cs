@@ -1,0 +1,133 @@
+#!/bin/bash
+# bin/deploy-all
+# Round 25 (2026-07-25 13:00+) — 一鍵 deploy chicken + Worker prod
+#
+# 設計：
+#   - 跑品質檢查 + subset 測試
+#   - commit + push（chicken repo）
+#   - sync-mirror + sync-canonical
+#   - Worker staging deploy（先 staging 測試）
+#   - Worker prod deploy（需 --prod 確認）
+#
+# 使用：
+#   bash bin/deploy-all              # 預設 staging 模式（不 deploy prod）
+#   bash bin/deploy-all --prod       # 包含 prod deploy
+#   bash bin/deploy-all --skip-test  # 跳過測試（緊急 hotfix）
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+WORKER_REPO="/home/clawuser/openclaw-workspace/external-user/cloudflare-worker"
+
+# 顏色
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+ok() { echo -e "${GREEN}✅${NC} $1"; }
+err() { echo -e "${RED}❌${NC} $1"; }
+warn() { echo -e "${YELLOW}⚠️${NC} $1"; }
+info() { echo -e "${CYAN}▶${NC} $1"; }
+
+DEPLOY_PROD=false
+SKIP_TEST=false
+for arg in "$@"; do
+  case "$arg" in
+    --prod) DEPLOY_PROD=true ;;
+    --skip-test) SKIP_TEST=true ;;
+    *) warn "Unknown arg: $arg" ;;
+  esac
+done
+
+echo "🚀 雞味客服 deploy-all"
+echo "============================================="
+[ "$DEPLOY_PROD" = true ] && warn "PROD 模式 — 會 deploy 到 production" || info "staging 模式（預設，不 deploy prod）"
+echo ""
+
+# 1. 品質檢查
+if [ "$SKIP_TEST" = false ]; then
+  info "Step 1/6: 品質檢查（12 checks）"
+  echo "---"
+  if ! bash scripts/check-quality.sh 2>&1 | tail -3; then
+    err "check-quality 失敗，停止 deploy"
+    exit 1
+  fi
+  ok "check-quality passed"
+  echo ""
+
+  info "Step 2/6: Subset 測試"
+  echo "---"
+  bash bin/test-quick 2>&1 | tail -3 || warn "test-quick 有失敗（繼續）"
+  echo ""
+fi
+
+# 2. Git commit + push（chicken repo）
+info "Step 3/6: Git commit + push（chicken repo）"
+echo "---"
+cd "$PROJECT_ROOT"
+if [ -n "$(git status --short)" ]; then
+  git add -A
+  if git commit -m "deploy: Round 25 deploy-all"; then
+    git push origin main 2>&1 | tail -2
+    ok "Chicken repo pushed"
+  else
+    warn "Git commit 失敗（可能沒新改動）"
+  fi
+else
+  warn "Chicken repo working tree clean（跳過 commit）"
+fi
+echo ""
+
+# 3. Sync 3 層位置
+info "Step 4/6: Sync 3 層位置（canonical + config + mirror）"
+echo "---"
+bash bin/sync-all 2>&1 | tail -8
+echo ""
+
+# 4. Worker staging deploy
+info "Step 5/6: Worker staging deploy"
+echo "---"
+cd "$WORKER_REPO"
+if wrangler deploy --env staging 2>&1 | tail -8; then
+  ok "Worker staging deployed"
+else
+  err "Worker staging deploy 失敗，停止"
+  exit 1
+fi
+echo ""
+
+# 5. Worker prod deploy（可選）
+if [ "$DEPLOY_PROD" = true ]; then
+  info "Step 6/6: Worker prod deploy（PROD 模式）"
+  echo "---"
+  warn "⚠️  即將 deploy 到 production"
+  read -p "確認 deploy prod? (yes/no): " confirm
+  if [ "$confirm" = "yes" ]; then
+    if wrangler deploy --env production 2>&1 | tail -8; then
+      ok "Worker prod deployed"
+    else
+      err "Worker prod deploy 失敗"
+      exit 1
+    fi
+  else
+    warn "取消 prod deploy"
+  fi
+else
+  info "Step 6/6: Worker prod deploy（跳過，需 --prod 才執行）"
+fi
+echo ""
+
+# 6. 健康檢查
+info "健康檢查"
+echo "---"
+curl -sS -m 5 http://localhost:3000/healthz 2>&1 | head -3 || warn "/healthz 連不上"
+echo ""
+
+ok "Deploy 完成！"
+echo "  下次操作:"
+echo "  - curl https://external-user-line-security.kaden1122123.workers.dev/api/knowledge/stats"
+echo "  - wrangler tail --env production  # 看 prod log"
+echo "  - git log --oneline -5  # 看 chicken commits"

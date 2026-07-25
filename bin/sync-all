@@ -1,0 +1,90 @@
+#!/bin/bash
+# bin/sync-all
+# Round 25 (2026-07-25 13:00+) — 一次跑 sync-canonical + sync-config + sync-mirror
+#
+# 設計：
+#   - 跑 3 個 sync 腳本（canonical files / config.yaml / main mirror）
+#   - 每個 sync 失敗不中斷（warn 繼續）
+#   - 顯示每步結果
+#
+# 使用：
+#   bash bin/sync-all          # 全部 3 個
+#   bash bin/sync-all --only=canonical  # 只跑 canonical
+#   bash bin/sync-all --only=config     # 只跑 config
+#   bash bin/sync-all --only=mirror     # 只跑 mirror
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT"
+
+# 顏色
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+ok() { echo -e "${GREEN}✅${NC} $1"; }
+err() { echo -e "${RED}❌${NC} $1"; }
+warn() { echo -e "${YELLOW}⚠️${NC} $1"; }
+
+# 解析 --only= 參數
+ONLY=""
+for arg in "$@"; do
+  case "$arg" in
+    --only=*) ONLY="${arg#--only=}" ;;
+  esac
+done
+
+# Helper: 跑單個 sync（失敗不中斷）
+run_sync() {
+  local name="$1"
+  local cmd="$2"
+  echo ""
+  echo "▶ ${name}..."
+  if eval "$cmd" 2>&1 | tail -5; then
+    ok "${name} 完成"
+  else
+    warn "${name} 有失敗（繼續下一個）"
+  fi
+}
+
+echo "🔄 雞味客服 sync-all（3 層位置同步）"
+echo "============================================="
+echo "  同步路徑:"
+echo "    docs/production-prompt/  →  ~/.openclaw/agents/external-user/  (canonical)"
+echo "    config/tenants/chicken.yaml  →  config.yaml  (legacy fallback)"
+echo "    ~/openclaw-workspace/...  →  ~/.openclaw/workspace-external-user/...  (main mirror)"
+[ -n "$ONLY" ] && echo "  ⚠️  Only mode: $ONLY"
+echo ""
+
+# 1. sync-canonical（如果改了 main_idea.md / AGENTS.md / SOUL.md）
+if [ -z "$ONLY" ] || [ "$ONLY" = "canonical" ]; then
+  run_sync "sync-canonical" "bash scripts/sync-canonical.sh"
+fi
+
+# 2. sync-config（如果改了 chicken.yaml）
+if [ -z "$ONLY" ] || [ "$ONLY" = "config" ]; then
+  run_sync "sync-config" "bash scripts/sync-config.sh"
+fi
+
+# 3. sync-mirror（如果改了 src/ 或 scripts/）
+if [ -z "$ONLY" ] || [ "$ONLY" = "mirror" ]; then
+  run_sync "sync-mirror" "bash scripts/sync-mirror.sh from-legacy"
+fi
+
+# 4. main-enforce-readonly（強制 chmod 555 防 drift）
+if [ -z "$ONLY" ]; then
+  echo ""
+  echo "▶ main-enforce-readonly（防 drift）"
+  if bash scripts/main-enforce-readonly.sh 2>&1 | tail -3; then
+    ok "main-enforce-readonly 完成"
+  else
+    warn "main-enforce-readonly 有失敗（繼續）"
+  fi
+fi
+
+echo ""
+ok "sync-all 完成"
+echo "  3 層位置已同步：dev repo ↔ main mirror ↔ production runtime"
