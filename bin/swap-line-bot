@@ -1,0 +1,33 @@
+#!/bin/bash
+# bin/swap-line-bot
+# Round 24 (2026-07-25 12:00+) — 一行命令換 LINE bot
+#
+# 使用：bash bin/swap-line-bot [staging|production]
+# 預設：換 staging
+
+ENV="${1:-staging}"
+case "$ENV" in
+  staging|production) ;;
+  *) echo "用法: bash bin/swap-line-bot [staging|production]"; exit 1 ;;
+esac
+
+echo "🔄 切換 LINE bot 到 ${ENV}..."
+
+if [ "$ENV" = "staging" ]; then
+  echo "1. 建 staging KV namespace（首次）"
+  cd /home/clawuser/openclaw-workspace/external-user/cloudflare-worker
+  wrangler kv:namespace create RATE_LIMIT_KV --env staging
+  echo "2. 設定 staging secrets"
+  echo "YOUR_STAGING_LINE_BOT_TOKEN" | wrangler secret put LINE_BOT_TOKEN --env staging
+  echo "YOUR_STAGING_LINE_CHANNEL_SECRET" | wrangler secret put LINE_CHANNEL_SECRET --env staging
+  echo "3. Deploy staging"
+  wrangler deploy --env staging
+else
+  echo "1. 設定 production secrets"
+  echo "YOUR_PROD_LINE_BOT_TOKEN" | wrangler secret put LINE_BOT_TOKEN
+  echo "YOUR_PROD_LINE_CHANNEL_SECRET" | wrangler secret put LINE_CHANNEL_SECRET
+  echo "2. Deploy production"
+  wrangler deploy --env production
+fi
+
+echo "✅ 完成 — 用 bin/cron-list 確認下次執行時間"

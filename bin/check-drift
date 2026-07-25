@@ -1,0 +1,41 @@
+#!/bin/bash
+# bin/check-drift
+# Round 24 (2026-07-25 12:00+) — 檢查 3 層位置 drift
+
+echo "=== Drift Check: 3 層位置 ==="
+DEV_REPO="/home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service"
+MAIN_MIRROR="/home/clawuser/.openclaw/workspace-external-user/projects/chicken-group-buying-customer-service"
+PROD_RUNTIME="/home/clawuser/.openclaw/agents/external-user"
+
+echo "1. dev repo <-> main mirror (rsync consistency)"
+diff -rq "$DEV_REPO" "$MAIN_MIRROR" 2>&1 | grep -v "^Only in\|Permission denied" | head -10 || echo "✅ 完全一致"
+
+echo ""
+echo "2. dev repo docs/production-prompt/ <-> prod runtime (canonical files)"
+for f in AGENTS.md SOUL.md main_idea.md; do
+  if [ -f "$DEV_REPO/docs/production-prompt/2026-07-03/$f" ] && [ -f "$PROD_RUNTIME/$f" ]; then
+    if [ "$DEV_REPO/docs/production-prompt/2026-07-03/$f" -nt "$PROD_RUNTIME/$f" ]; then
+      echo "⚠️  $f: dev repo newer than prod runtime"
+    elif [ "$DEV_REPO/docs/production-prompt/2026-07-03/$f" -ot "$PROD_RUNTIME/$f" ]; then
+      echo "⚠️  $f: prod runtime newer than dev repo"
+    else
+      echo "✅ $f: 同步"
+    fi
+  else
+    echo "❌ $f: missing"
+  fi
+done
+
+echo ""
+echo "3. config.yaml drift (vs chicken.yaml)"
+cd "$DEV_REPO"
+if [ -f config.yaml ] && [ -f config/tenants/chicken.yaml ]; then
+  if bash scripts/sync-config.sh 2>&1 | tail -1 | grep -q "預期 1"; then
+    echo "✅ config.yaml 同步（separator count 1）"
+  else
+    echo "⚠️  config.yaml 可能 drift，run sync-config.sh 確認"
+  fi
+fi
+
+echo ""
+echo "✅ Drift check 完成"

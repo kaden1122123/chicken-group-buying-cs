@@ -1,0 +1,9 @@
+#!/bin/bash
+# bin/cron-list
+# Round 24 (2026-07-25 12:00+) — 列出所有雞味客服相關 cron
+
+echo "=== OpenClaw crons (雞味客服) ==="
+openclaw cron list 2>&1 | grep -E "雞味|backup|cleanup|google|api|日|週|sheets|keyage|cloudflared|dashboard" | head -20
+echo ""
+echo "=== System crontab (Linux level) ==="
+crontab -l 2>/dev/null | grep -E "chicken|backup|cleanup" | head -10 || echo "（無 system crontab for chicken）"
