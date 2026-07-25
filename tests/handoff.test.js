@@ -199,7 +199,7 @@ test('shouldTransfer high_value_order 邊界 — NT$3000 門檻', async () => {
     { amount: 100, shouldTrigger: false },
     { amount: 0, shouldTrigger: false },
   ];
-  for (const { amount, shouldTrigger, reason } of cases) {
+  for (const { amount, shouldTrigger, reason: _reason } of cases) { // _reason unused：只驗證 shouldTransfer，不驗 reason
     const result = await shouldTransfer('我要訂購', { totalAmount: amount });
     assert.strictEqual(result.shouldTransfer, shouldTrigger, `amount=${amount} should shouldTransfer=${shouldTrigger}`);
   }

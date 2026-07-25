@@ -18,7 +18,7 @@
  */
 
 const fs = require('fs');
-const path = require('path');
+// const path = require('path'); // unused 2026-07-25 Round 26 #2 lint cleanup
 const logger = require('../utils/logger');
 const { isFeatureEnabled, getEmailConfig } = require('../config');
 
@@ -195,7 +195,7 @@ async function sendEmail({ to, subject, body }) {
  * 格式化訂單彙總（純文字精美版 v3 — 分組、重要欄位全加）
  */
 function formatOrderDigest(orders, type = 'daily') {
-  const ts = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Taipei', hour12: false }).replace(' ', ' ');
+  const _ts = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Taipei', hour12: false }).replace(' ', ' '); // unused 2026-07-25 Round 26 #2 lint cleanup（_ts 是 placeholder）
   const dateStr = new Date().toISOString().slice(0, 10);
   const typeLabel = type === 'daily' ? '今日' : type === 'weekly' ? '本週' : '彙總';
 

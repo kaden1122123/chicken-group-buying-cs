@@ -245,7 +245,7 @@ function ordersToSheetValues(orders) {
  */
 async function syncOrdersToSheets(options = {}) {
   const { dryRun = false } = options;
-  const errors = [];
+  const _errors = []; // unused 2026-07-25 Round 26 #2 lint cleanup（未來加錯誤處理時啟用）
 
   try {
     // 1. 讀 config

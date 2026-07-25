@@ -26,7 +26,7 @@
  */
 
 const fs = require('fs');
-const path = require('path');
+// const path = require('path'); // unused 2026-07-25 Round 26 #2 lint cleanup
 const http = require('http'); // OpenClaw Gateway 通常是 http (本地)
 const https = require('https');
 const logger = require('../utils/logger');

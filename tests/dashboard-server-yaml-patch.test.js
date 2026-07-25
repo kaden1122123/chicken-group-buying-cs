@@ -113,7 +113,7 @@ test('I5: dashboard-server yaml 字串 patch — 修改 keys + 保留其他區�
   fs.writeFileSync(FIXTURE_PATH, FIXTURE_CONTENT, 'utf-8');
 
   let proc = null;
-  let serverOutput = '';
+  let _serverOutput = ''; // unused：subprocess output 原本要 capture 但現在未 assertion
   try {
     proc = spawn('node', [SERVER_PATH], {
       env: Object.assign({}, process.env, {
@@ -125,8 +125,8 @@ test('I5: dashboard-server yaml 字串 patch — 修改 keys + 保留其他區�
       stdio: ['ignore', 'pipe', 'pipe'],
       detached: true,
     });
-    proc.stdout.on('data', (d) => { serverOutput += d.toString(); });
-    proc.stderr.on('data', (d) => { serverOutput += d.toString(); });
+    proc.stdout.on('data', (d) => { _serverOutput += d.toString(); });
+    proc.stderr.on('data', (d) => { _serverOutput += d.toString(); });
 
     await waitForServer();
 

@@ -12,12 +12,19 @@ const assert = require('assert');
 const { test } = require('node:test');
 const {
   validateAll,
-  validatePhone,
+  // eslint-disable-next-line no-unused-vars
+  validatePhone, // test 用 eval(name) 呼叫 — 不是 unused，是動態引用
+  // eslint-disable-next-line no-unused-vars
   validateAddress,
+  // eslint-disable-next-line no-unused-vars
   validateMenu,
+  // eslint-disable-next-line no-unused-vars
   validateDate,
+  // eslint-disable-next-line no-unused-vars
   validateTimeSlot,
+  // eslint-disable-next-line no-unused-vars
   validatePayment,
+  // eslint-disable-next-line no-unused-vars
   calculatePrice,
 } = require('../src/rules');
 

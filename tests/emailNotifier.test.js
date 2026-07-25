@@ -40,7 +40,7 @@ const mockGoogleapis = {
         generateAuthUrl(opts) {
           return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${this.clientId}&scope=${encodeURIComponent((opts.scope || []).join(' '))}&access_type=${opts.access_type}`;
         }
-        async getToken(code) {
+        async getToken(_code) { // unused arg：mock 函式不需 code
           return {
             tokens: {
               access_token: 'ya29.mock-access-token',
@@ -85,7 +85,7 @@ const {
   formatOrderDigest,
   loadToken,
   loadCredentials,
-  saveToken,
+  _saveToken, // unused：imported 但未使用
   sendEmail,
   sendOrderDigest,
   buildEmailContent,

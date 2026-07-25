@@ -17,7 +17,7 @@ const USERNAME = 'api-user';
 const PASSWORD = 'chicke…9k2x';
 const SERVER_PATH = path.join(__dirname, '..', 'scripts', 'api-server.js');
 
-let serverOutput = '';
+let _serverOutput = ''; // unused：subprocess stdout/stderr 原本要 capture 但現在未 assertion
 let serverProcess;
 
 function httpRequest(p, method, body, auth) {
@@ -76,9 +76,9 @@ test('API Server integration tests', async () => {
     }),
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  serverOutput = '';
-  serverProcess.stdout.on('data', function (d) { serverOutput += d.toString(); });
-  serverProcess.stderr.on('data', function (d) { serverOutput += d.toString(); });
+  _serverOutput = '';
+  serverProcess.stdout.on('data', function (d) { _serverOutput += d.toString(); });
+  serverProcess.stderr.on('data', function (d) { _serverOutput += d.toString(); });
 
   try {
     await waitForServer();

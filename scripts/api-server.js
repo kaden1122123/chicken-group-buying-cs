@@ -25,7 +25,7 @@ const { getTenantId } = require('../src/config');
 const { writeOrderWithRetry, updateOrder } = require('../src/order/csvWriter');
 const { getOrdersByDate, getRecentOrders } = require('../src/order/csvReader');
 const { analyzeReceipt } = require('../src/handoff/receiptAnalyzer');
-const { triggerAutoOrder, isStrictConfirmation } = require('../src/handoff/autoOrder');
+// const { triggerAutoOrder, isStrictConfirmation } = require('../src/handoff/autoOrder'); // unused 2026-07-25 Round 26 #2 lint cleanup
 // Round 20 (2026-07-24) Task 4: 客戶標籤 API endpoint
 const { buildTagContext, determineTags, loadOrderHistory } = require('./customer-tags');
 
@@ -141,13 +141,13 @@ const OPENAPI_FILE = path.join(ROOT, 'openapi.yaml');
 
 // ========== HTTP 工具 ==========
 
-function parseAuth(req) {
-  const auth = req.headers['authorization'];
-  if (!auth || !auth.startsWith('Basic ')) return null;
-  const decoded = Buffer.from(auth.slice(6), 'base64').toString('utf-8');
-  const [user, pass] = decoded.split(':');
-  return { user, pass };
-}
+// function parseAuth(req) { // unused 2026-07-25 Round 26 #2 lint cleanup
+//   const auth = req.headers['authorization'];
+//   if (!auth || !auth.startsWith('Basic ')) return null;
+//   const decoded = Buffer.from(auth.slice(6), 'base64').toString('utf-8');
+//   const [user, pass] = decoded.split(':');
+//   return { user, pass };
+// }
 
 /**
  * X-API-Token 認證（B 方案 · 2026-07-16 加）
@@ -170,7 +170,7 @@ function checkXApiToken(req) {
       if (fileToken) candidates.push(fileToken);
     }
   } catch (e) {
-    // ignore
+    void e; // ignore 讀取 token 檔失敗（檔案不存在或權限不足）→ 讓 API token 環境變數生效即可
   }
 
   const clientToken = req.headers['x-api-token'];
@@ -502,12 +502,12 @@ function detectMimeTypeFromBuffer(buffer) {
   return null;
 }
 
-function formatDate(d) {
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
+// function formatDate(d) { // unused 2026-07-25 Round 26 #2 lint cleanup
+//   const yyyy = d.getFullYear();
+//   const mm = String(d.getMonth() + 1).padStart(2, '0');
+//   const dd = String(d.getDate()).padStart(2, '0');
+//   return `${yyyy}-${mm}-${dd}`;
+// }
 
 async function handleUploadReceipt(req, res, orderId) {
   return parseBody(req).then(async (body) => {
@@ -868,7 +868,7 @@ const server = http.createServer((req, res) => {
       const tags = determineTags(ctx);
       // 按 category 分組
       const byCategory = {};
-      tags.forEach(t => {
+      tags.forEach((t) => {
         if (!byCategory[t.category]) byCategory[t.category] = [];
         byCategory[t.category].push(t.tag);
       });

@@ -18,7 +18,7 @@ const fs = require('fs');
 const path = require('path');
 
 const cfg = require('../src/config');
-const notifier = require('../src/handoff/notifier');
+const _notifier = require('../src/handoff/notifier'); // unused：導入但不直接使用
 const lineProfileCache = require('../src/utils/lineProfileCache');
 
 const NOTIFIER_PATH = path.join(__dirname, '..', 'src', 'handoff', 'notifier.js');

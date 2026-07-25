@@ -50,7 +50,7 @@ writeCsv('2026-07-18', sampleOrders);
 
 // 測試 1：subprocess 跑 daily（mock sendOrderDigest）
 test('send-digest daily — 讀取單日訂單並呼叫 sendOrderDigest', async () => {
-  const { spawnSync } = require('child_process');
+  const { spawnSync: _spawnSync } = require('child_process'); // unused：subprocess 改用 spawn 而非 spawnSync
   // 設定 TENANT_ID 指向測試目錄需要先 monkey patch DATA_DIR
   // 由於 send-digest.js 內部 hard-code DATA_DIR，我們簡化測試：檢查 module 載入無錯
   // 真正測試需要整合測試或將 DATA_DIR 改為可配置

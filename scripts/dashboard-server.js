@@ -574,10 +574,10 @@ const server = http.createServer(async (req, res) => {
         orderCount: orderHistory.length,
         currentOrder: currentOrder
           ? {
-              order_id: currentOrder.order_id,
-              total_amount: currentOrder.total_amount,
-              payment_status: currentOrder.payment_status,
-            }
+            order_id: currentOrder.order_id,
+            total_amount: currentOrder.total_amount,
+            payment_status: currentOrder.payment_status,
+          }
           : null,
         tags,
         tagCount: tags.length,

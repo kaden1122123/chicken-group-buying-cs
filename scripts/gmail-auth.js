@@ -35,7 +35,7 @@ const {
   saveToken,
   SCOPES,
   CREDENTIALS_PATH,
-  TOKEN_PATH,
+  // TOKEN_PATH, // unused 2026-07-25 Round 26 #2 lint cleanup
 } = require('../src/handoff/emailNotifier');
 
 const rl = readline.createInterface({
@@ -43,13 +43,13 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-function prompt(question) {
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      resolve(answer.trim());
-    });
-  });
-}
+// function prompt(question) { // unused 2026-07-25 Round 26 #2 lint cleanup
+//   return new Promise((resolve) => {
+//     rl.question(question, (answer) => {
+//       resolve(answer.trim());
+//     });
+//   });
+// }
 
 /**
  * 啟動 local HTTP server 接 OAuth callback
