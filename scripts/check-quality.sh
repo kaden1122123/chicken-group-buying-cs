@@ -474,6 +474,26 @@ else
   fi
 fi
 
+# ────────────────────────────────────────────────
+# 檢查 12: Markdown 連結完整性（Round 26 補齊 — 2026-07-25）
+# 用途：防止 .md 連結指向不存在檔案（Round 26 發現 11 個未被抓到的 link drift）
+# 對齊：docs/.archive/SYSTEM_AUDIT_2026-07-19.md + Round 26 audit findings
+# 排除：.archive/、archive/、.task-state/、跨 repo 引用
+# ────────────────────────────────────────────────
+section "Check 12/12: Markdown 連結完整性"
+
+if [ -f "scripts/check-md-links.js" ]; then
+  if node scripts/check-md-links.js > /tmp/md-links.log 2>&1; then
+    link_count=$(grep -oE '檢查連結: [0-9]+' /tmp/md-links.log | grep -oE '[0-9]+')
+    pass "0 個 broken markdown links（已檢查 $link_count 個相對路徑連結）"
+  else
+    fail "Markdown 連結 drift（看 /tmp/md-links.log）"
+    tail -30 /tmp/md-links.log
+  fi
+else
+  warn "scripts/check-md-links.js 不存在（跳過）"
+fi
+
 # ─────────────────────────────────────────
 
 # 總結
