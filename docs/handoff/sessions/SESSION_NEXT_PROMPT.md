@@ -1,4 +1,4 @@
-# 下個 Session Prompt（2026-07-22 23:08 之後接手雞味客服工作的 agent）
+# 下個 Session Prompt（2026-07-24 21:10+ 之後接手雞味客服工作的 agent）
 
 > **作者**：2026-07-22 23:08（Round 1+2 + Sign B + Sign C-all 全部完成 + Session close-out）
 > **TL;DR**：Hubert 23:07 收尾指令，session `agent:main:discord:channel:1512213273846485058` (2d 12h+) 完整關閉。
@@ -56,7 +56,7 @@ ls /home/clawuser/.config/chicken/secrets/   # 應有 dashboard-pwd / api-pwd / 
 
 ---
 
-## 當前狀態（2026-07-22 23:08）
+## 當前狀態（2026-07-24 21:10+，Round 20 全部完成後）
 
 | 項目 | 狀態 |
 |------|------|
@@ -68,7 +68,7 @@ ls /home/clawuser/.config/chicken/secrets/   # 應有 dashboard-pwd / api-pwd / 
 | dashboard-server | ✅ 跑（port 3000） |
 | Dashboard tunnel | ✅ `brt1122-System-09`（systemd 自動管理，PID 1543） |
 | Dashboard URL | ✅ `https://dashboard.brt1122.com`（Hubert 已驗證 up） |
-| Cloudflare Worker | ✅ deploy v `683f6f9b`（Bug #1 雙邊 fix 生效） |
+| Cloudflare Worker | ✅ deploy v `326f6e31`（Round 20 — 45 KB entries + Workers AI semantic scoring 取代 synonym） |
 | 老闆 LINE 通知 | ✅ 重新啟用（notify_owner.enabled=true） |
 | LINE push loop 防護 | ✅ HUMAN_HANDOFF guard + 1分鐘 debounce |
 | 3 層 enforcement | ✅ chmod 555 + cron 10min + Check 10/11 |
@@ -345,22 +345,35 @@ SOP 內容見 `docs/SESSION_END_SOP.md`（7 步 / 5 分鐘：check-quality → �
 
 ---
 
-## 🆕 Round 15 收尾（2026-07-22 23:08）
+## 🆕 Round 19+20 收尾（2026-07-24 21:10+）
 
-**已 commit**: `5ca4aba`（chicken, 這次 session 最後一個）+ Worker v `683f6f9b` 已部署
-**每日總結**: `memory/2026-07-22.md`（本檔 + 對應完成段）
-**check-quality**: 11/1/2 → lint:fix 後 12/1/0
-**npm test**: 53 全綠
-**/healthz**: 應 dashboard / api_server / worker 全 up
+**已 commit**: `56db907`（chicken, final）+ Worker `b5c9d1a` deploy v `326f6e31` (prod) / `1056d177` (staging)
+**每日總結**: `memory/2026-07-24.md`（Round 19 全部 + Round 20 partial）
+**check-quality**: 13 pass / 1 warn / 0 fail
+**npm test**: 30 / 30 pass（含 Round 19 C5 inverted index + cache + Round 18 Bug 1+2 fix tests）
+**/healthz**: dashboard / api_server / worker 全 up
 
-### Sign C-all 完成
-- 統一 test framework **48/48 套**為 `node:test` 風格
-- 從最簡單 5 套（第 1 批 `51e3dcc`）→ 中階 → 全部轉換（第 8 批 `a649467`）
-- + 1 amend `5ca4aba` 修 timezone.test.js syntax error
+### Round 19 完成（Hubert 10:49 指示 8 個 task）
+- **Task A**: `docs/TESTING_TROUBLESHOOTING.md` (`9efdb1a`) — 7 種常見問題 + P0/P1/P2 分級
+- **Task B**: LINE bot config 整合 (`8ef89be`) — 修 `LINE_BOT_TOKEN` drift + `.env.example` + `docs/LINE_BOT_SETUP.md`
+- **Task C1**: Semantic scoring via synonyms (Worker `aa31757` + deploy v `f2458aee`)
+- **Task C2**: 客戶標籤自動判斷 (`d5a7604`) — `scripts/customer-tags.js` (rule-based 5 類 23 規則)
+- **Task C3**: L2 .bak cleanup (`846fc76`) — `scripts/cleanup-baks.sh` 7-day buffer
+- **Task C4**: Worker staging 環境 (Worker `23bf5da`) — `wrangler.staging.toml` + `docs/STAGING.md`
+- **Task C5**: KB inverted index + LRU cache (Worker `6c3e2a7`) — 30/30 tests pass
+- **Task D**: `docs/AGENT_PROJECT_SOP.md` (`7ec11ac`) — 18 個建置步驟 + 完成清單
+- **Task E**: 狀態文件更新防 drift
 
-### 待做（Hubert 23:08 後 Sign-on）
-- **Sign D**（P0 第一）：Worker FAQ 前處理實作（2-3 hr）
-- **Sign E**（deferred）：GCP service account key rotate
-- **Sign G**：Check 10 AGENTS.md drift 決策
-- **Sign H**（1 分鐘）：`chmod 600` 2 個 OAuth credentials 檔
-- 其他 Sign：Hubert 描述
+### Round 20 完成（Hubert 21:10 指示 4 個補齊任務）
+- **Task 2**: wrangler staging setup (`2ac093d` + `83d36bc57b6b4505aa24ad684483e00c` KV) + deploy v `12a5bd4d`
+- **Task 3**: Workers AI embeddings 取代 synonym (Worker `b5c9d1a` + deploy v `326f6e31` prod / `1056d177` staging) — `@cf/baai/bge-m3` multilingual
+- **Task 4**: `/api/customer-tags/:userId` endpoint (`2486033`) — integrate `scripts/customer-tags.js` rule-based
+- **Task 5**: `bash scripts/cleanup-baks.sh --force` — 0 files deleted (全部在 1-5 天 buffer 內)
+- **Status files**: HANDOFF.md + CHANGELOG.md + .env.example + docs/LINE_BOT_SETUP.md (`56db907`)
+
+### 下次 session 第一件事
+1. **設定 staging Worker secrets**（LINE_BOT_TOKEN / LINE_CHANNEL_SECRET for staging）
+2. **Workers AI embeddings 上線 24hr 監控**（看實際 LINE 訊息 semantic match 命中率）
+3. **真實 LINE Bot 帳號測試**（換 `LINE_BOT_TOKEN` secret 用真實帳號）
+4. **加 `/api/customer-tags` 整合測試**（手動測試幾個用戶 ID）
+5. **`/api/customer-tags` 加到 dashboard**（UI 顯示客戶標籤）
