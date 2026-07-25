@@ -27,6 +27,8 @@ const path = require('path');
 const { getTenantId } = require('../src/config');
 const { getOrdersByDate, getRecentOrders } = require('../src/order/csvReader');
 const { updateOrder } = require('../src/order/csvWriter'); // P5：Hubert 手動標記付款狀態
+// Round 21 (2026-07-25 09:12+) Task 4: 客戶標籤自動判斷（直接 require，避免跨 server 請求）
+const { buildTagContext, determineTags, loadOrderHistory } = require('./customer-tags');
 
 // P1-8：js-yaml fallback。Production 環境遺漏 npm install 時不會 crash。
 // 讀取優先用 js-yaml，失敗時用 src/config.js 的 _parseYamlSimple。
@@ -548,6 +550,43 @@ const server = http.createServer(async (req, res) => {
     const safeLimit = Math.min(Math.max(limit, 1), 100); // 限 1-100
     const recent = getRecentOrders(safeLimit);
     sendJson(res, 200, { tenant: getTenantId(), count: recent.length, orders: recent });
+    return;
+  }
+
+  // Round 21 (2026-07-25) Task 4: GET /api/customer-tags/:userId
+  // 客戶標籤自動判斷（直接 require customer-tags.js，不需跨 server 請求）
+  const tagMatch = url.match(/^\/api\/customer-tags\/([^/]+)$/);
+  if (tagMatch && method === 'GET') {
+    const userLineId = decodeURIComponent(tagMatch[1]);
+    try {
+      const orderHistory = loadOrderHistory(userLineId);
+      const currentOrder = orderHistory[orderHistory.length - 1] || null;
+      const ctx = buildTagContext(userLineId, orderHistory, currentOrder);
+      const tags = determineTags(ctx);
+      const byCategory = {};
+      tags.forEach((t) => {
+        if (!byCategory[t.category]) byCategory[t.category] = [];
+        byCategory[t.category].push(t.tag);
+      });
+      sendJson(res, 200, {
+        success: true,
+        userLineId,
+        orderCount: orderHistory.length,
+        currentOrder: currentOrder
+          ? {
+              order_id: currentOrder.order_id,
+              total_amount: currentOrder.total_amount,
+              payment_status: currentOrder.payment_status,
+            }
+          : null,
+        tags,
+        tagCount: tags.length,
+        byCategory,
+      });
+    } catch (e) {
+      logger.error('[/api/customer-tags] error:', e);
+      sendJson(res, 500, { success: false, error: e.message });
+    }
     return;
   }
 

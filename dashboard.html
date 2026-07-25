@@ -480,5 +480,71 @@
       }
     });
   </script>
+
+  <!-- Round 21 (2026-07-25) Task 4: 客戶標籤查詢 UI -->
+  <section id="customer-tags-section" style="margin-top: 2em; padding: 1em; border: 1px solid #ddd; border-radius: 8px; background: #fafafa;">
+    <h2>🏷️ 客戶標籤查詢</h2>
+    <p style="color: #666; font-size: 0.9em;">輸入用戶 LINE ID 或電話，查詢自動標籤（首購族/老客戶/大客戶/待轉帳 等 5 類 23 規則）</p>
+    <div style="display: flex; gap: 0.5em; margin-bottom: 1em;">
+      <input
+        type="text"
+        id="customer-tags-input"
+        placeholder="例如：Uf56650056d35626deb64165926a26182"
+        style="flex: 1; padding: 0.5em; border: 1px solid #ccc; border-radius: 4px;"
+      />
+      <button
+        id="customer-tags-btn"
+        style="padding: 0.5em 1em; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;"
+        onclick="queryCustomerTags()"
+      >查詢標籤</button>
+    </div>
+    <div id="customer-tags-result" style="display: none; padding: 1em; background: white; border: 1px solid #eee; border-radius: 4px;"></div>
+  </section>
+
+  <script>
+    async function queryCustomerTags() {
+      const input = document.getElementById('customer-tags-input');
+      const result = document.getElementById('customer-tags-result');
+      const btn = document.getElementById('customer-tags-btn');
+      const userId = input.value.trim();
+      if (!userId) {
+        alert('請輸入用戶 LINE ID 或電話');
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = '查詢中…';
+      result.style.display = 'block';
+      result.innerHTML = '<p style="color: #999;">查詢中…</p>';
+      try {
+        const r = await fetch('/api/customer-tags/' + encodeURIComponent(userId));
+        const data = await r.json();
+        if (data.success && data.tagCount > 0) {
+          let html = '<h3>✅ ' + data.userLineId + '</h3>';
+          html += '<p>訂單數: <b>' + data.orderCount + '</b> 標籤數: <b>' + data.tagCount + '</b></p>';
+          if (data.currentOrder) {
+            html += '<p>當下訂單: <code>' + data.currentOrder.order_id + '</code> ($' + data.currentOrder.total_amount + ', ' + data.currentOrder.payment_status + ')</p>';
+          }
+          html += '<h4>標籤（按分類）:</h4><ul>';
+          for (const [cat, tags] of Object.entries(data.byCategory)) {
+            html += '<li><b>[' + cat + ']</b> ' + tags.map((t) => '<span style="display: inline-block; padding: 0.2em 0.5em; margin: 0.1em; background: #e3f2fd; border-radius: 3px;">' + t + '</span>').join(' ') + '</li>';
+          }
+          html += '</ul>';
+          result.innerHTML = html;
+        } else if (data.success && data.tagCount === 0) {
+          result.innerHTML = '<h3>ℹ️ ' + data.userLineId + '</h3><p>訂單數: ' + data.orderCount + ' — 無標籤符合</p>';
+        } else {
+          result.innerHTML = '<p style="color: red;">查詢失敗: ' + (data.error || '未知錯誤') + '</p>';
+        }
+      } catch (err) {
+        result.innerHTML = '<p style="color: red;">網路錯誤: ' + err.message + '</p>';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '查詢標籤';
+      }
+    }
+    document.getElementById('customer-tags-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') queryCustomerTags();
+    });
+  </script>
 </body>
 </html>
