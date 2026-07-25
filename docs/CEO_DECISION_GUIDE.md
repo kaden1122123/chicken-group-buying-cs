@@ -201,7 +201,7 @@ brtclaw 問決策時，格式：
 **brtclaw 推薦**：做（1.5-2 小時、中風險、高 ROI）
 **你決定**：______
 
-**詳見**：[`SESSION_H8_PROMPT.md`](./handoff/sessions/SESSION_H8_PROMPT.md)
+**詳見**：[`SESSION_H8_PROMPT.md`](./.archive/handoff/sessions/SESSION_H8_PROMPT.md)
 
 ---
 
@@ -226,7 +226,7 @@ brtclaw 問決策時，格式：
 
 **brtclaw 推薦**：✅ 已完成
 
-**詳見**：[`SESSION_X1_PROMPT.md`](./handoff/sessions/SESSION_X1_PROMPT.md)
+**詳見**：[`SESSION_X1_PROMPT.md`](./.archive/handoff/sessions/SESSION_X1_PROMPT.md)
 
 ---
 
@@ -241,7 +241,7 @@ brtclaw 問決策時，格式：
 
 **brtclaw 推薦**：✅ 已完成（11 個 SESSION prompt 狀態欄補齊）
 
-**詳見**：[`SESSION_X2_PROMPT.md`](./handoff/sessions/SESSION_X2_PROMPT.md)
+**詳見**：[`SESSION_X2_PROMPT.md`](./.archive/handoff/sessions/SESSION_X2_PROMPT.md)
 
 ---
 
@@ -259,7 +259,7 @@ dashboard 只看訂單。故障排查要翻 logs/ 目錄。比讀檔案慢且看
 
 **brtclaw 推薦**：✅ 已完成
 
-**詳見**：[`SESSION_X3_PROMPT.md`](./handoff/sessions/SESSION_X3_PROMPT.md)
+**詳見**：[`SESSION_X3_PROMPT.md`](./.archive/handoff/sessions/SESSION_X3_PROMPT.md)
 
 ---
 
@@ -279,7 +279,7 @@ dashboard 只看訂單。故障排查要翻 logs/ 目錄。比讀檔案慢且看
 **brtclaw 推薦**：做（1.5 小時、低風險）
 **你決定**：______
 
-**詳見**：[`SESSION_X4_PROMPT.md`](./handoff/sessions/SESSION_X4_PROMPT.md)
+**詳見**：[`SESSION_X4_PROMPT.md`](./.archive/handoff/sessions/SESSION_X4_PROMPT.md)
 
 ---
 
@@ -298,7 +298,7 @@ dashboard 只看訂單。故障排查要翻 logs/ 目錄。比讀檔案慢且看
 
 **brtclaw 推薦**：✅ 已完成（無獨立 `start-api-server.sh`，SOP 內化）
 
-**詳見**：[`SESSION_X5_PROMPT.md`](./handoff/sessions/SESSION_X5_PROMPT.md)
+**詳見**：[`SESSION_X5_PROMPT.md`](./.archive/handoff/sessions/SESSION_X5_PROMPT.md)
 
 ---
 

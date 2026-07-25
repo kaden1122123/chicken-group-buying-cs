@@ -169,8 +169,8 @@
 
 ### 升級 Session Reference
 
-- [docs/handoff/sessions/SESSION_O_PROMPT.md](../handoff/sessions/SESSION_O_PROMPT.md) — B 方案（OpenClaw tool calling）
-- [docs/handoff/sessions/SESSION_P_PROMPT.md](../handoff/sessions/SESSION_P_PROMPT.md) — C 方案（OpenClaw ↔ Worker KV 同步）
+- [docs/handoff/sessions/SESSION_O_PROMPT.md](../.archive/handoff/sessions/SESSION_O_PROMPT.md) — B 方案（OpenClaw tool calling）
+- [docs/handoff/sessions/SESSION_P_PROMPT.md](../.archive/handoff/sessions/SESSION_P_PROMPT.md) — C 方案（OpenClaw ↔ Worker KV 同步）
 
 ---
 
