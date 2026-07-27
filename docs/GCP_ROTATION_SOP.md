@@ -4,6 +4,7 @@
 > **觸發**：audit 2026-07-19 發現 `google-service-account.json` 已 2+ 個月沒 rotate（建立時間 2026-05 之前）
 > **目的**：建立定期 rotate SOP，避免 service account key 過期/外洩導致 Sheets sync 失敗
 > **對齊**：GCP 官方 best practices + goldbergyoni/nodebestpractices
+> **last_updated**：2026-07-27（Round 27 確認仍適用，無改動）
 
 ---
 

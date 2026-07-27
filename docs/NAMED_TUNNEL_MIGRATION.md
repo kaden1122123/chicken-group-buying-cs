@@ -3,6 +3,7 @@
 > **作者**：brtclaw（2026-07-19 22:30+ session 修整）
 > **重要修正**：原 SOP 假設要新建 `chicken-dashboard` named tunnel，但實際上 `brt1122-System-09` 已經是穩定的 named tunnel（從 5/02 跑，78 天穩定），**不需要新建 tunnel**！
 > **狀態**：Round 14 修整 — 重複確認 + 整理
+> **last_updated**：2026-07-27（Round 27 確認仍適用，無改動）
 
 ---
 

@@ -3,6 +3,7 @@
 > **建立時間**：2026-07-25 09:10+ Round 21
 > **目的**：列出 `/home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service/` 所有檔案按功能分類
 > **維護**：每次新增/刪除檔案時更新
+> **last_updated**：2026-07-27（Round 27 確認仍適用，無改動）
 
 ---
 

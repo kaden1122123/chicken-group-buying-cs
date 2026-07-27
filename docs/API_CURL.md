@@ -3,6 +3,7 @@
 > Session L3：api-server.js 對外 HTTP API 的 curl 範例
 > 完整 OpenAPI spec 見 `openapi.yaml`
 > Swagger UI 互動式文件：`GET /api/docs`（需 auth）
+> last_updated：2026-07-27（Round 27 確認仍適用，無改動）
 
 ---
 

@@ -3,6 +3,7 @@
 > 快速審查 Phase 1 實作品
 > 維護者：brtclaw
 > 更新時間：2026-07-03（Hubert 17:18 drift 修整 + 49 套對齊）
+> last_updated：2026-07-27（Round 27 確認仍適用，無改動）
 > Single Source of Truth：`src/order/csvWriter.js` 第 17-44 行 `CSV_HEADERS`
 
 ---

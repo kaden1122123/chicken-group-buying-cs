@@ -4,6 +4,7 @@
 > **維護者**：brtclaw
 > **自動產生**：`bash scripts/check-quality.sh`（6 項檢查）
 > **更新規則**：每次 Session 結束跑一次 check-quality.sh，更新本檔
+> **last_updated**：2026-07-27（Round 27 確認仍適用，無改動）
 
 ---
 

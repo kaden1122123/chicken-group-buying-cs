@@ -3,6 +3,7 @@
 > **Session P0（2026-07-17）**：雞味客服 LINE 額度 500/月限制的備援通知通道 + 全量通知。
 >
 > **v2 更新**：Hubert 22:53 決定 — Email 不再只是 fallback，**所有 `notifyHubert` 呼叫都同時寄 Email**（LINE + Email 並行）。
+> **last_updated**：2026-07-27（Round 27 確認仍適用，無改動）
 
 ---
 

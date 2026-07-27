@@ -4,6 +4,7 @@
 > **目的**：合併 `TESTING_GUIDE.md` + `TESTING_TROUBLESHOOTING.md` 為單一文件
 > **來源**：2 個 SOP 共 1007 行 → 合併後 280 行（**72% 節省**）
 > **適用對象**：開發者、測試者、debugger
+> **last_updated**：2026-07-27（Round 27 確認仍適用，無改動）
 
 ---
 
