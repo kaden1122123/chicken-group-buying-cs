@@ -6,7 +6,10 @@ const https = require('https');
 // 支援多租戶、js-yaml 缺失 fallback、與 src/ 其他模組一致
 const { getLineBotToken, getNotifyOwnerUserId, isFeatureEnabled, getEmailConfig } = require('../config');
 // P0 2026-07-17：Email 整合（Gmail 通知老闆的備援通道）
-const { sendEmail, PAYMENT_METHOD_LABELS } = require('./emailNotifier');
+// 注意：用 emailNotifier.sendEmail 延遲查找（不要 destructure）— 讓測試能在 module load 之後
+// 替換 sendEmail 函式（P0 mock pattern）
+const emailNotifier = require('./emailNotifier');
+const { PAYMENT_METHOD_LABELS } = emailNotifier;
 
 // 預設值（若 config 沒設定時使用，僅在開發環境有意義）
 const DEFAULT_HUBERT_LINE_USER_ID = 'Uf56650056d35626deb64165926a26182';
@@ -310,7 +313,7 @@ async function sendEmailNotification(message, options = {}) {
     return { success: false, skipped: true };
   }
   const { subject, body } = buildEmailContent(message, options);
-  return sendEmail({ to, subject, body });
+  return emailNotifier.sendEmail({ to, subject, body });
 }
 
 /**
@@ -342,15 +345,29 @@ async function notifyHubert(message, options = {}) {
   const lineResult = await notifyHubertViaLine(message);
 
   // Email 永遠並行觸發（Hubert 22:53 要求：所有 notifyHubert 都要寄 Email）
-  sendEmailNotification(message, options).catch((e) =>
-    logger.warn('[notifier] Email 通知失敗', { err: e.message }),
-  );
-
-  // 向後相容：原行為是失敗時 reject（呼叫端 .catch 處理）
-  if (!lineResult.success) {
-    throw new Error(lineResult.error || 'LINE push failed');
+  // 改為 await 是為了讓 Email fallback 真正生效（舊版 fire-and-forget 即使 Email 成功也會因 LINE 失敗而 throw）
+  let emailResult;
+  try {
+    emailResult = await sendEmailNotification(message, options);
+  } catch (e) {
+    logger.warn('[notifier] Email 通知失敗', { err: e.message });
+    emailResult = { success: false, error: e.message };
   }
-  return true;
+
+  // 整體成功：LINE 或 Email 至少一邊成功即可
+  const overallSuccess =
+    (lineResult && lineResult.success) ||
+    (emailResult && emailResult.success);
+
+  if (!overallSuccess) {
+    // 雙通道都失敗才 throw（保留向後相容：呼叫端 .catch 處理）
+    const errMsg =
+      (lineResult && lineResult.error) ||
+      (emailResult && emailResult.error) ||
+      'notifyHubert failed (LINE + Email 都失敗)';
+    throw new Error(errMsg);
+  }
+  return { line: lineResult, email: emailResult, overallSuccess: true };
 }
 
 /**
@@ -371,7 +388,11 @@ async function sendTextMessage(text, recipientUserId) {
   const lineToken = getLineToken();
   if (!lineToken) {
     logger.warn('LINE Bot Token not configured, skipping text message');
-    return false;
+    return { success: false, error: 'LINE Bot Token not configured' };
+  }
+  if (!recipientUserId || typeof recipientUserId !== 'string') {
+    logger.warn('sendTextMessage: recipientUserId 必填（非空字串）');
+    return { success: false, error: 'recipientUserId 必填（非空字串）' };
   }
 
   const payload = JSON.stringify({
@@ -379,7 +400,7 @@ async function sendTextMessage(text, recipientUserId) {
     messages: [{ type: 'text', text }],
   });
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const options = {
       hostname: 'api.line.me',
       path: '/v2/bot/message/push',
@@ -396,17 +417,17 @@ async function sendTextMessage(text, recipientUserId) {
       res.on('data', (chunk) => { data += chunk; });
       res.on('end', () => {
         if (res.statusCode === 200 || res.statusCode === 201) {
-          resolve(true);
+          resolve({ success: true });
         } else {
           logger.error('LINE text push failed', { status: res.statusCode, body: data });
-          reject(new Error(`LINE API returned ${res.statusCode}: ${data}`));
+          resolve({ success: false, error: `LINE API returned ${res.statusCode}: ${data}` });
         }
       });
     });
 
     req.on('error', (e) => {
       logger.error('LINE text push error', { err: e.message });
-      reject(e);
+      resolve({ success: false, error: e.message });
     });
 
     req.write(payload);
@@ -508,5 +529,6 @@ module.exports = {
   sendTextMessage,
   sendImageMessage,
   getJKOQrCodeUrl,
+  getHubertLineUserId,
   testNotification,
 };
