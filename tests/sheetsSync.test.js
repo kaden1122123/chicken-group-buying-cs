@@ -392,17 +392,15 @@ test('syncOrdersToSheets — dryRun: 跳過 HTTPS 呼叫，回 dryRun:true', asy
   }
 });
 
-test('syncOrdersToSheets — happy path: auto-discover + clear + append + success', async () => {
+test('syncOrdersToSheets — happy path: token + auto-discover + clear + append + success', async () => {
   const credsPath = setupFakeCredsFile();
   const get = mockHttpsGet({
     statusCode: 200,
     body: JSON.stringify({ sheets: [{ properties: { title: 'DiscoveredSheet' } }] }),
   });
   const m = mockHttpsRequest([
-    // getFirstSheetName 內部 getAccessToken（auto-discover sheet metadata 前）
-    { statusCode: 200, body: JSON.stringify({ access_token: 'ya29.inner' }) },
-    // syncOrdersToSheets 主流程 getAccessToken（clear/append 前）
-    { statusCode: 200, body: JSON.stringify({ access_token: 'ya29.outer' }) },
+    // 主流程 getAccessToken（共用給 sheet metadata + clear/append）
+    { statusCode: 200, body: JSON.stringify({ access_token: 'ya29.shared' }) },
     // clear
     { statusCode: 200, body: '{}' },
     // append
@@ -423,14 +421,13 @@ test('syncOrdersToSheets — happy path: auto-discover + clear + append + succes
     const result = await sheetsSync.syncOrdersToSheets();
     assert.strictEqual(result.success, true);
     assert.ok(result.rowsWritten >= 0);
-    // getFirstSheetName 透過 https.get 呼叫
+    // getFirstSheetName 透過 https.get 呼叫（用主流程同一個 token，不再內部 fetch）
     const getOpts = get.capturedOptions();
     assert.match(getOpts.path, /\/v4\/spreadsheets\/test-sheet-id/);
-    // 4 https.request calls：getFirstSheetName 內部 token + 主流程 token + clear + append
-    // （已知：雙 token 呼叫是浪費，未來可重構成傳 token 進 getFirstSheetName 消除冗餘）
-    assert.strictEqual(m.captured.length, 4);
-    assert.match(m.captured[2].path, /:clear$/);
-    assert.match(m.captured[3].path, /:append/);
+    // 3 https.request calls：token (共用) + clear + append（雙 token 浪費已消除）
+    assert.strictEqual(m.captured.length, 3);
+    assert.match(m.captured[1].path, /:clear$/);
+    assert.match(m.captured[2].path, /:append/);
   } finally {
     get.restore();
     m.restore();
@@ -443,10 +440,8 @@ test('syncOrdersToSheets — metadata 404 → fallback 到 config.sheet_name', a
   const credsPath = setupFakeCredsFile();
   const get = mockHttpsGet({ statusCode: 404, body: 'Not Found' });
   const m = mockHttpsRequest([
-    // getFirstSheetName 內部 token
-    { statusCode: 200, body: JSON.stringify({ access_token: 'ya29.inner' }) },
-    // syncOrdersToSheets 主流程 token
-    { statusCode: 200, body: JSON.stringify({ access_token: 'ya29.outer' }) },
+    // 主流程 token
+    { statusCode: 200, body: JSON.stringify({ access_token: 'ya29.shared' }) },
     // clear
     { statusCode: 200, body: '{}' },
     // append
@@ -466,8 +461,8 @@ test('syncOrdersToSheets — metadata 404 → fallback 到 config.sheet_name', a
     });
     const result = await sheetsSync.syncOrdersToSheets();
     assert.strictEqual(result.success, true, 'fallback 寫入應成功');
-    // Append 應該用 FallbackSheetName（URL-encoded 帶單引號）— 索引 [3] 而非 [2]
-    const appendPath = m.captured[3].path;
+    // Append 應該用 FallbackSheetName（URL-encoded 帶單引號）— 索引 [2] 而非 [3]
+    const appendPath = m.captured[2].path;
     assert.ok(
       appendPath.includes(encodeURIComponent("'FallbackSheetName'!A1")),
       `append path 應含 'FallbackSheetName'!A1，實際：${decodeURIComponent(appendPath)}`,
@@ -575,20 +570,24 @@ test('syncOrdersToSheets — Sheets clear 500 → success false', async () => {
 // getFirstSheetName — auto-discover sheet
 // ---------------------------------------------------------------------------
 
-test('getFirstSheetName — success returns first sheet title', async () => {
+test('getFirstSheetName — success returns first sheet title（傳入 pre-fetched token）', async () => {
   setupFakeCredsFile();
   const get = mockHttpsGet({
     statusCode: 200,
     body: JSON.stringify({ sheets: [{ properties: { title: 'FirstSheet' } }] }),
   });
   const m = mockHttpsRequest([
+    // 先取 token（getFirstSheetName 不再內部 fetch）
     { statusCode: 200, body: JSON.stringify({ access_token: 'ya29.test' }) },
   ]);
   try {
     const { sheetsSync } = reloadSheetsSync();
     const creds = generateTestCredentials();
-    const title = await sheetsSync.getFirstSheetName(creds, 'test-sheet-id');
+    const accessToken = await sheetsSync.getAccessToken(creds);
+    const title = await sheetsSync.getFirstSheetName(accessToken, 'test-sheet-id');
     assert.strictEqual(title, 'FirstSheet');
+    // 只用了 1 次 https.request（取 token），https.get 是另個 mock
+    assert.strictEqual(m.captured.length, 1);
   } finally {
     get.restore();
     m.restore();
@@ -597,7 +596,7 @@ test('getFirstSheetName — success returns first sheet title', async () => {
   }
 });
 
-test('getFirstSheetName — 404 → reject', async () => {
+test('getFirstSheetName — 404 → reject（傳入 pre-fetched token）', async () => {
   setupFakeCredsFile();
   const get = mockHttpsGet({ statusCode: 404, body: 'Not Found' });
   const m = mockHttpsRequest([
@@ -606,8 +605,9 @@ test('getFirstSheetName — 404 → reject', async () => {
   try {
     const { sheetsSync } = reloadSheetsSync();
     const creds = generateTestCredentials();
+    const accessToken = await sheetsSync.getAccessToken(creds);
     await assert.rejects(
-      sheetsSync.getFirstSheetName(creds, 'missing-sheet-id'),
+      sheetsSync.getFirstSheetName(accessToken, 'missing-sheet-id'),
       /Get metadata failed: 404/,
     );
   } finally {
@@ -618,7 +618,7 @@ test('getFirstSheetName — 404 → reject', async () => {
   }
 });
 
-test('getFirstSheetName — invalid JSON response → reject', async () => {
+test('getFirstSheetName — invalid JSON response → reject（傳入 pre-fetched token）', async () => {
   setupFakeCredsFile();
   const get = mockHttpsGet({ statusCode: 200, body: 'not-json' });
   const m = mockHttpsRequest([
@@ -627,8 +627,9 @@ test('getFirstSheetName — invalid JSON response → reject', async () => {
   try {
     const { sheetsSync } = reloadSheetsSync();
     const creds = generateTestCredentials();
+    const accessToken = await sheetsSync.getAccessToken(creds);
     await assert.rejects(
-      sheetsSync.getFirstSheetName(creds, 'test-sheet-id'),
+      sheetsSync.getFirstSheetName(accessToken, 'test-sheet-id'),
       /Parse metadata failed/,
     );
   } finally {

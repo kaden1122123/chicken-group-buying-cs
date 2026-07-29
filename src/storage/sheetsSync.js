@@ -59,37 +59,38 @@ function base64url(data) {
  */
 /**
  * 從 spreadsheet metadata 取得第一個 sheet 的名稱（避免 hardcode sheet_name 出錯）
+ * @param {string} accessToken - 已取得的 access token（呼叫端負責 fetch）
+ * @param {string} spreadsheetId
+ * @returns {Promise<string>}
  */
-function getFirstSheetName(credentials, spreadsheetId) {
+function getFirstSheetName(accessToken, spreadsheetId) {
   return new Promise((resolve, reject) => {
-    getAccessToken(credentials).then((token) => {
-      https.get({
-        hostname: SHEETS_API_HOST,
-        path: `${SHEETS_APPEND_PATH}/${encodeURIComponent(spreadsheetId)}?fields=sheets.properties.title`,
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 10000,
-      }, (res) => {
-        let data = '';
-        res.on('data', (c) => { data += c; });
-        res.on('end', () => {
-          if (res.statusCode === 200) {
-            try {
-              const parsed = JSON.parse(data);
-              const firstSheet = parsed.sheets && parsed.sheets[0];
-              if (firstSheet) {
-                resolve(firstSheet.properties.title);
-              } else {
-                reject(new Error('No sheets found in spreadsheet'));
-              }
-            } catch (e) {
-              reject(new Error(`Parse metadata failed: ${e.message}`));
+    https.get({
+      hostname: SHEETS_API_HOST,
+      path: `${SHEETS_APPEND_PATH}/${encodeURIComponent(spreadsheetId)}?fields=sheets.properties.title`,
+      headers: { Authorization: `Bearer ${accessToken}` },
+      timeout: 10000,
+    }, (res) => {
+      let data = '';
+      res.on('data', (c) => { data += c; });
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          try {
+            const parsed = JSON.parse(data);
+            const firstSheet = parsed.sheets && parsed.sheets[0];
+            if (firstSheet) {
+              resolve(firstSheet.properties.title);
+            } else {
+              reject(new Error('No sheets found in spreadsheet'));
             }
-          } else {
-            reject(new Error(`Get metadata failed: ${res.statusCode} ${data}`));
+          } catch (e) {
+            reject(new Error(`Parse metadata failed: ${e.message}`));
           }
-        });
-      }).on('error', reject).end();
-    }).catch(reject);
+        } else {
+          reject(new Error(`Get metadata failed: ${res.statusCode} ${data}`));
+        }
+      });
+    }).on('error', reject).end();
   });
 }
 
@@ -286,18 +287,18 @@ async function syncOrdersToSheets(options = {}) {
       return { success: true, rowsWritten: 0, dryRun: true, ordersCount: orders.length, errors: [] };
     }
 
+    // 5. 取得 access token（共用給 sheet metadata + clear/append，雙重呼叫的浪費已消除）
+    const accessToken = await getAccessToken(credentials);
+
     // 4. Auto-discover sheet name（避免 sheet_name 跟實際試算表名稱不符 + 中文需單引號問題）
     let actualSheetName = phase2.sheet_name;
     try {
-      actualSheetName = await getFirstSheetName(credentials, phase2.spreadsheet_id);
+      actualSheetName = await getFirstSheetName(accessToken, phase2.spreadsheet_id);
       logger.info('[sheetsSync] 使用 spreadsheet 第一個 sheet', { sheet: actualSheetName });
     } catch (e) {
       logger.warn('[sheetsSync] auto-discover sheet 失敗，用 config 設定', { err: e.message, configured: phase2.sheet_name });
     }
     const sheetName = actualSheetName;
-
-    // 5. 取得 access token
-    const accessToken = await getAccessToken(credentials);
 
     // 6. 寫入 Sheets（先 clear 後寫，避免重複）
     // 中文 sheet name 用單引號包裝避免 range parse error
