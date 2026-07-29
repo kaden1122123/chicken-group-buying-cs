@@ -1,6 +1,7 @@
 # ADR-0001: src/ 不是 Production Runtime
 
 > **狀態**：Accepted
+> **last_updated**：2026-07-29（Round 28 📐 補齊）
 > **日期**：2026-06-27（SPEC.md v1.1）
 > **決策者**：Hubert
 > **背景文件**：[SPEC.md v1.1 §變更紀錄](../../SPEC.md)

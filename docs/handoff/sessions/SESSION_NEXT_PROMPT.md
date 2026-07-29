@@ -1,6 +1,7 @@
 # 下個 Session Prompt（自動生成於 2026-07-25 11:41:30）
 
 > **本檔由 `scripts/generate-next-prompt.sh` 自動生成**（Round 23）
+> **last_updated**：2026-07-29（Round 28 📐 補齊）
 > **手動編輯請注意**：下次跑 script 會被覆蓋靜態 sections
 > **重新生成**：`bash scripts/generate-next-prompt.sh`
 

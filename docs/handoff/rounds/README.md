@@ -1,6 +1,7 @@
 # Round 歷史（chicken-group-buying-customer-service）
 
 > **建立時間**：2026-07-28（HEARTBEAT 瘦身 Round）
+> **last_updated**：2026-07-29（Round 28 📐 補齊）
 > **建立者**：brtclaw
 > **目的**：從 git log + CHANGELOG.md 重新生成雞味客服 round close-out 摘要，存入 chicken repo（跟程式碼一起走 git history）
 

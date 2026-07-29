@@ -1,6 +1,7 @@
 # ADR-0005: Session-based 變更流程 + 每 Task 一個 Commit
 
 > **狀態**：Accepted
+> **last_updated**：2026-07-29（Round 28 📐 補齊）
 > **日期**：2026-06-27（Session C C2 事故後）
 > **決策者**：Hubert
 > **背景文件**：[MEMORY.md §I 結構性變更 SOP](../../../../.openclaw/workspace/MEMORY.md)（系統層檔案，不在本 repo 內）

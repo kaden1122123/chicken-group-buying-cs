@@ -1,6 +1,7 @@
 # ADR-0002: 雙位置架構（原位置 + 主位置）
 
 > **狀態**：Accepted
+> **last_updated**：2026-07-29（Round 28 📐 補齊）
 > **日期**：2026-06-27（Session C C1）
 > **決策者**：Hubert
 > **背景文件**：[MIGRATION_HISTORY.md](../../MIGRATION_HISTORY.md)

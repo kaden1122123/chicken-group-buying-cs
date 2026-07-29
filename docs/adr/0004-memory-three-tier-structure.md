@@ -1,6 +1,7 @@
 # ADR-0004: MEMORY.md 用 L1/L2/L3 三層結構
 
 > **狀態**：Accepted
+> **last_updated**：2026-07-29（Round 28 📐 補齊）
 > **日期**：2026-06-23
 > **決策者**：Hubert
 > **背景文件**：[MEMORY.md (~/.openclaw/workspace/MEMORY.md)](../../../../.openclaw/workspace/MEMORY.md)（系統層檔案，不在本 repo 內）
