@@ -343,6 +343,7 @@ async function syncOrdersToSheets(options = {}) {
 module.exports = {
   syncOrdersToSheets,
   getAccessToken,
+  getFirstSheetName,
   collectAllOrders,
   ordersToSheetValues,
   base64url,
