@@ -161,6 +161,87 @@ ORD-20991229-002,2099-12-29T11:00:00+08:00,第三天-2,0911111112,Z2,,2099-12-29
   assert.ok(has29 && has30 && has31, '應包含三個日期的訂單');
 });
 
+// === Round 30 P1.3：補強 csvReader 測試 ===
+
+test('7. getRecentOrders — 依 created_at 降序排序（最新優先）+ 預設 limit 20', () => {
+  // 既有資料（test 1-6 建檔）：
+  // - TEST_FILE_1: ORD-20991231-001 (12-31 10:00)
+  // - TEST_FILE_2: ORD-20991230-001 (12-30 10:00)
+  // - TEST_FILE_3: ORD-20991229-001 (12-29 10:00), ORD-20991229-002 (12-29 11:00)
+  // 注意：production data 也有訂單，所以用 limit=100 確保拿到 test orders，
+  // 再用 order_id 過濾到 test 自己的 4 筆
+  const recent = csvReader.getRecentOrders(100);
+  const testOrders = recent.filter((o) =>
+    ['ORD-20991231-001', 'ORD-20991230-001', 'ORD-20991229-001', 'ORD-20991229-002'].includes(o.order_id),
+  );
+  assert.strictEqual(testOrders.length, 4);
+  assert.strictEqual(testOrders[0].order_id, 'ORD-20991231-001', '最新 12-31');
+  assert.strictEqual(testOrders[1].order_id, 'ORD-20991230-001', '12-30 第二新');
+  assert.strictEqual(testOrders[2].order_id, 'ORD-20991229-002', '12-29 11:00');
+  assert.strictEqual(testOrders[3].order_id, 'ORD-20991229-001', '12-29 10:00 最舊');
+});
+
+test('8. getRecentOrders — 自訂 limit 參數（只回傳前 N 筆）', () => {
+  const limited = csvReader.getRecentOrders(5);
+  assert.strictEqual(limited.length, 5);
+  // limit 應限制返回數量
+  assert.ok(limited.length <= 5);
+});
+
+test('9. readCSV — JSON 欄位壞掉（malformed JSON）→ 不 throw，保留原值', () => {
+  // source：JSON.parse 失敗 catch 後 val 保持原字串（不修改為 ''）
+  const csv = `${CSV_HEADER}
+ORD-BAD-001,2099-12-31T13:00:00+08:00,測試,0900000099,X,,2099-12-31,morning,"broken{","{}",{},0,0,0,0,0,0,cash,pending,idle,,,,,line,`;
+  fs.writeFileSync(TEST_FILE_1, csv, 'utf8');
+  let orders;
+  assert.doesNotThrow(() => {
+    orders = csvReader.readCSV(TEST_FILE_1);
+  });
+  assert.strictEqual(orders.length, 1);
+  // JSON parse 失敗 → catch 後 val 保留原字串 'broken{'
+  assert.strictEqual(orders[0].chicken_items, 'broken{');
+});
+
+test('10. readCSV — 中文含逗號地址（CSV 逗號在引號內）', () => {
+  const csv = `${CSV_HEADER}
+ORD-CSV-001,2099-12-31T14:00:00+08:00,用戶A,0900000050,"地址含,逗號",,2099-12-31,morning,"{}",{},{},0,0,0,0,0,0,cash,pending,idle,,,,,line,`;
+  fs.writeFileSync(TEST_FILE_1, csv, 'utf8');
+  const orders = csvReader.readCSV(TEST_FILE_1);
+  assert.strictEqual(orders[0].address, '地址含,逗號');
+});
+
+test('11. getOrderById — 不存在 order_id → null', () => {
+  // 用獨特不存在的 order_id 避免 production 干擾
+  assert.strictEqual(csvReader.getOrderById('ORD-20991231-DOES-NOT-EXIST-99999'), null);
+});
+
+test('12. getCustomerByPhone — 不存在電話 → null', () => {
+  // 修正：production data 有空 user_phone，所以不要測空字串（會 match）
+  // 用獨特不存在的電話測 null 路徑
+  assert.strictEqual(csvReader.getCustomerByPhone('NONEXISTENT-PHONE-99999'), null);
+});
+
+test('13. isReturningCustomer — 不存在電話 → false', () => {
+  assert.strictEqual(csvReader.isReturningCustomer('NONEXISTENT-PHONE-99999'), false);
+});
+
+test('14. getRecentOrders — 訂單無 created_at 也能排序（空字串排最後）', () => {
+  const csv = `${CSV_HEADER}
+ORD-WITH-TIME,2099-12-31T15:00:00+08:00,有時間,0900000070,X,,2099-12-31,morning,"{}",{},{},0,0,0,0,0,0,cash,pending,idle,,,,,line,
+ORD-NO-TIME,,無時間,0900000071,X,,2099-12-31,morning,"{}",{},{},0,0,0,0,0,0,cash,pending,idle,,,,,line,`;
+  fs.writeFileSync(TEST_FILE_1, csv, 'utf8');
+  // limit=10000 確保所有 orders 都包進來（避免 production > 100 把 ORD-NO-TIME 切掉）
+  // ORD-NO-TIME (created_at='') 排最後（created_at 最小）
+  // ORD-WITH-TIME (created_at=2099) 排最前
+  const recent = csvReader.getRecentOrders(10000);
+  const testOrders = recent.filter(
+    (o) => o.order_id === 'ORD-WITH-TIME' || o.order_id === 'ORD-NO-TIME',
+  );
+  assert.strictEqual(testOrders.length, 2, `應找到 2 個 test orders，實際: ${testOrders.length}`);
+  assert.strictEqual(testOrders[0].order_id, 'ORD-WITH-TIME');
+  assert.strictEqual(testOrders[1].order_id, 'ORD-NO-TIME');
+});
+
 // 最終 cleanup（test suite 結束後）
 test('teardown — cleanup 測試 CSV', () => {
   cleanup();
