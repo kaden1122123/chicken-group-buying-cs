@@ -43,6 +43,24 @@ function getHandoffTitle(handoffType) {
 }
 
 /**
+ * 安全解析 JSON 字串（無效則跳過不 throw）
+ * P0.2 Round 30：防止 production crash — 原本 JSON.parse 無效會丟 SyntaxError，
+ * 這代表壞掉一笔訂單會讓整個 handoff 通知 fail。
+ * @param {*} raw - 字串或其他類型
+ * @param {string} fieldName - 日誌用欄位名
+ * @returns {*|null} - 解析結果，無效則回 null
+ */
+function safeJsonParse(raw, fieldName) {
+  if (typeof raw !== 'string') return raw;
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    logger.warn(`[notificationFormat] ${fieldName} 無效 JSON: ${e.message}`);
+    return null;
+  }
+}
+
+/**
  * 格式化 LINE 通知訊息
  * @param {object} orderData - 訂單資料
  * @param {string} userMessage - 客戶原始訊息
@@ -53,19 +71,17 @@ function formatLINENotification(orderData, userMessage) {
   const title = getHandoffTitle(handoffType);
   const time = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
 
-  // 解析品項摘要
+  // 解析品項摘要（P0.2 Round 30：safeJsonParse 防止無效 JSON 拋出）
   let itemsSummary = '';
   if (orderData.chicken_items) {
-    const chicken = typeof orderData.chicken_items === 'string'
-      ? JSON.parse(orderData.chicken_items) : orderData.chicken_items;
-    if (chicken && Object.keys(chicken).length > 0) {
+    const chicken = safeJsonParse(orderData.chicken_items, 'chicken_items');
+    if (chicken && typeof chicken === 'object' && Object.keys(chicken).length > 0) {
       itemsSummary += '🍗 雞肉：' + Object.entries(chicken).map(([k, v]) => `${k}x${v}`).join('、') + '\n';
     }
   }
   if (orderData.side_items) {
-    const side = typeof orderData.side_items === 'string'
-      ? JSON.parse(orderData.side_items) : orderData.side_items;
-    if (side && Object.keys(side).length > 0) {
+    const side = safeJsonParse(orderData.side_items, 'side_items');
+    if (side && typeof side === 'object' && Object.keys(side).length > 0) {
       itemsSummary += '🥗 小菜：' + Object.entries(side).map(([k, v]) => `${k}x${v}`).join('、') + '\n';
     }
   }

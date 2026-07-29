@@ -160,13 +160,38 @@ test('formatLINENotification handoff_type 缺 → 預設 general_inquiry', () =>
   assert.ok(msg.includes('【一般轉報】'), '缺 handoff_type → 【一般轉報】');
 });
 
-test('formatLINENotification chicken_items 無效 JSON → 拋出（不靜默吞）', () => {
-  const order = { order_id: 'X', handoff_type: 'general_inquiry', user_line_name: 'A', chicken_items: 'invalid' };
-  // source 對字串直接 JSON.parse，無效會 throw — 確認這個行為（未來可能要改成容錯）
-  assert.throws(
-    () => notificationFormat.formatLINENotification(order, 'msg'),
-    SyntaxError,
-  );
+test('formatLINENotification chicken_items 無效 JSON → 不拋出，靜默 fallback（Round 30 P0.2）', () => {
+  const order = { order_id: 'X', handoff_type: 'general_inquiry', user_line_name: 'A', chicken_items: 'invalid json' };
+  // Round 30 P0.2：safeJsonParse helper 防止 SyntaxError crash production
+  // 不 throw，雞肉行不顯示，其他欄位正常
+  assert.doesNotThrow(() => notificationFormat.formatLINENotification(order, 'msg'));
+  const msg = notificationFormat.formatLINENotification(order, 'msg');
+  assert.ok(!msg.includes('🍗 雞肉'), '無效 JSON 不應顯示雞肉行');
+});
+
+test('formatLINENotification side_items 無效 JSON → 不拋出，靜默 fallback（Round 30 P0.2）', () => {
+  const order = { order_id: 'X', handoff_type: 'general_inquiry', user_line_name: 'A', side_items: 'invalid' };
+  assert.doesNotThrow(() => notificationFormat.formatLINENotification(order, 'msg'));
+  const msg = notificationFormat.formatLINENotification(order, 'msg');
+  assert.ok(!msg.includes('🥗 小菜'), '無效 JSON 不應顯示小菜行');
+});
+
+test('formatLINENotification chicken/side items 都無效 JSON → 只顯示其他欄位', () => {
+  const order = {
+    order_id: 'X-001',
+    handoff_type: 'general_inquiry',
+    user_line_name: 'TestUser',
+    user_phone: '0912345678',
+    chicken_items: 'broken',
+    side_items: 'also broken',
+    total_amount: 1000,
+  };
+  const msg = notificationFormat.formatLINENotification(order, 'msg');
+  assert.ok(msg.includes('TestUser'), '其他欄位正常顯示');
+  assert.ok(msg.includes('0912345678'), '電話正常顯示');
+  assert.ok(!msg.includes('🍗 雞肉'), '雞肉行不顯示');
+  assert.ok(!msg.includes('🥗 小菜'), '小菜行不顯示');
+  assert.ok(msg.includes('NT$ 1,000'), '金額正常顯示');
 });
 
 test('formatLINENotification 各 handoff_type 標題正確（8 種 + general fallback）', () => {
