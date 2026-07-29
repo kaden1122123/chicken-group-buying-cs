@@ -285,6 +285,9 @@ function loadTransferRules() {
 
 /**
  * 讀取 FAQ（06_faq.md）
+ * 格式：`### Q\d?:` 後接段落（沒 `A:` 前綴）
+ * 修正 (Round 30 P1.4)：原本 regex 找 `A:` 前綴才 push，導致 0 筆。
+ * 修法：累積 Q 後的非空非標題非分隔行作為答案。
  * @returns {Array<{q:string, a:string}>}
  */
 function loadFAQ() {
@@ -292,23 +295,38 @@ function loadFAQ() {
   const faqs = [];
   const lines = content.split('\n');
   let currentQ = '';
+  let currentA = '';
   for (const line of lines) {
-    const qMatch = line.match(/^##?\s*Q\d?[：:]\s*(.+)/);
+    // Round 30 P1.4 bug fix：原本 ##? 只 match # 或 ##（1-2 個 #），但 06_faq.md 用 ### Q1:（3 個 #）
+    // 修法：改為 ###?（1 或 3 個 #）以支援實際檔案格式
+    const qMatch = line.match(/^###?\s*Q\d?[：:]\s*(.+)/);
     if (qMatch) {
+      // Push previous Q/A pair（若有）
+      if (currentQ && currentA) {
+        faqs.push({ q: currentQ, a: currentA.trim() });
+      }
       currentQ = qMatch[1];
+      currentA = '';
       continue;
     }
-    const aMatch = line.match(/^A[：:]\s*(.+)/);
-    if (aMatch && currentQ) {
-      faqs.push({ q: currentQ, a: aMatch[1] });
-      currentQ = '';
+    // 累積答案：非空、非標題 (#/##/###)、非分隔 (---) 的行
+    if (currentQ && line.trim() && !line.startsWith('#') && !line.startsWith('---')) {
+      currentA = currentA ? `${currentA}\n${line.trim()}` : line.trim();
     }
+  }
+  // Push last Q/A pair（迴圈結束時的未 push）
+  if (currentQ && currentA) {
+    faqs.push({ q: currentQ, a: currentA.trim() });
   }
   return faqs;
 }
 
 module.exports = {
   readKBFile,
+  // 內部 helper（Round 30 P1.4 為了測試被 export）
+  parseMarkdownTableRow,
+  isTableSeparator,
+  cleanItemName,
   loadProductMenu,
   loadOrderFlow,
   loadPaymentRules,
