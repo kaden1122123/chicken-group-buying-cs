@@ -70,3 +70,65 @@ test('imageReply — 圖片回覆', () => {
   const i3 = lineReply.imageReply('https://example.com/full.jpg', '');
   assert.strictEqual(i3.previewImageUrl, 'https://example.com/full.jpg', '空 preview 應 fallback');
 });
+
+// === Round 29 P0.3 補強：edge cases + 額外覆蓋 ===
+
+test('textReply — 含 emoji + 換行 + 中文標點（保持原樣）', () => {
+  const text = '訂單確認 🍗\n配送：2026-08-01\n請回覆「確認」';
+  const result = lineReply.textReply(text);
+  assert.strictEqual(result.type, 'text');
+  assert.strictEqual(result.text, text);
+});
+
+test('textReply — 長字串（>1000 chars）保持原樣', () => {
+  const longText = 'x'.repeat(2000);
+  const result = lineReply.textReply(longText);
+  assert.strictEqual(result.text.length, 2000);
+  assert.strictEqual(result.text, longText);
+});
+
+test('flexReply — altText 從 contents 來（覆寫預設）', () => {
+  const result = lineReply.flexReply({ altText: 'custom alt text', body: {} });
+  assert.strictEqual(result.altText, 'custom alt text');
+});
+
+test('flexReply — altText 空字串 → fallback「訂單摘要」（falsy fallback）', () => {
+  const result = lineReply.flexReply({ altText: '' });
+  assert.strictEqual(result.altText, '訂單摘要');
+});
+
+test('quickReply — 多個 options（5+ items）全保留', () => {
+  const options = [
+    { label: 'A', text: 'a' },
+    { label: 'B', text: 'b' },
+    { label: 'C', text: 'c' },
+    { label: 'D', text: 'd' },
+    { label: 'E', text: 'e' },
+  ];
+  const result = lineReply.quickReply('選擇', options);
+  assert.strictEqual(result.quickReply.items.length, 5);
+  assert.strictEqual(result.quickReply.items[4].action.label, 'E');
+  assert.strictEqual(result.quickReply.items[4].action.text, 'e');
+});
+
+test('quickReply — 自訂 action type（postback 等）', () => {
+  const result = lineReply.quickReply('Q', [
+    { label: 'Postback', action: 'postback', text: 'data' },
+  ]);
+  assert.strictEqual(result.quickReply.items[0].action.type, 'postback');
+});
+
+test('imageReply — 同樣 URL 給 original + preview（fallback 適用）', () => {
+  const result = lineReply.imageReply('https://example.com/x.jpg');
+  assert.strictEqual(result.originalContentUrl, 'https://example.com/x.jpg');
+  assert.strictEqual(result.previewImageUrl, 'https://example.com/x.jpg');
+  assert.strictEqual(result.type, 'image');
+});
+
+test('4 個 exports 全部是 function（module shape 驗證）', () => {
+  assert.strictEqual(typeof lineReply.textReply, 'function');
+  assert.strictEqual(typeof lineReply.flexReply, 'function');
+  assert.strictEqual(typeof lineReply.quickReply, 'function');
+  assert.strictEqual(typeof lineReply.imageReply, 'function');
+});
+
