@@ -186,6 +186,18 @@ test('semanticMatch — 模糊「太貴」觸發 L2 discount_request', async () 
   assert.strictEqual(r.confidence, 0.7);
 });
 
+
+// 🅱1 bug regression: 修 transferRules.js regex 的 full-width parens（（）→()）後，
+// 「這個會不會太貴」不再誤觸 cancel_request。修前 bug：quickMatch 把「這個」視為
+// /我要取消（整筆|這個|全部）訂單/i 中 | 的 alternation 跨 parens（符合）。
+// 修後 quickMatch 不再命中，semanticMatch 走 fuzzy discount_request。
+test('semanticMatch — 「這個會不會太貴」不再誤觸 cancel（🅱1 regression）', async () => {
+  const r = await semanticMatch('這個會不會太貴');
+  assert.strictEqual(r.matched, true);
+  assert.strictEqual(r.type, 'discount_request',
+    '🅱1 regression: quickMatch 修後不應誤觸 cancel_request');
+  assert.strictEqual(r.level, 'L2');
+});
 test('semanticMatch — 模糊「算了」觸發 cancel', async () => {
   const r = await semanticMatch('算了，不要了');
   assert.strictEqual(r.matched, true);
