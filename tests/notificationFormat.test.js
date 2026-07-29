@@ -133,3 +133,139 @@ test('HANDOFF_TITLES 與 transferRules 同步 + 所有 title【xxx】格式', ()
     assert.match(title, /^【.+】$/, `${key} → ${title} 應為【xxx】格式`);
   }
 });
+
+// === Round 29 P0.2 補強：邊界值 + 個別 handoff_type ===
+
+test('formatLINENotification chicken_items 空物件 → 不顯示雞肉行', () => {
+  const order = { order_id: 'X', handoff_type: 'general_inquiry', user_line_name: 'A', chicken_items: {} };
+  const msg = notificationFormat.formatLINENotification(order, 'msg');
+  assert.ok(!msg.includes('🍗 雞肉'), '空物件不應顯示雞肉行');
+});
+
+test('formatLINENotification side_items 空物件 → 不顯示小菜行', () => {
+  const order = { order_id: 'X', handoff_type: 'general_inquiry', user_line_name: 'A', side_items: {} };
+  const msg = notificationFormat.formatLINENotification(order, 'msg');
+  assert.ok(!msg.includes('🥗 小菜'), '空物件不應顯示小菜行');
+});
+
+test('formatLINENotification total_amount = 0 → 不顯示金額行（falsy）', () => {
+  const order = { order_id: 'X', handoff_type: 'general_inquiry', user_line_name: 'A', total_amount: 0 };
+  const msg = notificationFormat.formatLINENotification(order, 'msg');
+  assert.ok(!msg.includes('💰 訂單金額'), 'total_amount=0 不顯示金額行');
+});
+
+test('formatLINENotification handoff_type 缺 → 預設 general_inquiry', () => {
+  const order = { order_id: 'X', user_line_name: 'A' };
+  const msg = notificationFormat.formatLINENotification(order, 'msg');
+  assert.ok(msg.includes('【一般轉報】'), '缺 handoff_type → 【一般轉報】');
+});
+
+test('formatLINENotification chicken_items 無效 JSON → 拋出（不靜默吞）', () => {
+  const order = { order_id: 'X', handoff_type: 'general_inquiry', user_line_name: 'A', chicken_items: 'invalid' };
+  // source 對字串直接 JSON.parse，無效會 throw — 確認這個行為（未來可能要改成容錯）
+  assert.throws(
+    () => notificationFormat.formatLINENotification(order, 'msg'),
+    SyntaxError,
+  );
+});
+
+test('formatLINENotification 各 handoff_type 標題正確（8 種 + general fallback）', () => {
+  const cases = [
+    ['refund_request', '【退貨/退款】'],
+    ['cancel_request', '【取消訂單】'],
+    ['reschedule_request', '【改天需求】'],
+    ['complaint', '【售後/客訴】'],
+    ['escalation', '【客訴/爭議】'],
+    ['explicit_request', '【明確要求真人】'],
+    ['discount_request', '【折扣請求】'],
+    ['high_value_order', '【金額異常】'],
+  ];
+  for (const [type, expectedTitle] of cases) {
+    const order = { order_id: 'X', handoff_type: type, user_line_name: 'A' };
+    const msg = notificationFormat.formatLINENotification(order, 'msg');
+    assert.ok(msg.includes(expectedTitle), `${type} 應含 ${expectedTitle}`);
+  }
+});
+
+test('formatLINENotificationMessage 缺欄位 → text 還是 string 且不 crash', () => {
+  const order = {};
+  const obj = notificationFormat.formatLINENotificationMessage(order, 'test');
+  assert.strictEqual(obj.type, 'text');
+  assert.strictEqual(typeof obj.text, 'string');
+  assert.ok(obj.text.length > 0);
+});
+
+test('getHandoffTitle 全部 16 個 HANDOFF_TITLES key 都對應正確 title', () => {
+  const expected = {
+    refund_request: '【退貨/退款】',
+    cancel_request: '【取消訂單】',
+    reschedule_request: '【改天需求】',
+    complaint: '【售後/客訴】',
+    escalation: '【客訴/爭議】',
+    explicit_request: '【明確要求真人】',
+    discount_request: '【折扣請求】',
+    delivery_confirm_needed: '【配送範圍確認】',
+    bulk_order: '【大批訂單/公司合作】',
+    high_value_order: '【金額異常】',
+    payment_mismatch: '【付款異常】',
+    linepay_failed: '【LINE Pay 付款失敗】',
+    open_date_inquiry: '【開團日期確認】',
+    late_modify: '【截單後變更】',
+    general: '【一般轉報】',
+    general_inquiry: '【一般轉報】',
+  };
+  for (const [type, title] of Object.entries(expected)) {
+    assert.strictEqual(notificationFormat.getHandoffTitle(type), title, `${type} → ${title}`);
+  }
+});
+
+test('getHandoffTitle null → 【一般轉報】+ warn', () => {
+  const originalStderr = process.stderr.write.bind(process.stderr);
+  let warnCalled = false;
+  process.stderr.write = (_msg) => { warnCalled = true; return true; };
+  try {
+    assert.strictEqual(notificationFormat.getHandoffTitle(null), '【一般轉報】');
+    assert.ok(warnCalled, 'null 應觸發 logger.warn');
+  } finally {
+    process.stderr.write = originalStderr;
+  }
+});
+
+test('getHandoffTitle undefined → 【一般轉報】+ warn', () => {
+  const originalStderr = process.stderr.write.bind(process.stderr);
+  let warnCalled = false;
+  process.stderr.write = (_msg) => { warnCalled = true; return true; };
+  try {
+    assert.strictEqual(notificationFormat.getHandoffTitle(undefined), '【一般轉報】');
+    assert.ok(warnCalled, 'undefined 應觸發 logger.warn');
+  } finally {
+    process.stderr.write = originalStderr;
+  }
+});
+
+test('getHandoffTitle 空字串 → 【一般轉報】+ warn', () => {
+  const originalStderr = process.stderr.write.bind(process.stderr);
+  let warnCalled = false;
+  process.stderr.write = (_msg) => { warnCalled = true; return true; };
+  try {
+    assert.strictEqual(notificationFormat.getHandoffTitle(''), '【一般轉報】');
+    assert.ok(warnCalled, '空字串應觸發 logger.warn');
+  } finally {
+    process.stderr.write = originalStderr;
+  }
+});
+
+test('formatLINENotification AI 已回覆內容是固定字串', () => {
+  const order = { order_id: 'X', handoff_type: 'general_inquiry', user_line_name: 'A' };
+  const msg = notificationFormat.formatLINENotification(order, 'msg');
+  assert.ok(msg.includes('目前老闆再忙，後續會再回覆您，請留意 LINE 通知，謝謝！'));
+  assert.ok(msg.includes('🤖 AI 已回覆內容'));
+});
+
+test('formatLINENotification 時間格式 zh-TW', () => {
+  const order = { order_id: 'X', handoff_type: 'general_inquiry', user_line_name: 'A' };
+  const msg = notificationFormat.formatLINENotification(order, 'msg');
+  // 包含「⏰ 發生時間：」+ zh-TW locale 格式（年/月/日 時:分）
+  assert.match(msg, /⏰ 發生時間：\d{4}\/\d{1,2}\/\d{1,2}/);
+});
+
