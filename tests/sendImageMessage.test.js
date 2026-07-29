@@ -69,7 +69,7 @@ function restore() {
 
 // === Tests ===
 
-test('sendImageMessage — happy path: LINE API 200 → resolve(true)', async () => {
+test('sendImageMessage — happy path: LINE API 200 → {success: true}', async () => {
   const m = mockHttpsRequest(200, '{}');
   try {
     const { notifier } = reloadNotifier({
@@ -77,7 +77,7 @@ test('sendImageMessage — happy path: LINE API 200 → resolve(true)', async ()
       getLineBotToken: () => 'test-token',
     });
     const result = await notifier.sendImageMessage('https://example.com/full.jpg', null, 'user-id-abc');
-    assert.strictEqual(result, true);
+    assert.deepStrictEqual(result, { success: true });
     // 確認 HTTPS request 帶正確 method/host
     const opts = m.capturedOptions();
     assert.strictEqual(opts.method, 'POST');
@@ -89,7 +89,7 @@ test('sendImageMessage — happy path: LINE API 200 → resolve(true)', async ()
   }
 });
 
-test('sendImageMessage — LINE API 201 也視為成功（resolve(true)）', async () => {
+test('sendImageMessage — LINE API 201 也視為成功（{success: true}）', async () => {
   const m = mockHttpsRequest(201, '{"sentAt":"2026-07-29T12:00:00Z"}');
   try {
     const { notifier } = reloadNotifier({
@@ -97,14 +97,14 @@ test('sendImageMessage — LINE API 201 也視為成功（resolve(true)）', asy
       getLineBotToken: () => 'test-token',
     });
     const result = await notifier.sendImageMessage('https://example.com/x.jpg', null, 'user-id-abc');
-    assert.strictEqual(result, true);
+    assert.deepStrictEqual(result, { success: true });
   } finally {
     m.restore();
     restore();
   }
 });
 
-test('sendImageMessage — token 缺失 → return false（不 throw）', async () => {
+test('sendImageMessage — token 缺失 → {success: false, error}（不 throw）', async () => {
   const m = mockHttpsRequest(200, '{}');
   try {
     const { notifier } = reloadNotifier({
@@ -112,7 +112,8 @@ test('sendImageMessage — token 缺失 → return false（不 throw）', async 
       getLineBotToken: () => null,
     });
     const result = await notifier.sendImageMessage('https://example.com/x.jpg', null, 'user-id');
-    assert.strictEqual(result, false);
+    assert.strictEqual(result.success, false);
+    assert.ok(result.error.includes('LINE Bot Token'));
     assert.strictEqual(m.capturedOptions(), null, '無 token 不應打 HTTPS');
   } finally {
     m.restore();
@@ -120,7 +121,7 @@ test('sendImageMessage — token 缺失 → return false（不 throw）', async 
   }
 });
 
-test('sendImageMessage — imageUrl 缺失 → return false', async () => {
+test('sendImageMessage — imageUrl 缺失 → {success: false, error}', async () => {
   const m = mockHttpsRequest(200, '{}');
   try {
     const { notifier } = reloadNotifier({
@@ -128,7 +129,8 @@ test('sendImageMessage — imageUrl 缺失 → return false', async () => {
       getLineBotToken: () => 'test-token',
     });
     const result = await notifier.sendImageMessage('', null, 'user-id');
-    assert.strictEqual(result, false);
+    assert.strictEqual(result.success, false);
+    assert.ok(result.error.includes('imageUrl 和 recipientUserId'));
     assert.strictEqual(m.capturedOptions(), null, '缺 imageUrl 不應打 HTTPS');
   } finally {
     m.restore();
@@ -136,7 +138,7 @@ test('sendImageMessage — imageUrl 缺失 → return false', async () => {
   }
 });
 
-test('sendImageMessage — recipientUserId 缺失 → return false', async () => {
+test('sendImageMessage — recipientUserId 缺失 → {success: false, error}', async () => {
   const m = mockHttpsRequest(200, '{}');
   try {
     const { notifier } = reloadNotifier({
@@ -144,7 +146,8 @@ test('sendImageMessage — recipientUserId 缺失 → return false', async () =>
       getLineBotToken: () => 'test-token',
     });
     const result = await notifier.sendImageMessage('https://example.com/x.jpg', null, '');
-    assert.strictEqual(result, false);
+    assert.strictEqual(result.success, false);
+    assert.ok(result.error.includes('imageUrl 和 recipientUserId'));
     assert.strictEqual(m.capturedOptions(), null, '缺 recipientUserId 不應打 HTTPS');
   } finally {
     m.restore();
@@ -152,17 +155,33 @@ test('sendImageMessage — recipientUserId 缺失 → return false', async () =>
   }
 });
 
-test('sendImageMessage — LINE API 500 → reject', async () => {
+test('sendImageMessage — recipientUserId 非字串 → {success: false, error}', async () => {
+  const m = mockHttpsRequest(200, '{}');
+  try {
+    const { notifier } = reloadNotifier({
+      isFeatureEnabled: () => true,
+      getLineBotToken: () => 'test-token',
+    });
+    const result = await notifier.sendImageMessage('https://example.com/x.jpg', null, 12345);
+    assert.strictEqual(result.success, false);
+    assert.ok(result.error.includes('recipientUserId'));
+    assert.strictEqual(m.capturedOptions(), null, 'recipientUserId 非字串不應打 HTTPS');
+  } finally {
+    m.restore();
+    restore();
+  }
+});
+
+test('sendImageMessage — LINE API 500 → {success: false, error}（不 reject）', async () => {
   const m = mockHttpsRequest(500, 'Internal Server Error');
   try {
     const { notifier } = reloadNotifier({
       isFeatureEnabled: () => true,
       getLineBotToken: () => 'test-token',
     });
-    await assert.rejects(
-      notifier.sendImageMessage('https://example.com/x.jpg', null, 'user-id'),
-      /LINE API returned 500/,
-    );
+    const result = await notifier.sendImageMessage('https://example.com/x.jpg', null, 'user-id');
+    assert.strictEqual(result.success, false);
+    assert.match(result.error, /LINE API returned 500/);
   } finally {
     m.restore();
     restore();
@@ -176,9 +195,9 @@ test('sendImageMessage — previewImageUrl fallback 到 imageUrl（未給 previe
       isFeatureEnabled: () => true,
       getLineBotToken: () => 'test-token',
     });
-    await notifier.sendImageMessage('https://example.com/x.jpg', undefined, 'user-id');
+    const result = await notifier.sendImageMessage('https://example.com/x.jpg', undefined, 'user-id');
+    assert.deepStrictEqual(result, { success: true });
     const opts = m.capturedOptions();
-    // 無法直接讀 body（透過 req.write 寫入），但確認有 HTTPS call
     assert.ok(opts, '應打 HTTPS');
     assert.strictEqual(opts.method, 'POST');
   } finally {

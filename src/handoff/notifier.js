@@ -437,20 +437,25 @@ async function sendTextMessage(text, recipientUserId) {
 
 /**
  * 通用 LINE Push Image 訊息（2026-07-16 P4 加）
+ * 與 sendTextMessage 統一合約：回 {success, error}、不 throw、API 錯誤也是 resolve
  * @param {string} imageUrl - HTTPS 公開 URL（LINE 不接受本地檔）
  * @param {string} previewImageUrl - 縮圖 URL（可選，沒給就用原圖）
  * @param {string} recipientUserId - LINE user ID（接收者）
- * @returns {Promise<boolean>}
+ * @returns {Promise<{success: boolean, error?: string}>}
  */
 async function sendImageMessage(imageUrl, previewImageUrl, recipientUserId) {
   const lineToken = getLineToken();
   if (!lineToken) {
     logger.warn('LINE Bot Token not configured, skipping image message');
-    return false;
+    return { success: false, error: 'LINE Bot Token not configured' };
   }
   if (!imageUrl || !recipientUserId) {
     logger.warn('sendImageMessage: imageUrl 和 recipientUserId 必填');
-    return false;
+    return { success: false, error: 'imageUrl 和 recipientUserId 必填' };
+  }
+  if (typeof recipientUserId !== 'string') {
+    logger.warn('sendImageMessage: recipientUserId 必填（非空字串）');
+    return { success: false, error: 'recipientUserId 必填（非空字串）' };
   }
 
   const payload = JSON.stringify({
@@ -464,7 +469,7 @@ async function sendImageMessage(imageUrl, previewImageUrl, recipientUserId) {
     ],
   });
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const options = {
       hostname: 'api.line.me',
       path: '/v2/bot/message/push',
@@ -481,17 +486,17 @@ async function sendImageMessage(imageUrl, previewImageUrl, recipientUserId) {
       res.on('data', (chunk) => { data += chunk; });
       res.on('end', () => {
         if (res.statusCode === 200 || res.statusCode === 201) {
-          resolve(true);
+          resolve({ success: true });
         } else {
           logger.error('LINE image push failed', { status: res.statusCode, body: data, imageUrl });
-          reject(new Error(`LINE API returned ${res.statusCode}: ${data}`));
+          resolve({ success: false, error: `LINE API returned ${res.statusCode}: ${data}` });
         }
       });
     });
 
     req.on('error', (e) => {
       logger.error('LINE image push error', { err: e.message });
-      reject(e);
+      resolve({ success: false, error: e.message });
     });
 
     req.write(payload);
