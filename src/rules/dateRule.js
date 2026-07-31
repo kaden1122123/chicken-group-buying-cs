@@ -183,7 +183,8 @@ function validateDate(inputDate, _customerMessage) {
 
 /**
  * 統一產生錯誤訊息
- * 突出「下一個開團日」建議，而非整個清單
+ * Round 31 P0.3 (Hubert 12:33)：只列「近期開團日」前 3 個（含 weekday）供顧客選擇，
+ * 不再列整個本月開團日清單。避免訊息冗長、推播 太多。
  *
  * @param {string} errorType
  * @param {string} requestedDate
@@ -192,24 +193,30 @@ function validateDate(inputDate, _customerMessage) {
  * @returns {string}
  */
 function buildErrorMessage(errorType, requestedDate, suggestedDate, openDates) {
-  const suggested = suggestedDate
-    ? `下次有開團的日期是 ${formatDateWithWeekday(suggestedDate)}，您要改訂這天嗎？`
+  // 近期開團日：取 sort 後前 3 個（含 weekday）
+  const sortedOpenDates = [...openDates].sort();
+  const upcoming = sortedOpenDates.slice(0, 3)
+    .map((d) => formatDateWithWeekday(d))
+    .join('、');
+  const upcomingHint = upcoming
+    ? `近期開團日：${upcoming}。`
     : `本月已無可訂購的開團日。`;
-  const fullList = openDates.length > 0
-    ? `（本月開團日期：${formatOpenDates(openDates)}）`
+
+  const suggested = suggestedDate
+    ? `下次可下單日期是 ${formatDateWithWeekday(suggestedDate)}，您要改訂這天嗎？`
     : '';
 
   switch (errorType) {
     case 'not_open_date':
-      return `不好意思，您選的日期（${requestedDate}）目前沒有開團。${suggested}${fullList}`;
+      return `不好意思，您選的日期（${requestedDate}）目前沒有開團。${upcomingHint}${suggested}`;
     case 'past_cutoff_today':
-      return `不好意思，今天已經超過 13:00 了，無法再下今天的訂單。${suggested}${fullList}`;
+      return `不好意思，今天已經超過 13:00 了，無法再下今天的訂單。${upcomingHint}${suggested}`;
     case 'past_order_cutoff':
-      return `不好意思，已經超過下單時間了（配送前一日 13:00 截止）。${suggested}${fullList}`;
+      return `不好意思，已經超過下單時間了（配送前一日 13:00 截止）。${upcomingHint}${suggested}`;
     case 'not_this_month':
-      return `不好意思，您選的日期（${requestedDate}）不是本月的開團日。${suggested}${fullList}`;
+      return `不好意思，您選的日期（${requestedDate}）不是本月的開團日。${upcomingHint}${suggested}`;
     default:
-      return `不好意思，您選的日期有問題。${suggested}${fullList}`;
+      return `不好意思，您選的日期有問題。${upcomingHint}${suggested}`;
   }
 }
 

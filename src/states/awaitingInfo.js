@@ -174,6 +174,15 @@ function handleAwaitingInfo(userId, message, orderData, context) {
           updatedOrderData.delivery_date = dateStr;
         }
         updatedContext.awaitingField = 'timeSlot';
+      } else {
+        // Round 31 P0.3 (Hubert 12:33)：validateDate 失敗時回 errorMessage 給用戶
+        // 維持 awaitingField='date' 讓用戶重試。原本 invalid 情況下 break 什麼都沒做
+        // （用戶無聲卡住，不知道要重試）。
+        return {
+          reply: textReply(validationResult.errorMessage),
+          action: 'validation_failed',
+          context: { ...context, lastError: validationResult.errorMessage, awaitingField: 'date' },
+        };
       }
       break;
 

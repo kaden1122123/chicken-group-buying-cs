@@ -182,21 +182,47 @@ test('validateTimeSlotWithDate 各種時段 × 時間組合', () => {
 // 6. 改進的錯誤訊息（突出下一個開團日）
 // ═════════════════════════════════════════════════════════════════
 
-test('錯誤訊息突出下一個開團日', () => {
+test('錯誤訊息突出下一個開團日（Round 31 P0.3 變更格式）', () => {
   mockTime('2026-06-15T21:00:00+08:00');
   const r1 = validateDate('2026-06-20'); // 非開團日
-  assert.ok(r1.errorMessage.includes('下次有開團的日期是 2026-06-18（週四）'), '應突出下一個開團日');
+  assert.ok(r1.errorMessage.includes('下次可下單日期是 2026-06-18（週四）'), '應突出下一個可下單日期');
   assert.ok(r1.errorMessage.includes('您要改訂這天嗎？'), '應有引導語');
+  assert.ok(r1.errorMessage.includes('近期開團日：'), '應列出近期開團日（不含全清單）');
+  assert.ok(!r1.errorMessage.includes('本月開團日期：'), '不應再列整個本月開團日清單（Hubert 12:33 要修）');
 
   const r2 = validateDate('2026-06-16'); // 配送前一日 21:00 → 過了收單
-  assert.ok(r2.errorMessage.includes('下次有開團的日期是 2026-06-18（週四）'), '應突出下一個開團日');
+  assert.ok(r2.errorMessage.includes('下次可下單日期是 2026-06-18（週四）'), '應突出下一個可下單日期');
 
   mockTime('2026-06-16T20:00:00+08:00');
   const r3 = validateDate('2026-06-16'); // 今天 + 20:00
-  assert.ok(r3.errorMessage.includes('下次有開團的日期是 2026-06-18'), 'past_cutoff_today 應突出下一個開團日');
+  assert.ok(r3.errorMessage.includes('下次可下單日期是 2026-06-18'), 'past_cutoff_today 應突出下一個可下單日期');
 
   const r4 = validateDate('2026-07-15'); // 跨月
   assert.ok(r4.errorMessage.includes('不是本月的開團日'), 'not_this_month 應清楚說明');
 
   restoreTime();
+});
+
+test('錯誤訊息只列近期 3 個開團日（不超過 3 個 weekday）', () => {
+  mockTime('2026-06-15T21:00:00+08:00');
+  // 8 個 open_dates（2026-06-16/18/23/26/2026-07-21/24/2026-08-04/07）
+  const r = validateDate('2026-06-20');
+  // 「近期開團日：」後只列前 3 個
+  const upcomingMatch = r.errorMessage.match(/近期開團日：(.+?)。/);
+  assert.ok(upcomingMatch, '應有「近期開團日：」段');
+  const upcomingDates = upcomingMatch[1].split('、');
+  assert.strictEqual(upcomingDates.length, 3, `只列前 3 個，實際 ${upcomingDates.length} 個：${upcomingMatch[1]}`);
+  assert.ok(upcomingDates[0].includes('週'), `每個日期應含 weekday：${upcomingDates[0]}`);
+  restoreTime();
+});
+
+test('buildErrorMessage fallback 邏輯（ternary 簡化驗證）', () => {
+  // 驗證 buildErrorMessage 內的 upcomingHint ternary 表達式
+  // 空 upcoming → fallback '本月已無可訂購的開團日。'
+  // 非空 → '近期開團日：{upcoming}。'
+  const buildHint = (upcoming) => upcoming
+    ? `近期開團日：${upcoming}。`
+    : '本月已無可訂購的開團日。';
+  assert.strictEqual(buildHint(''), '本月已無可訂購的開團日。', '空 upcoming 應回 fallback');
+  assert.strictEqual(buildHint('2026-08-04（週二）、2026-08-07（週四）'), '近期開團日：2026-08-04（週二）、2026-08-07（週四）。', '非空 upcoming 應列前幾個');
 });
