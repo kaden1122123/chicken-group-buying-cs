@@ -133,8 +133,13 @@ test('Worker Deployment Consistency — Bug #1 fix 同步', () => {
   }
   assert.ok(workerSrc.includes('isIgnoredKeyword') || workerSrc.includes('getIgnoredKeywords'),
     'Worker source should have isIgnoredKeyword/getIgnoredKeywords function');
-  assert.ok(!workerSrc.includes("'菜單'"),
-    'Worker source should NOT have 菜單 keyword (Session Q 2026-06-30)');
+  // 菜單 keyword 不應在 DEFAULT_IGNORED_KEYWORDS（會被無聲 drop）
+  // Round 31 P0.4 fix: 菜單 可在 MENU_IMAGE_KEYWORDS（菜單圖片查詢，Hubert 5 號 15:57 設計）
+  const ignoredMatch = workerSrc.match(/DEFAULT_IGNORED_KEYWORDS\s*=\s*\[([^\]]*)\]/);
+  if (ignoredMatch) {
+    assert.ok(!ignoredMatch[1].includes("'菜單'"),
+      'Worker DEFAULT_IGNORED_KEYWORDS should NOT have 菜單 (Session Q 2026-06-30)');
+  }
   assert.ok(!workerSrc.includes("'我要訂購'"),
     'B01 fix: Worker 不再有 我要訂購 keyword');
   assert.ok(workerSrc.includes("'常見問題'"),
