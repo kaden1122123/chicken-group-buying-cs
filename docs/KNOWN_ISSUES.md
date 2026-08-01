@@ -34,7 +34,7 @@
 這些是已知暫不處理，列出來避免混淆：
 
 - ❌ **Cognee placeholder**（MEMORY.md 寫 ✅ 但實際是 placeholder）— 6/26 audit 已標記，待 Session F 刪除
-- ~~❌ **6/16 訂單流程方向未定**~~ — ✅ **2026-06-28 Session E 決策完成**（D 純 postback + systemd），新架構見 `docs/architecture/NEW_ORDER_FLOW.md` v2，待 Session N 實作
+- ~~❌ **6/16 訂單流程方向未定**~~ — ✅ **2026-06-28 Session E 決策完成**（D 純 postback + systemd），新架構見 `NEW_SESSION_README.md` §4，待 Session N 實作
 
 ---
 

@@ -226,7 +226,7 @@ pending → paid → confirmed
 - 知識庫重構：`main_idea.md` 內容遷移至 `knowledge/tenants/chicken/*.md`（2026-06-11）
 - Cloudflare Worker 部署：Version `ef63e075`（6/14）→ `190c15e1`（6/16，含 postback 處理）
 - 新訂單流程（6/16）：API server + Worker postback + 刪除 order-listener
-- 雙位置架構（6/15）：原位置 = git + 開發入口；主位置 = production runtime。詳見 `MIGRATION_HISTORY.md`
+- 雙位置架構（6/15）：原位置 = git + 開發入口；主位置 = production runtime。詳見 `NEW_SESSION_README.md`
 
 ---
 

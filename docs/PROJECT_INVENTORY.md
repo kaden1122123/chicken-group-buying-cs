@@ -148,7 +148,6 @@ disown
 | `docs/handoff/sessions/SESSION_NEXT_PROMPT.md` | **下個 session 開始 prompt**（含接手者必跳過清單）|
 | `docs/handoff/SESSION_CLEANUP_PROMPT_*.md` | Session B/C/D cleanup prompts |
 | `docs/adr/*.md` | 5 個 Architecture Decision Records（0001-0005）|
-| `docs/architecture/NEW_ORDER_FLOW.md` | A/B/C 方案訂單流程設計 |
 | `docs/NOTES/2026-06-16-issues.md` | 6/16 實測問題紀錄 |
 | `docs/production-prompt/2026-07-03/` | LLM prompt 當前版本（AGENTS/SOUL/main_idea/CHANGELOG）|
 | `docs/SYSTEM_AUDIT_2026-07-19.md` | 完整 audit 報告（2026-07-19，含 Round 10 修整紀錄）|

@@ -84,7 +84,7 @@ AI 客服「小雞」**不要主動提及 AI / 機器人 / 程式身份**。被�
   - `scripts/admin.html`（管理後台 UI）
   - `docs/SOP.md`（完整 SOP）
   - `docs/MULTI_TENANT_DESIGN.md`（多租戶設計）
-  - `docs/architecture/NEW_ORDER_FLOW.md`（新訂單流程規劃）
+  - `NEW_SESSION_README.md` §2.1（舊架構已併入）（新訂單流程規劃）
   - `docs/NOTES/2026-06-16-issues.md`（問題筆記）
   - `.openclaw-internal/SESSION_BACKGROUND.md`（本檔案；2026-06-27 Session B B4 從 docs/handoff/ 搬移過來）
   - `docs/INDEX.md`（文檔入口）
@@ -144,7 +144,7 @@ AI 客服「小雞」**不要主動提及 AI / 機器人 / 程式身份**。被�
 
 ## 第一步建議
 1. 讀 `docs/NOTES/2026-06-16-issues.md` 了解問題
-2. 讀 `docs/architecture/NEW_ORDER_FLOW.md` 了解原本規劃
+2. 讀 `NEW_SESSION_README.md` §2.1（舊架構已併入） 了解原本規劃
 3. 與 Hubert 討論 5 個新方向（A-E），決定用哪個
 4. 重新規劃 80% → 確認 → execute 20%
 ```
@@ -163,5 +163,5 @@ AI 客服「小雞」**不要主動提及 AI / 機器人 / 程式身份**。被�
 ## 相關文檔
 
 - `docs/NOTES/2026-06-16-issues.md` — 6/16 問題筆記
-- `docs/architecture/NEW_ORDER_FLOW.md` — 新訂單流程規劃
+- `NEW_SESSION_README.md` §2.1（舊架構已併入） — 新訂單流程規劃
 - `docs/INDEX.md` — 文檔入口

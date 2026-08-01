@@ -71,7 +71,6 @@ cat DEVELOPMENT.md | head -50      # 開發 SOP
 ```
 0f61a39 refactor(docs): Round 22 — 合併 5 個 SOP（刪 3 + 新 3）減少 67% token
 e2131ba feat(dashboard): Round 21 Task 4 — /api/customer-tags/:userId endpoint + dashboard UI panel
-a0d10ee docs(sop): MAIN_DIR_FILES.md — 主目錄檔案按功能分類
 4ee8b7f docs(handoff): SESSION_NEXT_PROMPT.md Round 20 收尾狀態更新
 56db907 docs(scripts): Round 19/20 累積文件 + .env.example 更新
 ```

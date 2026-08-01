@@ -285,7 +285,6 @@
 ### Round 21 (2026-07-25 09:07+, Hubert 09:07 指示)
 
 - **Task 1**: 5/5 狀態文件防 drift (commit `4ee8b7f`)
-- **Task 2**: 主目錄檔案分類 → `docs/MAIN_DIR_FILES.md` (commit `a0d10ee`)
 - **Task 3**: staging Worker secrets 設定位置 → `docs/STAGING_SECRETS_SETUP.md` (Worker commit `a800020`)
 - **Task 4**: `/api/customer-tags/:userId` + dashboard UI panel (commit `e2131ba`)
 - **Task 5**: 7/26 cleanup-baks.sh 排程 (cron ID `15998630-...`，next run 7/26 02:00)

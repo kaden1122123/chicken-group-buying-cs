@@ -65,7 +65,6 @@
 | 引用本目錄 | 位置 |
 |-----------|------|
 | `~/.openclaw/agents/external-user/knowledge/main_idea.md`（prompt）| 多處章節引用（§十一菜單 → 01_product.md）|
-| `docs/architecture/NEW_ORDER_FLOW.md` v2.1 | 提到「知識庫重構：`main_idea.md` 內容遷移至 `knowledge/tenants/chicken/*.md`」|
 | `SPEC.md` line 225 | 知識庫重構記錄 |
 
 ---

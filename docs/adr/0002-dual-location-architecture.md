@@ -4,7 +4,7 @@
 > **last_updated**：2026-07-29（Round 28 📐 補齊）
 > **日期**：2026-06-27（Session C C1）
 > **決策者**：Hubert
-> **背景文件**：[MIGRATION_HISTORY.md](../../MIGRATION_HISTORY.md)
+> **背景文件**：本 ADR 自描述（無外部依賴）
 
 ---
 
@@ -54,7 +54,7 @@
 ### 緩解
 
 - Session J 計畫加 `--dry-run` 與 `.rsync-filter` 排除測試 CSV
-- MIGRATION_HISTORY.md 詳細說明同步流程
+- 同步流程詳見 `NEW_SESSION_README.md` §2.1 與 §3
 
 ---
 

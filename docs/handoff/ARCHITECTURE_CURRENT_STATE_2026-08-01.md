@@ -172,7 +172,6 @@ docs/
 │   └── SUMMARY.md
 ├── INDEX.md
 ├── HANDOFF.md                  # ⚠ stale 2026-07-25
-├── AGENT_PROJECT_SOP.md
 ├── CEO_DECISION_GUIDE.md
 ├── DEVELOPMENT.md
 ├── ENGINEERING_HANDBOOK.md

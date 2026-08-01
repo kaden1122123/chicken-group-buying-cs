@@ -107,7 +107,7 @@
 
 **同步**：`scripts/sync-mirror.sh from-legacy`（原 → 主）
 
-詳細：見 [MIGRATION_HISTORY.md](../MIGRATION_HISTORY.md)
+詳細：見 [NEW_SESSION_README.md](../NEW_SESSION_README.md)
 
 ---
 
@@ -407,7 +407,7 @@ tests/csv-writer-concurrency.test.js   ← Session D D2: CSV race condition
 
 1. **本檔（ENGINEERING_HANDBOOK.md）** — 30 分鐘 overview
 2. [SPEC.md](../SPEC.md) — Phase 1 完整規格
-3. [MIGRATION_HISTORY.md](../MIGRATION_HISTORY.md) — 雙位置架構說明
+3. [NEW_SESSION_README.md](../NEW_SESSION_README.md) — 雙位置架構說明
 
 ### 開發者必讀
 
