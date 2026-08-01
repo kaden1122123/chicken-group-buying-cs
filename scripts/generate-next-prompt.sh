@@ -89,11 +89,11 @@ bash scripts/check-quality.sh    # 應 12 pass / 0 warn / 0 fail
 npm test                          # 應 30+ tests 全綠
 curl -s http://localhost:3000/healthz
 
-# 2. 讀必讀
-cat docs/INDEX.md                 # 單一入口
-cat HANDOFF.md | head -100         # 當前狀態
-cat OPERATIONS.md | head -50       # 部署 SOP
-cat DEVELOPMENT.md | head -50      # 開發 SOP
+# 2. 讀必讀（Round 34 單一入口）
+cat NEW_SESSION_README.md         # 10 分鐘上手（單一入口）
+cat docs/OPERATIONS.md | head -50 # 部署 SOP
+cat docs/DEVELOPMENT.md | head -50 # 開發 SOP
+cat docs/adr/0001-0005.md         # 5 個架構決策
 \`\`\`
 
 ## 當前狀態（自動生成於 $(date '+%Y-%m-%d %H:%M:%S')）
@@ -108,13 +108,15 @@ cat DEVELOPMENT.md | head -50      # 開發 SOP
 | Check quality | \`${CHECK_QUALITY}\` |
 | Staging ready | ✅ (KV \`83d36bc57b6b4505aa24ad684483e00c\`) |
 
-## 必讀（5 個，Round 22 合併後精簡）
+## 必讀（5 個，Round 34 重整為單一入口）
 
-- \`HANDOFF.md\` — §1 現狀 + §7 最近 3 rounds
+- \`NEW_SESSION_README.md\` — **10 分鐘上手手冊**（單一入口，Round 34 取代舊 HANDOFF.md 等多個交接文件）
 - \`CHANGELOG.md\` — commit-level 變更歷史
 - \`OPERATIONS.md\` — LINE bot + staging + secrets
 - \`DEVELOPMENT.md\` — 測試 + 開發 + troubleshooting
 - \`INDEX.md\` — 單一入口（auto-generated）
+
+> **接手變更**：舊 \`HANDOFF.md\` / \`SESSION_NEXT_PROMPT.md\` / \`ARCHITECTURE_CURRENT_STATE_2026-08-01.md\` 內容已併入 \`NEW_SESSION_README.md\`，標頭已標 LEGACY。
 
 ## 最近 5 個 chicken commits
 

@@ -1,3 +1,16 @@
+<!-- ⚠️ LEGACY — 內容已併入 NEW_SESSION_README.md（Round 34）
+
+本檔原本是雞味客服專案的主要 session 交接手冊（§1 現狀 + §7 變更歷史）。
+但 Round 34 整理後，內容已併入根目錄的：
+
+  → NEW_SESSION_README.md（單一入口 10 分鐘上手手冊）
+
+新 session 接手時**請直接讀 NEW_SESSION_README.md**，不要讀本檔。
+本檔保留的目的是：（1）git 歷史回查；（2）CHANGELOG.md 引用。
+
+以下為原始內容（保留供 audit）：
+
+-->
 # Session Handoff — 雞味客服專案
 
 > **last_updated**：2026-07-25（Round 26 — 連結修補、測試殘留清理、文件補齊）

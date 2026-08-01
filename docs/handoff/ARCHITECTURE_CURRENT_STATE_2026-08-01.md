@@ -1,3 +1,16 @@
+<!-- ⚠️ LEGACY — 內容已併入 NEW_SESSION_README.md（Round 34）
+
+本檔是 2026-08-01 12:39 建立的「架構現況 + 新 Session 計畫」文件。
+但 Round 34 整理後，內容已併入根目錄的：
+
+  → NEW_SESSION_README.md §2 系統地圖 + §5 已知問題
+
+新 session 接手時**請直接讀 NEW_SESSION_README.md**，不要讀本檔。
+本檔保留的目的是：（1）git 歷史回查。
+
+以下為原始內容（保留供 audit）：
+
+-->
 # 雞味客服 LINE Bot — 架構現況 + 新 Session 計畫
 
 > **建立時間**：2026-08-01 12:39 GMT+8

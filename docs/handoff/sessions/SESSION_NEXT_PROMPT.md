@@ -1,7 +1,6 @@
-# 下個 Session Prompt（自動生成於 2026-07-25 11:41:30）
+# 下個 Session Prompt（自動生成於 2026-08-01 14:06:19）
 
 > **本檔由 `scripts/generate-next-prompt.sh` 自動生成**（Round 23）
-> **last_updated**：2026-07-29（Round 28 📐 補齊）
 > **手動編輯請注意**：下次跑 script 會被覆蓋靜態 sections
 > **重新生成**：`bash scripts/generate-next-prompt.sh`
 
@@ -18,7 +17,7 @@
 ## 🏁 結束時應該做什麼
 
 1. 跑 `bash scripts/check-quality.sh` 確認 12 checks 全綠
-2. 跑 `npm test` 確認 54 tests 全綠
+2. 跑 `npm test` 確認 61 tests 全綠
 3. git add -A + commit + push（按 §I-1 SOP）
 4. 跑 `bash scripts/sync-mirror.sh from-legacy` 同步主鏡像
 5. 寫當日 `~/.openclaw/workspace/memory/YYYY-MM-DD.md`
@@ -39,53 +38,60 @@ bash scripts/check-quality.sh    # 應 12 pass / 0 warn / 0 fail
 npm test                          # 應 30+ tests 全綠
 curl -s http://localhost:3000/healthz
 
-# 2. 讀必讀
-cat docs/INDEX.md                 # 單一入口
-cat HANDOFF.md | head -100         # 當前狀態
-cat OPERATIONS.md | head -50       # 部署 SOP
-cat DEVELOPMENT.md | head -50      # 開發 SOP
+# 2. 讀必讀（Round 34 單一入口）
+cat NEW_SESSION_README.md         # 10 分鐘上手（單一入口）
+cat docs/OPERATIONS.md | head -50 # 部署 SOP
+cat docs/DEVELOPMENT.md | head -50 # 開發 SOP
+cat docs/adr/0001-0005.md         # 5 個架構決策
 ```
 
-## 當前狀態（自動生成於 2026-07-25 11:41:30）
+## 當前狀態（自動生成於 2026-08-01 14:06:19）
 
 | 項目 | 狀態 |
 |------|------|
-| Chicken repo last commit | `0f61a39 refactor(docs): Round 22 — 合併 5 個 SOP（刪 3 + 新 3）減少 67% token` |
-| Worker last commit | `e08b2cc` |
-| Worker deploy version | `f9d39dfa-3990-4f32-a06c-e93b4dbaba0d` |
-| Test count | 54 tests |
+| Chicken repo last commit | `7f17be8 perf(scripts): cleanup-baks.sh 加強版 — 保留每檔最新 N 個 .bak` |
+| Worker last commit | `148d7df` |
+| Worker deploy version | `dfa555f4-855d-4f22-b534-01a9bb3e91cc` |
+| Test count | 61 tests |
 | Cron jobs | 0 active |
 | Check quality | `  - 真實訂單消失：git checkout HEAD -- data/orders/chicken/` |
 | Staging ready | ✅ (KV `83d36bc57b6b4505aa24ad684483e00c`) |
 
-## 必讀（5 個，Round 22 合併後精簡）
+## 必讀（5 個，Round 34 重整為單一入口）
 
-- `HANDOFF.md` — §1 現狀 + §7 最近 3 rounds
+- `NEW_SESSION_README.md` — **10 分鐘上手手冊**（單一入口，Round 34 取代舊 HANDOFF.md 等多個交接文件）
 - `CHANGELOG.md` — commit-level 變更歷史
 - `OPERATIONS.md` — LINE bot + staging + secrets
 - `DEVELOPMENT.md` — 測試 + 開發 + troubleshooting
 - `INDEX.md` — 單一入口（auto-generated）
 
+> **接手變更**：舊 `HANDOFF.md` / `SESSION_NEXT_PROMPT.md` / `ARCHITECTURE_CURRENT_STATE_2026-08-01.md` 內容已併入 `NEW_SESSION_README.md`，標頭已標 LEGACY。
+
 ## 最近 5 個 chicken commits
 
 ```
-0f61a39 refactor(docs): Round 22 — 合併 5 個 SOP（刪 3 + 新 3）減少 67% token
-e2131ba feat(dashboard): Round 21 Task 4 — /api/customer-tags/:userId endpoint + dashboard UI panel
-4ee8b7f docs(handoff): SESSION_NEXT_PROMPT.md Round 20 收尾狀態更新
-56db907 docs(scripts): Round 19/20 累積文件 + .env.example 更新
+7f17be8 perf(scripts): cleanup-baks.sh 加強版 — 保留每檔最新 N 個 .bak
+1641eb4 docs(cleanup): 精簡 7 個冗餘文件（Round 34 整理 · 方案 A 執行）
+2efb03d docs(readme): NEW_SESSION_README.md — 單一入口必讀手冊（取代多個 stale 交接文件）
+83faf9c docs(handoff): ARCHITECTURE_CURRENT_STATE_2026-08-01.md — 新 Session 架構整理計畫
+c0dd8a4 docs(handoff): Round 33 close-out — 3 個 bug/improvement
 ```
 
 ## Worker 最近 3 個 commits
 
 ```
-e08b2cc refactor(docs): Round 22 — 刪除 STAGING.md + STAGING_SECRETS_SETUP.md（已合併到 chicken docs/OPERATIONS.md）
-a800020 docs(worker): STAGING_SECRETS_SETUP.md — staging Worker secrets 設定 SOP
-b5c9d1a feat(worker): Round 20 C1 — Workers AI embeddings 取代 synonym dictionary
+148d7df fix(worker): Round 31 hotfix #4 — 移除 Workers AI + greeting canned reply（Hubert 18:05）
+96bedb4 fix(worker): Round 31 hotfix #3 — TDZ bug 修復（Hubert 17:50）
+e426191 fix(worker): Round 31 hotfix #2 — STEP 4.6 semantic match timeout 2s
 ```
 
 ## 下次 session 第一件事（pending tasks）
 
-(無 pending tasks，可自由接續)
+  - [ ] 翻 OpenClaw source 找 `Exec failed` 源頭
+  - [ ] 從 OpenClaw session 重建客戶 context（清污染）
+  - [ ] 清理 `agents/external-user/*.bak.*` 18 個檔案
+  - [ ] Prune `sessions/` 16384 個 entries
+  - [ ] 更新 `HANDOFF.md` + `INDEX.md` + `SESSION_NEXT_PROMPT.md`（stale）
 
 ---
 
@@ -140,5 +146,5 @@ sleep 2 && curl http://localhost:3000/healthz
 
 ---
 
-_本檔由 `scripts/generate-next-prompt.sh` 自動生成於 2026-07-25 11:41:30_
+_本檔由 `scripts/generate-next-prompt.sh` 自動生成於 2026-08-01 14:06:19_
 _取代舊手寫 SESSION_NEXT_PROMPT.md（Round 23 自動化）_

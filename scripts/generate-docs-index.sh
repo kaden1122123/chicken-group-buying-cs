@@ -49,15 +49,17 @@ generate() {
 
 ---
 
-## 🔥 必讀（5 個）
+## 🔥 必讀（5 個 · Round 34 重整）
 
 | 檔案 | 用途 |
 |------|------|
-| \`HANDOFF.md\` | 主要 session 交接手冊（§1 現狀 + §7 變更歷史）|
-| \`CHANGELOG.md\` | Commit-level 變更歷史 |
-| \`OPERATIONS.md\` (Round 22 新) | LINE bot + staging + secrets SOP |
-| \`DEVELOPMENT.md\` (Round 22 新) | 測試 + 開發 + Troubleshooting |
-| \`INDEX.md\` (本檔) | 單一入口（auto-generated）|
+| NEW_SESSION_README.md | 單一入口 10 分鐘手冊（Round 34 新增，取代舊 HANDOFF.md、SESSION_NEXT_PROMPT.md、ARCHITECTURE_CURRENT_STATE） |
+| CHANGELOG.md | Commit-level 變更歷史 |
+| OPERATIONS.md (Round 22) | LINE bot + staging + secrets SOP |
+| DEVELOPMENT.md (Round 22) | 測試 + 開發 + Troubleshooting |
+| INDEX.md (本檔) | 單一入口（auto-generated）|
+
+> 接手變更：Round 34 後新 session 必讀清單單一化為 NEW_SESSION_README.md，舊 HANDOFF.md / SESSION_NEXT_PROMPT.md / ARCHITECTURE_CURRENT_STATE 標頭已標 LEGACY 指向新檔。
 
 ---
 
@@ -83,6 +85,7 @@ HEADER
     else
       cat="📄 其他"
     fi
+    # 註：NEW_SESSION_README.md 在主目錄（不在 docs/），不會被列入本表，但列在「必讀」段
     echo "| \`$name\` | $cat | $lines 行 |"
   done
 
