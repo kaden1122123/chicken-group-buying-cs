@@ -91,7 +91,7 @@ function getChickenItems() { ensureDerived(); return [..._chickenItems]; }
 function getSideItems() { ensureDerived(); return [..._sideItems]; }
 
 /**
- * 從原始文字解析品項
+ * 從原始文字解析品項（Round 32 Bug 2c 修整：長度優先匹程，避免「煙燻」誤判為「甘蔗煙燻雞」）
  * @param {string} text - 客戶輸入的品項文字
  * @returns {Array<{name:string, quantity:number}>}
  */
@@ -100,51 +100,70 @@ function parseItems(text) {
   if (!text) return items;
   const validItems = getValidItems();
 
-  // P1-3 修整：兩個 pattern 都會對「鹽水雞x2、甘蔗煙燻雞1」抓出重複
-  // （第一個 pattern 抓甘蔗煙燻雞 qty 1，第二個 pattern 也抓到甘蔗煙燻雞 qty 1）
-  // 解法：加入 items 前檢查去重（相同 name + quantity 不重複加入）
+  // Round 32 Bug 2c：按品項名長度降序排，最長的（最精確的）優先匹配
+  // 並拆分量為「剛出現在品項名後」才計入，避免「煙燻 1 甘蔗煙燻雞 1」被誤讀
   const isDuplicate = (name, qty) =>
     items.some((it) => it.name === name && it.quantity === qty);
 
-  // 嘗試解析 "鹽水雞x2" 或 "鹽水雞 2盒" 或 "鹽水雞 2" 等格式
-  const patterns = [
-    /([^\s\d,，xX×]+)\s*[xX×]\s*(\d+)/g,
-    /([^\s\d,，]+)\s*(\d+)\s*(盒|份|支|顆|罐)?/g,
-  ];
+  const sortedByLength = [...validItems].sort((a, b) => b.length - a.length);
+  let remaining = text;
 
-  for (const pattern of patterns) {
-    let match;
-    while ((match = pattern.exec(text)) !== null) {
-      const name = match[1].trim();
-      const qty = parseInt(match[2]) || 1;
-      if (validItems.some((v) => v.includes(name) || name.includes(v))) {
-        const found = validItems.find((v) => v.includes(name) || name.includes(v));
-        if (!isDuplicate(found, qty)) {
-          items.push({ name: found, quantity: qty });
+  // 每個匹配後重啟 for 迴圈，避免「鹽水雞x2 鹽水雞x3」只匹配到一次
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    let matched = false;
+    for (const validName of sortedByLength) {
+      if (remaining.includes(validName)) {
+        // 抽離品項名後面的數字（最多理 1 個）
+        const idx = remaining.indexOf(validName);
+        const after = remaining.substring(idx + validName.length);
+        const qtyMatch = after.match(/^\s*[xX×]?\s*(\d+)?/);
+        const qty = qtyMatch && qtyMatch[1] ? parseInt(qtyMatch[1]) : 1;
+        if (!isDuplicate(validName, qty)) {
+          items.push({ name: validName, quantity: qty });
         }
+        // 從 remaining 移除已匹配區段
+        const matchedLen = idx + validName.length + (qtyMatch ? qtyMatch[0].length : 0);
+        remaining = remaining.substring(0, idx) + remaining.substring(matchedLen);
+        matched = true;
+        break; // 重啟 while loop 檢查其他品項
       }
     }
-  }
-
-  // 如果解析失敗，嘗試簡單匹配品項名
-  if (items.length === 0) {
-    for (const item of validItems) {
-      if (text.includes(item)) {
-        // 嘗試找數量
-        const qtyMatch = text.match(new RegExp(`(${item})\\s*(\\d+)`));
-        const qty = qtyMatch ? parseInt(qtyMatch[2]) : 1;
-        items.push({ name: item, quantity: qty });
-      }
-    }
+    if (!matched) break;
   }
 
   return items;
 }
 
 /**
- * 驗證品項是否存在於知識庫
+ * 找出文字中所有「模糊關鍵字」對應的品項（Round 32 Bug 2c）
+ * 例如「煙燻」對應 甘蔗煙燻雞 / 甘蔗煙燻公雞 / 煙燻鴨肉 / 煙燻鵝肉 / 秘製煙燻無骨鳳爪
+ * @param {string} text - 客戶輸入
+ * @returns {string[]} - 所有候選品項名稱（不重複）
+ */
+function findAmbiguousCandidates(text) {
+  const validItems = getValidItems();
+  // 這些關鍵字可能代表多個品項，需要客戶確認
+  const AMBIGUOUS_KEYWORDS = ['煙燻', '鹽水', '公雞', '玉米雞', '土雞', '烏骨', '雞', '鴨', '鵝'];
+  const matches = new Set();
+
+  for (const kw of AMBIGUOUS_KEYWORDS) {
+    if (text.includes(kw)) {
+      const candidates = validItems.filter((v) => v.includes(kw));
+      // 只在該關鍵字對應 2+ 個品項時才算 ambiguous
+      if (candidates.length >= 2) {
+        candidates.forEach((c) => matches.add(c));
+      }
+    }
+  }
+
+  return Array.from(matches);
+}
+
+/**
+ * 驗證品項是否存在於知識庫（Round 32 Bug 2c 加 ambiguous 處理）
  * @param {string} menuText - 客戶輸入的品項文字
- * @returns {{ valid: boolean, errorMessage: string|null, parsedItems: Array }}
+ * @returns {{ valid: boolean, errorMessage: string|null, parsedItems: Array, ambiguous?: boolean, candidates?: string[] }}
  */
 function validateMenu(menuText) {
   if (!menuText || menuText.trim().length === 0) {
@@ -159,6 +178,17 @@ function validateMenu(menuText) {
   const validItems = getValidItems();
 
   if (items.length === 0) {
+    // Round 32 Bug 2c：如果 parseItems 沒匹配到，但有模糊關鍵字對應多個品項 → 詢問
+    const candidates = findAmbiguousCandidates(menuText);
+    if (candidates.length >= 2) {
+      return {
+        valid: false,
+        ambiguous: true,
+        candidates,
+        errorMessage: `不好意思，「${menuText}」可能指多個品項，請問您要的是哪一個？\n\n${candidates.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\n請直接回覆完整品項名稱。`,
+        parsedItems: [],
+      };
+    }
     return {
       valid: false,
       errorMessage: '不好意思，請確認品項名稱，我們沒有這個品項喔。',
@@ -230,6 +260,8 @@ function calculateSubtotal(items) {
 module.exports = {
   validateMenu,
   parseItems,
+  // Round 32 Bug 2c：匯出 findAmbiguousCandidates 供 awaitingInfo 判斷
+  findAmbiguousCandidates,
   calculateChickenCount,
   calculateTotalBoxes,
   calculateSubtotal,

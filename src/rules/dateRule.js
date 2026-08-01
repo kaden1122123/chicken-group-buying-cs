@@ -193,8 +193,10 @@ function validateDate(inputDate, _customerMessage) {
  * @returns {string}
  */
 function buildErrorMessage(errorType, requestedDate, suggestedDate, openDates) {
-  // 近期開團日：取 sort 後前 3 個（含 weekday）
-  const sortedOpenDates = [...openDates].sort();
+  // 近期開團日：過濾掉今天以前的日期，取 sort 後前 3 個（含 weekday）
+  // Round 32 Bug 2a (Hubert 01:08 09:45)：不推薦客戶不能訂購的過去日期
+  const today = getTodayString();
+  const sortedOpenDates = [...openDates].sort().filter((d) => d >= today);
   const upcoming = sortedOpenDates.slice(0, 3)
     .map((d) => formatDateWithWeekday(d))
     .join('、');

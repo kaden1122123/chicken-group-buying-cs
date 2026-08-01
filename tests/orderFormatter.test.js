@@ -201,7 +201,10 @@ test('formatOrderSummary 完整訂單（morning + 轉帳 + 免運）', () => {
     extra_items: {},
     payment_method: 'transfer',
   });
-  assert.ok(s.includes('📋 訂單確認'));
+  // Round 32 Bug 1 (Hubert 01:08 09:45)：移除 📋 訂單確認 標頭 / ═══════════════════ 裝飾線
+  // 只保留實際訂單資料
+  assert.ok(!s.includes('📋 訂單確認'), '不應有裝飾標頭');
+  assert.ok(!s.includes('═══'), '不應有 ═══ 裝飾線');
   assert.ok(s.includes('王小明'));
   assert.ok(s.includes('0912345678'));
   assert.ok(s.includes('三峽北大特區學成路100號'));

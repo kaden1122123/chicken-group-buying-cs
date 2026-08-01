@@ -120,9 +120,9 @@ function formatOrderSummary(orderData) {
 
   const timeSlotLabel = orderData.time_slot === 'morning' ? '🌞 上午（10:00~12:00）' : '🌛 下午（16:00~18:00）';
 
+  // Round 32 Bug 1 (Hubert 01:08 09:45)：移除裝飾標頭（📋 訂單確認 / ═══════════════════），
+  // 只輸出實際需求資訊。LLM 也已同步（main_idea.md §訂單確認）。
   const lines = [
-    '📋 訂單確認',
-    '═══════════════════',
     `📦 品項：`,
     formatItemsDisplay({
       chicken_items: orderData.chicken_items || {},
@@ -142,7 +142,6 @@ function formatOrderSummary(orderData) {
     '',
     `💳 付款方式：${orderData.payment_method || '（未選擇）'}`,
     '',
-    '═══════════════════',
     '請回覆「確認」完成訂購。',
   ].filter((l) => l !== '');
 

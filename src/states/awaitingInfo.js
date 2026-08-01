@@ -127,6 +127,21 @@ function handleAwaitingInfo(userId, message, orderData, context) {
 
     case 'menu':
       validationResult = validateMenu(value);
+      // Round 32 Bug 2c (Hubert 01:08 09:45)：品項不明確，列出候選請客戶確認
+      // 例如「煙燻1」會出現 甘蔗煙燻雞 / 甘蔗煙燻公雞 / 煙燻鴨肉 / 煙燻鵝肉 / 秘製煙燻無骨鳳爪 多個候選
+      if (validationResult.ambiguous) {
+        return {
+          action: 'ambiguous_menu',
+          reply: textReply(validationResult.errorMessage),
+          newState: STATES.AWAITING_INFO,
+          orderData: updatedOrderData,
+          context: {
+            ...updatedContext,
+            awaitingField: 'menu',
+            menuCandidates: validationResult.candidates,
+          },
+        };
+      }
       if (validationResult.valid) {
         const parsedItems = validationResult.parsedItems;
         updatedOrderData._parsedItems = parsedItems;
