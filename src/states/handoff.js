@@ -108,15 +108,17 @@ async function handleHandoff(userId, userMessage, orderData = {}, userProfile = 
   const replyText = getHandoffCustomerReply() || DEFAULT_HANDOFF_CUSTOMER_REPLY;
   const customerReply = textReply(replyText);
 
-  // Step 3: LINE Push 通知 Hubert（非同步 + debounce）
-  // P3-emergency 2026-07-16：1 分鐘 debounce 防止 LINE push infinite loop
+  // Step 3: 通知 Hubert（Email only + 1 分鐘 debounce）
+  // Round 34 Bug 4 (Hubert 2026-08-01 14:29)：LINE 月額度 500 限制，所有通知改 Email 避免爆量
+  // P3-emergency 2026-07-16：1 分鐘 debounce 防止 push infinite loop
+  // Round 33 already：Email 5s throttle（sendEmailWithThrottle）
   if (shouldDebouncePush(userId, userMessage)) {
     logger.warn(`[handoff] Push debounced for ${userId} (same message within 1 min)`);
   } else {
     const notification = formatLINENotification(handoffOrderData, userMessage);
-    notifyHubert(notification, { type: 'handoff' }).catch((e) => {
-      logger.error('LINE notification failed', { err: e.message });
-      handoffOrderData.staff_notes = 'LINE通知失敗，請人工確認';
+    notifyHubert(notification, { type: 'handoff', channels: ['email'] }).catch((e) => {
+      logger.error('Email notification failed', { err: e.message });
+      handoffOrderData.staff_notes = 'Email通知失敗，請人工確認';
       try {
         writeOrderWithRetry(handoffOrderData); // 更新 staff_notes
       } catch (e2) {
