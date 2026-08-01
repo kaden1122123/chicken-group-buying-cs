@@ -3,7 +3,7 @@
 維護者：brtclaw
 last_updated：2026-07-27（Round 27 確認仍適用，無改動）
 
-> ⚠️ **本文件為 Phase 1 規格書**，最新進度見 [`docs/.archive/PHASE1_PROGRESS.md`](./docs/.archive/PHASE1_PROGRESS.md)（已歸檔）。
+> ⚠️ **本文件為 Phase 1 規格書**，最新進度見 **`docs/.archive/PHASE1_PROGRESS.md`**（已歸檔，內容已併入 NEW_SESSION_README.md）（已歸檔）。
 > **Source of truth**：`src/order/csvWriter.js`（CSV schema）、`config/tenants/chicken.yaml`（狀態值）、`src/knowledge/loader.js`（知識庫路徑）。
 
 ---
