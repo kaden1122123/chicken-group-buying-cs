@@ -41,14 +41,32 @@ git push origin main
 - 不要 `git add <single-file>`（會漏 commit）
 - Session 結束時統一 push（不中途）
 
-### 規則 6：Session 結束必跑 7 步 SOP
+### 規則 6：Session 結束必跑 7 步 SOP（推薦「commit 不自動更新」）
 1. `bash scripts/check-quality.sh` 確認全綠
 2. 更新 CHANGELOG.md
 3. 更新本檔（記錄 Round N summary）
 4. 寫當日 memory/YYYY-MM-DD.md
 5. 更新 active-tasks.md
-6. **跑 `scripts/update-session-state.sh` 自動更新 session docs**
+6. **跑 `scripts/update-session-state.sh` 自動更新 session docs**（一次 commit，不 noise）
 7. git add -A + commit + push
+
+### 規則 6.5：不要在 commit 後自動跑 update-session-state.sh（避免 noise commits）
+- ❌ **post-commit hook**：每次 code commit 都生成 3 個 auto-gen 改動（noise）
+- ✅ **只在 Session end SOP Step 6**：跑一次 update-session-state.sh，統一 commit
+- 設計理由：避免 commit history 充滿 auto-gen diff，干擾 git blame / code review
+- 例外：emergency patch（如 main_idea.md 修錯）可手動單獨跑
+
+### 規則 6.6：Context Window 監控
+```bash
+# 每次 commit 後主動估算
+bash scripts/check-session-tokens.sh
+
+# 閾值判斷：
+# - < 60% (120K)：正常，可繼續工作
+# - 60-70%：留意，不要讀大型檔案
+# - 70-80%：下次 commit 完成就 end session
+# - > 80%：立即跑 session-end SOP
+```
 
 ### 規則 7：所有老闆通知走 Email（節省 LINE 額度）
 LINE 月額度限制 500：
