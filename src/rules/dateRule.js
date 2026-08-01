@@ -25,6 +25,29 @@ function formatOpenDates(dates) {
 }
 
 /**
+ * 取得未來 N 週內的開團日（Round 33 Bug 2 增進：Hubert 01:08 11:55）
+ * 過濾：今天以前的不算，N 週以後的不算
+ * @param {object} [options]
+ * @param {number} [options.weeks=2] - 未來幾週（預設 2 週 = 這週 + 下週）
+ * @returns {string[]} - ['YYYY-MM-DD', ...] 已 sort 過
+ */
+function getUpcomingOpenDates(options = {}) {
+  const weeks = options.weeks !== undefined ? options.weeks : 2;
+  const openDates = getOpenDates();
+  const today = getTodayString();
+  // 計算 cutoff（避免 Date timezone 問題，用 string 比較）
+  const todayDate = new Date(`${today}T00:00:00+08:00`);
+  todayDate.setDate(todayDate.getDate() + weeks * 7);
+  const yyyy = todayDate.getFullYear();
+  const mm = String(todayDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(todayDate.getDate()).padStart(2, '0');
+  const cutoffStr = `${yyyy}-${mm}-${dd}`;
+  return [...openDates]
+    .sort()
+    .filter((d) => d >= today && d <= cutoffStr);
+}
+
+/**
  * 取得指定日期之後的下一個開團日
  * @param {string|Date} [afterDate] - 起始日期（含當天），未提供則用今天
  * @returns {string|null} - YYYY-MM-DD 格式，null 表示找不到
@@ -193,16 +216,25 @@ function validateDate(inputDate, _customerMessage) {
  * @returns {string}
  */
 function buildErrorMessage(errorType, requestedDate, suggestedDate, openDates) {
-  // 近期開團日：過濾掉今天以前的日期，取 sort 後前 3 個（含 weekday）
-  // Round 32 Bug 2a (Hubert 01:08 09:45)：不推薦客戶不能訂購的過去日期
+  // Round 33 Bug 2 (Hubert 01:08 11:55)：改用 getUpcomingOpenDates(2 weeks)
+  // 過濾掉今天以前的日期 + 取未來 14 天內的開團日
   const today = getTodayString();
-  const sortedOpenDates = [...openDates].sort().filter((d) => d >= today);
-  const upcoming = sortedOpenDates.slice(0, 3)
+  const todayDate = new Date(`${today}T00:00:00+08:00`);
+  todayDate.setDate(todayDate.getDate() + 14);
+  const yyyy = todayDate.getFullYear();
+  const mm = String(todayDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(todayDate.getDate()).padStart(2, '0');
+  const cutoffStr = `${yyyy}-${mm}-${dd}`;
+
+  const sortedOpenDates = [...openDates]
+    .sort()
+    .filter((d) => d >= today && d <= cutoffStr);
+  const upcoming = sortedOpenDates
     .map((d) => formatDateWithWeekday(d))
     .join('、');
   const upcomingHint = upcoming
-    ? `近期開團日：${upcoming}。`
-    : `本月已無可訂購的開團日。`;
+    ? `未來兩週開團日：${upcoming}。`
+    : `未來兩週沒有開團日。`;
 
   const suggested = suggestedDate
     ? `下次可下單日期是 ${formatDateWithWeekday(suggestedDate)}，您要改訂這天嗎？`
@@ -226,6 +258,8 @@ module.exports = {
   validateDate,
   getOpenDates,
   formatOpenDates,
+  // Round 33 Bug 2 (Hubert 01:08 11:55)：未來兩週開團日
+  getUpcomingOpenDates,
   getNextOpenDate,
   getNextOrderableOpenDate,
   formatDateWithWeekday,

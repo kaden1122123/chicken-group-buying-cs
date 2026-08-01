@@ -132,3 +132,39 @@ test('4 個 exports 全部是 function（module shape 驗證）', () => {
   assert.strictEqual(typeof lineReply.imageReply, 'function');
 });
 
+// === Round 33 Bug 3 (Hubert 01:08 11:55)：sanitizeReplyText ===
+
+test("textReply — 漏出 'Exec failed' 訊息 → 改為 fallback 訊息", () => {
+  const leakyText = '抱歉出了問題 Exec failed: spawn git ENOENT';
+  const result = lineReply.textReply(leakyText);
+  assert.strictEqual(result.type, 'text');
+  assert.strictEqual(result.text, '抱歉，系統遇到一些問題，請稍後再試或聯絡客服 🙏', '應過濾作業訊息');
+});
+
+test('textReply — 漏出 stack trace → 改為 fallback', () => {
+  const leakyText = 'Error: 系統錯誤\n    at Object.handler (/usr/lib/node_modules/x.js:1:1)';
+  const result = lineReply.textReply(leakyText);
+  assert.strictEqual(result.text, '抱歉，系統遇到一些問題，請稍後再試或聯絡客服 🙏');
+});
+
+test('textReply — 正常訊息不過濾', () => {
+  const result = lineReply.textReply('您好，請問今天想訂購什麼？');
+  assert.strictEqual(result.text, '您好，請問今天想訂購什麼？');
+});
+
+test("flexReply — altText 漏出 'Exec failed' → 改為 fallback", () => {
+  const result = lineReply.flexReply({ type: 'bubble', altText: 'Exec failed: foo' });
+  assert.strictEqual(result.altText, '抱歉，系統遇到一些問題，請稍後再試或聯絡客服 🙏');
+});
+
+test('sanitizeReplyText — 直接呼叫（其他 module 可用）', () => {
+  assert.strictEqual(
+    lineReply.sanitizeReplyText('Exec failed: x'),
+    '抱歉，系統遇到一些問題，請稍後再試或聯絡客服 🙏',
+  );
+  assert.strictEqual(
+    lineReply.sanitizeReplyText('正常訊息'),
+    '正常訊息',
+  );
+});
+

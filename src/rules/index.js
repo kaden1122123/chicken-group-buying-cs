@@ -3,7 +3,7 @@
 const validatePhone = require('./phoneRule');
 const validateAddress = require('./addressRule');
 const { validateMenu, parseItems, calculateChickenCount, calculateTotalBoxes, calculateSubtotal } = require('./menuRule');
-const { validateDate, getOpenDates, formatOpenDates } = require('./dateRule');
+const { validateDate, getOpenDates, formatOpenDates, getUpcomingOpenDates } = require('./dateRule');
 const { validateTimeSlot } = require('./timeSlotRule');
 const { validatePayment, PAYMENT_METHODS, PAYMENT_LABELS } = require('./paymentRule');
 const { calculatePrice } = require('./priceRule');
@@ -63,6 +63,8 @@ module.exports = {
   validateAll,
   getOpenDates,
   formatOpenDates,
+  // Round 33 Bug 2 (Hubert 01:08 11:55)：未來兩週開團日
+  getUpcomingOpenDates,
   PAYMENT_METHODS,
   PAYMENT_LABELS,
 };

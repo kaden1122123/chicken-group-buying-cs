@@ -151,7 +151,8 @@ async function triggerAutoOrder(options) {
         '配送: ' + orderData.delivery_date + ' ' + orderData.time_slot + '\n' +
         '金額: NT$ ' + orderData.total_amount + '\n' +
         '請確認付款狀態 ✓',
-          { type: 'autoOrder' },
+          // Round 33 Bug 1 (Hubert 11:55)：B 方案成功通知只走 Email，避免測試階段洗 LINE
+          { type: 'autoOrder', channels: ['email'] },
         );
       } catch (e) {
         // notifyHubert 失敗（LINE 429 / 網路）只 log，不影響 autoOrder success
@@ -252,7 +253,8 @@ async function fallbackNotifyHubert(userId, orderData, error) {
       '金額: NT$ ' + (orderData.total_amount || '?') + '\n' +
       '失敗原因: ' + error + '\n' +
       '請至 dashboard 手動建單 🙏',
-      { type: 'autoOrder' },
+      // Round 33 Bug 1 (Hubert 11:55)：失敗 fallback 只走 Email，不推 LINE
+      { type: 'autoOrder', channels: ['email'] },
     );
   } catch (e) {
     logger.error('[autoOrder] fallback 通知老闆也失敗', { err: e.message });

@@ -341,33 +341,55 @@ async function sendEmailFallback(message) {
  * @param {boolean} [options.urgent=false] - 強制 LINE + Email 並行
  * @returns {Promise<boolean>}
  */
-async function notifyHubert(message, options = {}) {
-  const lineResult = await notifyHubertViaLine(message);
+// Round 33 Bug 1 (Hubert 2026-08-01 11:55)：Email throttle 避免 Gmail 判讀為 spam
+let _lastEmailSentAt = 0;
+const EMAIL_THROTTLE_MS = 5000; // 連續寄送最小間隔 5 秒
 
-  // Email 永遠並行觸發（Hubert 22:53 要求：所有 notifyHubert 都要寄 Email）
-  // 改為 await 是為了讓 Email fallback 真正生效（舊版 fire-and-forget 即使 Email 成功也會因 LINE 失敗而 throw）
-  let emailResult;
-  try {
-    emailResult = await sendEmailNotification(message, options);
-  } catch (e) {
-    logger.warn('[notifier] Email 通知失敗', { err: e.message });
-    emailResult = { success: false, error: e.message };
+async function sendEmailWithThrottle(message, options) {
+  const now = Date.now();
+  if (_lastEmailSentAt > 0) {
+    const elapsed = now - _lastEmailSentAt;
+    if (elapsed < EMAIL_THROTTLE_MS) {
+      const waitMs = EMAIL_THROTTLE_MS - elapsed;
+      logger.info(`[notifier] Email throttle: 等待 ${waitMs}ms 避免 Gmail 判讀為 spam`);
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+    }
+  }
+  const result = await sendEmailNotification(message, options);
+  _lastEmailSentAt = Date.now();
+  return result;
+}
+
+async function notifyHubert(message, options = {}) {
+  // Round 33 Bug 1 (Hubert 2026-08-01 11:55)：測試階段不再用 LINE push，改為 channels: ['email']
+  // 預設 ['line', 'email'] 維持向後相容，測試用戶通知、auto-create-order 失敗等呼叫點明確傳 channels: ['email']
+  const channels = Array.isArray(options.channels) ? options.channels : ['line', 'email'];
+  const results = {};
+
+  if (channels.includes('line')) {
+    results.line = await notifyHubertViaLine(message);
   }
 
-  // 整體成功：LINE 或 Email 至少一邊成功即可
-  const overallSuccess =
-    (lineResult && lineResult.success) ||
-    (emailResult && emailResult.success);
+  if (channels.includes('email')) {
+    try {
+      results.email = await sendEmailWithThrottle(message, options);
+    } catch (e) {
+      logger.warn('[notifier] Email 通知失敗', { err: e.message });
+      results.email = { success: false, error: e.message };
+    }
+  }
+
+  // 整體成功：指定 channels 中至少一邊成功即可
+  const overallSuccess = Object.values(results).some((r) => r && r.success);
 
   if (!overallSuccess) {
-    // 雙通道都失敗才 throw（保留向後相容：呼叫端 .catch 處理）
+    // 所有指定 channels 都失敗才 throw（保留向後相容：呼叫端 .catch 處理）
     const errMsg =
-      (lineResult && lineResult.error) ||
-      (emailResult && emailResult.error) ||
-      'notifyHubert failed (LINE + Email 都失敗)';
+      Object.values(results).map((r) => r && r.error).filter(Boolean).join('; ') ||
+      'notifyHubert failed (所有 channels 都失敗)';
     throw new Error(errMsg);
   }
-  return { line: lineResult, email: emailResult, overallSuccess: true };
+  return { ...results, overallSuccess: true };
 }
 
 /**
@@ -375,7 +397,8 @@ async function notifyHubert(message, options = {}) {
  * @returns {Promise<boolean>}
  */
 async function testNotification() {
-  return notifyHubert('🔔 AI 客服測試通知 — 系統運作正常', { type: 'system' });
+  // Round 33 Bug 1 (Hubert 11:55)：測試通知只走 Email，不推 LINE
+  return notifyHubert('🔔 AI 客服測試通知 — 系統運作正常', { type: 'system', channels: ['email'] });
 }
 
 /**
