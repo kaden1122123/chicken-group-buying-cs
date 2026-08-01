@@ -1,4 +1,51 @@
-# Changelog
+# CHANGELOG
+
+## Round 34 (2026-08-01 13:17 → 14:08 · 接管 session 整理)
+
+**主題**：Hubert 13:17 指示摸清系統 + 精簡冗餘文件 + 清 production runtime .bak（方案 A）
+
+**5 個 commits**：
+
+1. `2efb03d` docs(readme): NEW_SESSION_README.md — 單一入口必讀手冊（取代多個 stale 交接文件）
+2. `1641eb4` docs(cleanup): 精簡 7 個冗餘文件（71 個檔案變更，+9/-12867）
+3. `7f17be8` perf(scripts): cleanup-baks.sh 加強版 — 保留每檔最新 N 個 .bak
+4. `8328b0a` docs(handoff): Round 34 — 重生 INDEX.md / SESSION_NEXT_PROMPT.md + 加 LEGACY 標頭
+
+**5 個重點交付**：
+
+- **NEW_SESSION_README.md**（單一入口 10 分鐘手冊）
+  - 取代舊 HANDOFF.md + SESSION_NEXT_PROMPT.md + ARCHITECTURE_CURRENT_STATE_2026-08-01.md
+  - 結構：5 分鐘上手 + 10 分鐘系統地圖 + 必讀清單 + 開始工作 + 已知問題 + 架構決策
+- **精簡 7 個冗餘文件**（71 個檔案變更，12867 行刪除）
+  - docs/.archive/ 整個目錄（13 個檔案 + planning-2026-06-12/ 21 個檔案）
+  - MIGRATION_HISTORY.md / INTERNAL_MODULES.md / CLI_TOOLS.md / MAIN_DIR_FILES.md / AGENT_PROJECT_SOP.md / docs/architecture/NEW_ORDER_FLOW.md
+- **重生 INDEX.md / SESSION_NEXT_PROMPT.md**
+  - 必讀清單單一化為 NEW_SESSION_README.md
+  - 修正 generate-docs-index.sh heredoc bug（必讀段重寫為無 backtick 的純字串表格）
+- **加 LEGACY 標頭**
+  - HANDOFF.md：原本是主要 session 交接手冊，內容已併入 NEW_SESSION_README.md
+  - docs/handoff/ARCHITECTURE_CURRENT_STATE_2026-08-01.md：架構現況 + 新 Session 計畫，內容已併入 NEW_SESSION_README.md
+- **清理 production runtime .bak 18 個**
+  - 保留 3 個最新 .bak（每檔 1 個：AGENTS.md / SOUL.md / knowledge/main_idea.md）
+  - 刪除 15 個舊 .bak（373029 bytes freed）
+  - 修改 cleanup-baks.sh 為「保留每檔最新 N 個 .bak」策略（從 BUFFER_DAYS 改為 KEEP_COUNT）
+
+**Root cause 總結**（給下個 session）：
+
+- 多 session 開發導致底層理解不一致 → 統一單一入口 NEW_SESSION_README.md
+- 文件 drift 累積（CHANGELOG / HANDOFF / SESSION_NEXT_PROMPT / ARCHITECTURE_CURRENT_STATE / INDEX / AGENT_PROJECT_SOP / INTERNAL_MODULES / CLI_TOOLS / MAIN_DIR_FILES / AGENT_PROJECT_SOP 9 個檔案都聲稱是「主要入口 / 單一入口」）→ 全部併入 NEW_SESSION_README.md
+- Production runtime .bak 堆積 18 個（從 2026-07-19 起累計 5 次 sync）→ 改為 keep-count 策略
+
+**下個 session 第一件事**：
+
+1. 跑 `bash scripts/check-quality.sh` 確認 12 通過 / 0 失敗
+2. 跑 `npm test` 確認 30+ 套全綠
+3. 確認 /healthz 仍然 dashboard=up, api_server=up
+4. 確認 `cleanup-baks.sh --keep 1` 仍正常（保留 3 個 .bak）
+5. 處理 Round 33 仍存在的「客服邏輯錯亂」（HOTFIX_V2，未解決）
+
+---
+
 
 All notable changes to the chicken-group-buying-customer-service project will be documented in this file.
 
