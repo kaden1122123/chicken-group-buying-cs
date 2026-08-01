@@ -25,10 +25,10 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Model context window 設定
 MODEL_NAME="${MODEL_NAME:-MiniMax-M3}"
-MODEL_LIMIT=200000       # 200K tokens（OpenClaw M3 上限）
-WARN_PCT=60              # 60% = 120K tokens
-CAUTION_PCT=70           # 70% = 140K tokens
-CRITICAL_PCT=80          # 80% = 160K tokens
+MODEL_LIMIT=1000000      # 1M tokens（M3 實際上限，Hubert 21:57 確認）
+WARN_PCT=60              # 60% = 600K tokens
+CAUTION_PCT=70           # 70% = 700K tokens
+CRITICAL_PCT=80          # 80% = 800K tokens
 
 cd "$PROJECT_ROOT"
 
@@ -62,7 +62,7 @@ TOTAL_PCT=$(( TOTAL_TOKENS * 100 / MODEL_LIMIT ))
 
 echo "=== Session Token 用量估算 ==="
 echo "Model: $MODEL_NAME"
-echo "Context window: $MODEL_LIMIT tokens"
+echo "Context window: $MODEL_LIMIT tokens (1M，Hubert 21:57 確認)"
 echo ""
 echo "當前 session: $SESSION_TOKENS tokens ($PRIMARY_PCT%)"
 echo "Memory 載入: $MEMORY_BYTES bytes (~$(( MEMORY_BYTES / 4 )) tokens)"
@@ -80,7 +80,7 @@ elif [ $PRIMARY_PCT -ge $CAUTION_PCT ]; then
   echo "   建議：下次 commit 後跑 session-end SOP"
   WARN_LEVEL="caution"
 elif [ $PRIMARY_PCT -ge $WARN_PCT ]; then
-  echo "🟢 OK: session 已用 $PRIMARY_PCT% context（仍 < 60%）"
+  echo "🟢 OK: session 已用 $PRIMARY_PCT% context（60% 警戒線下）"
   echo "   提醒：留意後續文件讀取量"
   WARN_LEVEL="ok"
 else
@@ -89,11 +89,11 @@ else
 fi
 
 echo ""
-echo "=== 判斷閾值 ==="
+echo "=== 判斷閾值（M3 1M context）==="
 echo "  警戒線: $WARN_PCT% (= $(( MODEL_LIMIT * WARN_PCT / 100 )) tokens)"
 echo "  注意線: $CAUTION_PCT% (= $(( MODEL_LIMIT * CAUTION_PCT / 100 )) tokens)"
 echo "  危急線: $CRITICAL_PCT% (= $(( MODEL_LIMIT * CRITICAL_PCT / 100 )) tokens)"
-echo ""
+echo "  M3 model 1M context = $(( MODEL_LIMIT * 4 )) bytes（粗估）"
 
 # === 詳細建議 ===
 case "$WARN_LEVEL" in

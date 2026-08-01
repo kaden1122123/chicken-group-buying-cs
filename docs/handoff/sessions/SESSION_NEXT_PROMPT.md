@@ -1,4 +1,4 @@
-# 下個 Session Prompt（自動生成於 2026-08-01 20:04:20）
+# 下個 Session Prompt（自動生成於 2026-08-01 22:04:00）
 
 > **本檔由 `scripts/generate-next-prompt.sh` 自動生成**（Round 23）
 > **手動編輯請注意**：下次跑 script 會被覆蓋靜態 sections
@@ -45,11 +45,11 @@ cat docs/DEVELOPMENT.md | head -50 # 開發 SOP
 cat docs/adr/0001-0005.md         # 5 個架構決策
 ```
 
-## 當前狀態（自動生成於 2026-08-01 20:04:20）
+## 當前狀態（自動生成於 2026-08-01 22:04:00）
 
 | 項目 | 狀態 |
 |------|------|
-| Chicken repo last commit | `819e9e4 docs(handoff): Round 34 handoff + HUBERT_USER_GUIDE.md + main mirror sync` |
+| Chicken repo last commit | `4bcf611 perf(scripts): 加 check-session-tokens.sh 監控 + SESSION_RULES 規則 6 明確化` |
 | Worker last commit | `148d7df` |
 | Worker deploy version | `dfa555f4-855d-4f22-b534-01a9bb3e91cc` |
 | Test count | 61 tests |
@@ -70,11 +70,11 @@ cat docs/adr/0001-0005.md         # 5 個架構決策
 ## 最近 5 個 chicken commits
 
 ```
+4bcf611 perf(scripts): 加 check-session-tokens.sh 監控 + SESSION_RULES 規則 6 明確化
+fbb3b68 feat(session): New Session 開局 prompt + 規則手冊 + auto-update 機制
 819e9e4 docs(handoff): Round 34 handoff + HUBERT_USER_GUIDE.md + main mirror sync
 9c27061 perf(handoff): 客戶轉真人通知改 channels: ['email'] — 節省 LINE 額度
 ea0e28c docs(fix): 修 CEO_DECISION_GUIDE.md 6 個剩餘 .archive/[/] 格式 broken links
-cfb071b docs(fix): 修 CEO_DECISION_GUIDE.md + SPEC.md 7 個 .archive broken links
-5b45458 docs(fix): 修 check-quality Check 12 failure — 8 個 .archive broken links
 ```
 
 ## Worker 最近 3 個 commits
@@ -146,5 +146,5 @@ sleep 2 && curl http://localhost:3000/healthz
 
 ---
 
-_本檔由 `scripts/generate-next-prompt.sh` 自動生成於 2026-08-01 20:04:20_
+_本檔由 `scripts/generate-next-prompt.sh` 自動生成於 2026-08-01 22:04:00_
 _取代舊手寫 SESSION_NEXT_PROMPT.md（Round 23 自動化）_
