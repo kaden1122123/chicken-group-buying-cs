@@ -76,7 +76,16 @@ bash scripts/check-quality.sh
 - 加新發現到「待辦事項」段
 - 若有重要架構變更，更新「服務重啟 SOP」段
 
-### 步驟 6：git add + commit + push（1 分鐘）
+### 步驟 6：自動更新 session docs（1 分鐘，Round 34+）
+
+```bash
+# 自動更新 INDEX.md / SESSION_NEXT_PROMPT.md / sync canonical + main mirror
+bash scripts/update-session-state.sh
+```
+
+設計見 SESSION_RULES.md 規則 6。
+
+### 步驟 7：git add + commit + push（1 分鐘）
 
 按 MEMORY.md §I-1 SOP：
 
@@ -89,7 +98,7 @@ git show HEAD --stat             # 立即驗證 commit 包含預期檔案
 git push
 ```
 
-### 步驟 7：同步 main 鏡像（30 秒）
+### 步驟 8：同步 main 鏡像（30 秒）
 
 ```bash
 bash scripts/sync-mirror.sh from-legacy

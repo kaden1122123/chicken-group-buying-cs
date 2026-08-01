@@ -1,4 +1,4 @@
-# 下個 Session Prompt（自動生成於 2026-08-01 14:06:19）
+# 下個 Session Prompt（自動生成於 2026-08-01 20:04:20）
 
 > **本檔由 `scripts/generate-next-prompt.sh` 自動生成**（Round 23）
 > **手動編輯請注意**：下次跑 script 會被覆蓋靜態 sections
@@ -45,16 +45,16 @@ cat docs/DEVELOPMENT.md | head -50 # 開發 SOP
 cat docs/adr/0001-0005.md         # 5 個架構決策
 ```
 
-## 當前狀態（自動生成於 2026-08-01 14:06:19）
+## 當前狀態（自動生成於 2026-08-01 20:04:20）
 
 | 項目 | 狀態 |
 |------|------|
-| Chicken repo last commit | `7f17be8 perf(scripts): cleanup-baks.sh 加強版 — 保留每檔最新 N 個 .bak` |
+| Chicken repo last commit | `819e9e4 docs(handoff): Round 34 handoff + HUBERT_USER_GUIDE.md + main mirror sync` |
 | Worker last commit | `148d7df` |
 | Worker deploy version | `dfa555f4-855d-4f22-b534-01a9bb3e91cc` |
 | Test count | 61 tests |
 | Cron jobs | 0 active |
-| Check quality | `  - 真實訂單消失：git checkout HEAD -- data/orders/chicken/` |
+| Check quality | `⚠ 品質檢查通過（含 1 項警告，建議處理）` |
 | Staging ready | ✅ (KV `83d36bc57b6b4505aa24ad684483e00c`) |
 
 ## 必讀（5 個，Round 34 重整為單一入口）
@@ -70,11 +70,11 @@ cat docs/adr/0001-0005.md         # 5 個架構決策
 ## 最近 5 個 chicken commits
 
 ```
-7f17be8 perf(scripts): cleanup-baks.sh 加強版 — 保留每檔最新 N 個 .bak
-1641eb4 docs(cleanup): 精簡 7 個冗餘文件（Round 34 整理 · 方案 A 執行）
-2efb03d docs(readme): NEW_SESSION_README.md — 單一入口必讀手冊（取代多個 stale 交接文件）
-83faf9c docs(handoff): ARCHITECTURE_CURRENT_STATE_2026-08-01.md — 新 Session 架構整理計畫
-c0dd8a4 docs(handoff): Round 33 close-out — 3 個 bug/improvement
+819e9e4 docs(handoff): Round 34 handoff + HUBERT_USER_GUIDE.md + main mirror sync
+9c27061 perf(handoff): 客戶轉真人通知改 channels: ['email'] — 節省 LINE 額度
+ea0e28c docs(fix): 修 CEO_DECISION_GUIDE.md 6 個剩餘 .archive/[/] 格式 broken links
+cfb071b docs(fix): 修 CEO_DECISION_GUIDE.md + SPEC.md 7 個 .archive broken links
+5b45458 docs(fix): 修 check-quality Check 12 failure — 8 個 .archive broken links
 ```
 
 ## Worker 最近 3 個 commits
@@ -146,5 +146,5 @@ sleep 2 && curl http://localhost:3000/healthz
 
 ---
 
-_本檔由 `scripts/generate-next-prompt.sh` 自動生成於 2026-08-01 14:06:19_
+_本檔由 `scripts/generate-next-prompt.sh` 自動生成於 2026-08-01 20:04:20_
 _取代舊手寫 SESSION_NEXT_PROMPT.md（Round 23 自動化）_
