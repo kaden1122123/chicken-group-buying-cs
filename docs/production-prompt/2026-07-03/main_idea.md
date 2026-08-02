@@ -1171,63 +1171,15 @@ LLM reply 客戶：
 
 ---
 
-# 十八、Quick Reply 統一回覆（P3 2026-07-16 加）
-
-**客戶問特定問題時，LLM 回傳 Quick Reply 按鈕結構（LINE 原生功能）讓客戶一鍵點選。**
-
-## 4 種情境 + 對應按鈕
-
-從 chicken.yaml `quick_replies` 讀設定（會在 prompt 載入時帶入上下文）：
-
-1. **菜單查詢**（客戶：「有菜單嗎？」「你們賣什麼？」）
-   - 看完整菜單 / 招牌鹽水雞 / 煙燻雞 / 玉米雞
-2. **付款方式**（客戶問「怎麼付款？」、選付款方式時）
-   - LINE Pay / 街口支付 / 銀行轉帳 / 現金
-3. **配送時段**（客戶確認配送時）
-   - 上午 10-12 / 下午 16-18
-4. **配送範圍**（客戶問「你們送到哪？」）
-   - 三鶯地區 / 其他地區（轉老闆確認）
-
-## 使用原則
-
-- **看上下文才出**：客戶問什麼才出對應按鈕，不要每則都出
-- **按鈕標籤簡短**（4-6 字內）：「LINE Pay」而非「我要用 LINE Pay 付款」
-- **按鈕按下後傳的 text 是完整句子**：「我選 LINE Pay」而非「LINE Pay」（這樣 LLM 看得到完整意圖）
-- **不要同時出太多按鈕**（≤ 4 個）：太多客戶會 overwhelming
-- **Quick Reply 是輔助，主回應仍要是文字**（不要用按鈕取代文字解釋）
-
-## ❌ 不要
-
-- ❌ 在確認訂單步驟用 Quick Reply（OpenClaw pipeline 目前不支援 + 客戶容易誤觸重要動作）
-- ❌ 用 Quick Reply 取代文字回覆（按鈕只是輔助選項）
-
-## 範例
-
-客戶：「你們賣什麼？」
-
-✅ AI 回：
-
-```
-我們主要是雞肉跟小菜：
-
-🐔 雞肉（半隻 NT$380 起）
-- 鹽水雞 / 煙燻雞 / 玉米雞（整隻 NT$820）
-
-🥗 小菜（NT$70-120）
-- 雞胗 / 雞心 / 雞肝 / 煙燻滷蛋 / 煙燻豆腐
-
-📍 三鶯地區免費外送，滿 NT$500 起送
-
-[Quick Reply：看完整菜單 | 招牌鹽水雞 | 煙燻雞 | 玉米雞]
-```
-
-（最後一行是 Quick Reply 結構的 placeholder，未來 OpenClaw pipeline 支援後會渲染成 LINE 按鈕）
-
-## 為什麼目前沒看到按鈕？
-
-因為 **OpenClaw pipeline 目前不支援 Quick Reply 渲染**（見 §十二「訂單確認流程」備註）。這個 §十八 是**意圖定義**：未來 OpenClaw 支援後，pipeline 讀 chicken.yaml 的 quick_replies + 這個 §十八 規則，自動生成 LINE 按鈕。客戶問到對應情境時，LLM 主回應文字不變，後面加 Quick Reply 按鈕。
-
-未來 session 接手時，如果 OpenClaw 已支援 Quick Reply，本 §可以直接生效。
+# Round 35 C2 + C5：§十八 Quick Reply 統一回覆整段已刪除（OpenClaw pipeline 不支援，dead section）
+# 原因：chicken.yaml quick_replies config（C1 已刪）+ OpenClaw pipeline 尚未支援 Quick Reply 渲染
+# 副作用：§十八 內引用「§十二「訂單確認流程」備註」是 stale reference（§十二、§十三 已不存在）— 連帶清掉
+#
+# 後續實作該如何操作（要重新啟用 Quick Reply）：
+# 1. OpenClaw pipeline 加 Quick Reply renderer（支援 4 種情境：menu / payment / hours / delivery）
+# 2. chicken.yaml 加回 quick_replies section（C1 已附後續實作說明）
+# 3. main_idea.md §十八 加回 Quick Reply 統一回覆段（從 git history 找 6f1654f 之前的版本複製）
+# 4. 刪除本 comment block
 
 ---
 
