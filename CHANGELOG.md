@@ -46,6 +46,75 @@
 
 ---
 
+## Round 20-33 補丁（2026-07-25 → 2026-08-01 · Round 35 補登）
+
+**背景**：Round 20-27 期間 chicken repo 無 commits（Hubert 未在雞味客服工作），CHANGELOG 從 Round 19 直接跳到 Round 34。Round 35 接手 session 整理時補登 Round 28-33 的 51 個 commits（含 4 個 hotfixes）。
+
+### Round 28 (2026-07-29 · 6 個 commits)
+
+**主題**：測試覆蓋率強化 + lint 永久化 + transferRules bug 修復
+
+- `72ce9cf fix(transferRules): Round 28 🅱1 — 修 regex full-width parens bug`
+- `ad4d386 docs(sop): Round 28 🅰2 — 11 個關鍵文件補 last_updated`
+- `a33cc0a chore(lint): Round 28 🅰3 — no-unused-vars 升 warn → error`
+- `3e66c0f test(notifier): Round 28 🅱2 — 10 tests 補完（從 7/10 fail 到 10/10 pass）`
+- `b2a3732 test(sheetsSync): Round 28 🅱3 — 31 tests 補完（OAuth JWT + Sheets sync 主流程）`
+- `69777dd docs(handoff): Round 28 close-out 文件（6 commits + 70 新 tests + 下階段建議）`
+
+### Round 29 (2026-07-29 · 6 個 commits)
+
+**主題**：test 補強（buildEmailContent 從 0% 到 100% 涵蓋 4 種 type）+ refactor
+
+- `52723ac test(buildEmailContent): Round 29 P0.1 — 38 tests 補完（從 0% 到 100% 涵蓋 4 種 type 版型）`
+- `c36102e test(notificationFormat): Round 29 P0.2 — 13 tests 補強（邊界值 + 全部 16 種 handoff_type）`
+- `e2acaa6 test(lineReply): Round 29 P0.3 — 8 tests 補強（edge cases + emoji + 多 options + 自訂 action）`
+- `d697a68 refactor(sheetsSync): Round 29 P2.7 — 消除 getFirstSheetName 雙 token 浪費`
+- `a176d1a test(sendImageMessage): Round 29 P2.8 — 8 tests 補完（通用 LINE Push Image）`
+- `2644fae docs(handoff): Round 29 close-out 文件（5 commits + +67 新 tests + sheetsSync OAuth -50%）`
+
+### Round 30 (2026-07-30 · 6 個 commits)
+
+**主題**：refactor sendImageMessage + safeJsonParse 防 crash + test 補強
+
+- `7b38339 refactor(sendImageMessage): Round 30 P0.1 — 統一 contract 與 sendTextMessage 一致`
+- `c5c60b8 fix(notificationFormat): Round 30 P0.2 — safeJsonParse 防止無效 JSON 拋出`
+- `337708b test(csvReader): Round 30 P1.3 — 補強 8 tests（getRecentOrders + JSON 欄位錯誤處理 + 邊界值）`
+- `37d1db4 test(knowledgeLoader): Round 30 P1.4 — 27 tests 補完（loader.js 完整覆蓋）`
+- `dcd980e test(knowledgeTriggers): Round 30 P1.5 — 25 tests 補完（triggers.js 完整覆蓋）`
+- `80fe776 docs(handoff): Round 30 close-out 文件 + Round 29 防drift 註記`
+
+### Round 31 (2026-07-31 · 8 個 commits + 4 個 hotfixes)
+
+**主題**：菜單圖片整合（Round 31 P0）+ 4 個 hotfixes（Workers AI 移除、KV rollback、TDZ、semantic timeout）
+
+主線 commits：
+- `1178669 fix(integration): Round 31 P0.4 — integration test 6 allow 菜單 in MENU_IMAGE_KEYWORDS`
+- `8e6688f fix(dateRule): Round 31 P0.3 — date 錯誤訊息 + invalid 流程處理`
+- `ad4e8c6 docs(handoff): Round 31 close-out — P0.4 + P0.5 + P0.5 hotfix rollback`
+
+Hotfixes（Worker 端 + Chicken 端共 5 個）：
+- `b04fe34` P0.5 KV active tracking rollback（v `301e5929`）
+- `e426191` STEP 4.6 semantic match timeout 2s（v `7a6cac89`）
+- `96bedb4` TDZ bug 修復 MENU_IMAGE_KEYWORDS（v `753d0b07`）
+- `148d7df` 移除 Workers AI + greeting canned reply P0.6（v `b23dd720`，current）
+- 完整見 `docs/handoff/rounds/ROUND_31_2026-07-31.md`
+
+### Round 32 (2026-08-01 · 2 個 commits)
+
+**主題**：5 個 bug 修法 + auto-sync 架構統一
+
+- `ba9654d fix(chicken): Round 32 — 5 個 bug 修法 + auto-sync 架構`
+- `b7fa5d3 docs(handoff): Round 32 — 5 個 bug 修法 + 架構統一 close-out`
+
+### Round 33 (2026-08-01 · 2 個 commits)
+
+**主題**：3 個 bug/improvement 修法
+
+- `df33737 fix(chicken): Round 33 — 3 個 bug/improvement（Hubert 01:08 11:55）`
+- `c0dd8a4 docs(handoff): Round 33 close-out — 3 個 bug/improvement`
+
+---
+
 
 All notable changes to the chicken-group-buying-customer-service project will be documented in this file.
 
