@@ -1,4 +1,4 @@
-# 下個 Session Prompt（自動生成於 2026-08-02 20:04:49）
+# 下個 Session Prompt（自動生成於 2026-08-03 07:45:30）
 
 > **本檔由 `scripts/generate-next-prompt.sh` 自動生成**（Round 23）
 > **手動編輯請注意**：下次跑 script 會被覆蓋靜態 sections
@@ -45,11 +45,11 @@ cat docs/DEVELOPMENT.md | head -50 # 開發 SOP
 cat docs/adr/0001-0005.md         # 5 個架構決策
 ```
 
-## 當前狀態（自動生成於 2026-08-02 20:04:49）
+## 當前狀態（自動生成於 2026-08-03 07:45:30）
 
 | 項目 | 狀態 |
 |------|------|
-| Chicken repo last commit | `d4d7c98 docs(handoff+rules): Round 35 handoff + 規則手冊加 Round 35 summary` |
+| Chicken repo last commit | `8685028 docs(ops): log 路徑 /tmp/ → ~/.openclaw/logs/chicken/ + LOG_DIR 支援（D1 · Round 35 修理）` |
 | Worker last commit | `148d7df` |
 | Worker deploy version | `dfa555f4-855d-4f22-b534-01a9bb3e91cc` |
 | Test count | 61 tests |
@@ -70,11 +70,11 @@ cat docs/adr/0001-0005.md         # 5 個架構決策
 ## 最近 5 個 chicken commits
 
 ```
-d4d7c98 docs(handoff+rules): Round 35 handoff + 規則手冊加 Round 35 summary
-59740f2 docs(drift): 修 8 個文件 drift（Round 35 補丁）
-44018ee docs(known-issues): 補 4 個未關問題 + Round 35 U5 已修（Round 35 補丁）
-9be364d docs(readme): 修正 §1.1 npm test 套數（30+ → 51，Round 35 驗證）
-b299ef4 docs(changelog): 補登 Round 20-33 變更歷史（Round 35 補丁）
+8685028 docs(ops): log 路徑 /tmp/ → ~/.openclaw/logs/chicken/ + LOG_DIR 支援（D1 · Round 35 修理）
+9055284 refactor(prompt): 清 §十六 內 4 處 stale references + 改名避免 § 編號衝突（C3 · Round 35 修理）
+da2afd2 refactor(prompt): 刪 main_idea.md §十八 Quick Reply 整段（C2+C5 · Round 35 修理）
+6f1654f refactor(config): 刪 chicken.yaml quick_replies section（C1 · Round 35 修理）
+8655636 fix(lint): 修 api-server-hardening.test.js no-multi-spaces（C4 後遺症延伸）
 ```
 
 ## Worker 最近 3 個 commits
@@ -146,5 +146,5 @@ sleep 2 && curl http://localhost:3000/healthz
 
 ---
 
-_本檔由 `scripts/generate-next-prompt.sh` 自動生成於 2026-08-02 20:04:49_
+_本檔由 `scripts/generate-next-prompt.sh` 自動生成於 2026-08-03 07:45:30_
 _取代舊手寫 SESSION_NEXT_PROMPT.md（Round 23 自動化）_
