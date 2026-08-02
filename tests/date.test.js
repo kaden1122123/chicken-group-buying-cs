@@ -48,11 +48,12 @@ function restoreTime() {
 // ═════════════════════════════════════════════════════════════════
 
 test('getNextOpenDate 邊界正確', () => {
-  assert.strictEqual(getNextOpenDate('2026-06-14'), '2026-06-16', '2026-06-14 應該推薦 2026-06-16');
-  assert.strictEqual(getNextOpenDate('2026-06-16'), '2026-06-16', '2026-06-16 當天應回傳自己');
-  assert.strictEqual(getNextOpenDate('2026-06-17'), '2026-06-18', '2026-06-17 應推薦 2026-06-18');
-  assert.strictEqual(getNextOpenDate('2026-06-20'), '2026-06-23', '2026-06-20 應推薦 2026-06-23');
-  assert.strictEqual(getNextOpenDate('2026-07-01'), '2026-07-21', '2026-07-01 應推薦最近開團日 2026-07-21');
+  // Round 35 C4：open_dates 只剩 2026-08-04 / 08-07（清掉 past dates 後）
+  assert.strictEqual(getNextOpenDate('2026-07-31'), '2026-08-04', '2026-07-31 應該推薦 2026-08-04');
+  assert.strictEqual(getNextOpenDate('2026-08-04'), '2026-08-04', '2026-08-04 當天應回傳自己');
+  assert.strictEqual(getNextOpenDate('2026-08-05'), '2026-08-07', '2026-08-05 應推薦 2026-08-07');
+  assert.strictEqual(getNextOpenDate('2026-08-08'), null, '2026-08-08 應回 null（已過最後開團日）');
+  assert.strictEqual(getNextOpenDate('2026-08-01'), '2026-08-04', '2026-08-01 應推薦 2026-08-04');
   assert.strictEqual(getNextOpenDate('2099-12-31'), null, '2099 之後無開團日');
 });
 
@@ -75,14 +76,15 @@ test('formatDateWithWeekday 7 個星期都正確', () => {
 // ═════════════════════════════════════════════════════════════════
 
 test('getNextOrderableOpenDate 根據現在時間推薦可訂購日期', () => {
-  mockTime('2026-06-15T10:00:00+08:00'); // 配送前一日 10:00
-  assert.strictEqual(getNextOrderableOpenDate(), '2026-06-16', '配送前一日 10:00 應推薦 2026-06-16');
+  // Round 35 C4：open_dates 只剩 2026-08-04 / 08-07
+  mockTime('2026-08-03T10:00:00+08:00'); // 配送前一日 10:00
+  assert.strictEqual(getNextOrderableOpenDate(), '2026-08-04', '配送前一日 10:00 應推薦 2026-08-04');
 
-  mockTime('2026-06-15T14:00:00+08:00'); // 配送前一日 14:00（已過 2026-06-16 收單）
-  assert.strictEqual(getNextOrderableOpenDate(), '2026-06-18', '配送前一日 14:00 應跳過 2026-06-16 推薦 2026-06-18');
+  mockTime('2026-08-03T14:00:00+08:00'); // 配送前一日 14:00（已過 2026-08-04 收單）
+  assert.strictEqual(getNextOrderableOpenDate(), '2026-08-07', '配送前一日 14:00 應跳過 2026-08-04 推薦 2026-08-07');
 
-  mockTime('2026-06-15T20:00:00+08:00'); // 配送前一日晚上
-  assert.strictEqual(getNextOrderableOpenDate(), '2026-06-18', '配送前一日 20:00 應跳過 2026-06-16 推薦 2026-06-18');
+  mockTime('2026-08-03T20:00:00+08:00'); // 配送前一日晚上
+  assert.strictEqual(getNextOrderableOpenDate(), '2026-08-07', '配送前一日 20:00 應跳過 2026-08-04 推薦 2026-08-07');
 
   restoreTime();
 });
@@ -104,23 +106,24 @@ test('validateDate 12 種情境', () => {
     }
   }
 
+  // Round 35 C4：open_dates 只剩 2026-08-04 / 08-07
   // 場景 1: 配送日 = 今天，現在 13:00 前（但仍是配送前一日之後的時段）
-  testValidateDate('2026-06-16T10:00:00+08:00', '2026-06-16', false, 'past_order_cutoff', '今天 10:00 + 今天配送');
+  testValidateDate('2026-08-04T10:00:00+08:00', '2026-08-04', false, 'past_order_cutoff', '今天 10:00 + 今天配送');
   // 場景 2: 配送日 = 今天，現在 13:00 後
-  testValidateDate('2026-06-16T15:00:00+08:00', '2026-06-16', false, 'past_cutoff_today', '今天 15:00 + 今天配送');
-  testValidateDate('2026-06-16T20:00:00+08:00', '2026-06-16', false, 'past_cutoff_today', '今天 20:00 + 今天配送');
+  testValidateDate('2026-08-04T15:00:00+08:00', '2026-08-04', false, 'past_cutoff_today', '今天 15:00 + 今天配送');
+  testValidateDate('2026-08-04T20:00:00+08:00', '2026-08-04', false, 'past_cutoff_today', '今天 20:00 + 今天配送');
   // 場景 3: 配送日 = 明天，現在 < 13:00
-  testValidateDate('2026-06-15T10:00:00+08:00', '2026-06-16', true, null, '配送前一日 10:00 + 明天配送');
-  testValidateDate('2026-06-15T12:30:00+08:00', '2026-06-16', true, null, '配送前一日 12:30 + 明天配送');
+  testValidateDate('2026-08-03T10:00:00+08:00', '2026-08-04', true, null, '配送前一日 10:00 + 明天配送');
+  testValidateDate('2026-08-03T12:30:00+08:00', '2026-08-04', true, null, '配送前一日 12:30 + 明天配送');
   // 場景 4: 配送日 = 明天，現在 13:00 後
-  testValidateDate('2026-06-15T13:30:00+08:00', '2026-06-16', false, 'past_order_cutoff', '配送前一日 13:30 + 明天配送');
-  testValidateDate('2026-06-15T15:00:00+08:00', '2026-06-16', false, 'past_order_cutoff', '配送前一日 15:00 + 明天配送');
-  testValidateDate('2026-06-15T19:00:00+08:00', '2026-06-16', false, 'past_order_cutoff', '配送前一日 19:00 + 明天配送');
+  testValidateDate('2026-08-03T13:30:00+08:00', '2026-08-04', false, 'past_order_cutoff', '配送前一日 13:30 + 明天配送');
+  testValidateDate('2026-08-03T15:00:00+08:00', '2026-08-04', false, 'past_order_cutoff', '配送前一日 15:00 + 明天配送');
+  testValidateDate('2026-08-03T19:00:00+08:00', '2026-08-04', false, 'past_order_cutoff', '配送前一日 19:00 + 明天配送');
   // 場景 5: 配送日 = 後天或之後
-  testValidateDate('2026-06-15T20:00:00+08:00', '2026-06-18', true, null, '配送前 3 日 20:00 + 後天配送');
-  testValidateDate('2026-06-13T20:00:00+08:00', '2026-06-18', true, null, '配送前 5 日 20:00 + 後天配送');
+  testValidateDate('2026-08-03T20:00:00+08:00', '2026-08-07', true, null, '配送前 4 日 20:00 + 後天配送');
+  testValidateDate('2026-08-01T20:00:00+08:00', '2026-08-07', true, null, '配送前 6 日 20:00 + 後天配送');
   // 場景 6: 非開團日
-  testValidateDate('2026-06-14T10:00:00+08:00', '2026-06-20', false, 'not_open_date', '非開團日（2026-06-20）');
+  testValidateDate('2026-08-03T10:00:00+08:00', '2026-08-05', false, 'not_open_date', '非開團日（2026-08-05）');
   // 場景 7: 格式錯誤
   testValidateDate('2026-06-14T10:00:00+08:00', 'invalid-date', false, 'invalid_format', '格式錯誤');
   // 場景 8: 缺失
@@ -183,40 +186,42 @@ test('validateTimeSlotWithDate 各種時段 × 時間組合', () => {
 // ═════════════════════════════════════════════════════════════════
 
 test('錯誤訊息突出下一個開團日（Round 31 P0.3 變更格式）', () => {
-  mockTime('2026-06-15T21:00:00+08:00');
-  const r1 = validateDate('2026-06-20'); // 非開團日
-  assert.ok(r1.errorMessage.includes('下次可下單日期是 2026-06-18（週四）'), '應突出下一個可下單日期');
+  // Round 35 C4：open_dates 只剩 2026-08-04 / 08-07
+  mockTime('2026-08-03T21:00:00+08:00');
+  const r1 = validateDate('2026-08-05'); // 非開團日
+  // mock 2026-08-03 21:00（已過 8/4 收單 13:00）→ getNextOrderableOpenDate 推薦 8/7
+  assert.ok(r1.errorMessage.includes('下次可下單日期是 2026-08-07（週五）'), '應突出下一個可下單日期（已過 8/4 收單，推薦 8/7）');
   assert.ok(r1.errorMessage.includes('您要改訂這天嗎？'), '應有引導語');
   // Round 33 Bug 2 (Hubert 11:55)：改用未來兩週（14 天）開團日
   assert.ok(r1.errorMessage.includes('未來兩週開團日：'), '應列出未來兩週開團日');
   assert.ok(!r1.errorMessage.includes('本月開團日期：'), '不應再列整個本月開團日清單（Hubert 12:33 要修）');
 
-  const r2 = validateDate('2026-06-16'); // 配送前一日 21:00 → 過了收單
-  assert.ok(r2.errorMessage.includes('下次可下單日期是 2026-06-18（週四）'), '應突出下一個可下單日期');
+  const r2 = validateDate('2026-08-04'); // 配送前一日 21:00 → 過了收單
+  assert.ok(r2.errorMessage.includes('下次可下單日期是 2026-08-07（週五）'), '應突出下一個可下單日期');
 
-  mockTime('2026-06-16T20:00:00+08:00');
-  const r3 = validateDate('2026-06-16'); // 今天 + 20:00
-  assert.ok(r3.errorMessage.includes('下次可下單日期是 2026-06-18'), 'past_cutoff_today 應突出下一個可下單日期');
+  mockTime('2026-08-04T20:00:00+08:00');
+  const r3 = validateDate('2026-08-04'); // 今天 + 20:00
+  assert.ok(r3.errorMessage.includes('下次可下單日期是 2026-08-07'), 'past_cutoff_today 應突出下一個可下單日期');
 
-  const r4 = validateDate('2026-07-15'); // 跨月
+  const r4 = validateDate('2026-09-15'); // 跨月
   assert.ok(r4.errorMessage.includes('不是本月的開團日'), 'not_this_month 應清楚說明');
 
   restoreTime();
 });
 
 test('錯誤訊息只列未來兩週開團日（Round 33 Bug 2）', () => {
-  mockTime('2026-06-15T21:00:00+08:00');
-  // 8 個 open_dates：6/16/18/23/26、7/21/24、8/04/07
-  // 今天 2026-06-15 → 未來 14 天 = 2026-06-29 截止
-  // 過濾後的 upcoming 包含 6/16/18/23/26（都在未來 14 天內）、7/21、7/24、8/04、8/07
-  const r = validateDate('2026-06-20');
+  // Round 35 C4：open_dates 只剩 2026-08-04 / 08-07
+  mockTime('2026-08-03T21:00:00+08:00');
+  // 今天 2026-08-03 → 未來 14 天 = 2026-08-17 截止
+  // 過濾後的 upcoming 包含 2026-08-04（週二）、2026-08-07（週五）
+  const r = validateDate('2026-08-05');
   // Round 33 Bug 2 (Hubert 11:55)：未來兩週（含這週 + 下週 = 14 天）
   const upcomingMatch = r.errorMessage.match(/未來兩週開團日：(.+?)。/);
   assert.ok(upcomingMatch, '應有「未來兩週開團日：」段');
   const upcomingDates = upcomingMatch[1].split('、');
   assert.ok(upcomingDates.length >= 1, `至少 1 個開團日，實際 ${upcomingDates.length} 個：${upcomingMatch[1]}`);
   // 應過濾掉過去日期
-  assert.ok(!upcomingMatch[1].startsWith('2026-06-14'), '不應包含今天之前的日期');
+  assert.ok(!upcomingMatch[1].startsWith('2026-08-02'), '不應包含今天之前的日期');
   assert.ok(upcomingDates[0].includes('週'), `每個日期應含 weekday：${upcomingDates[0]}`);
   restoreTime();
 });

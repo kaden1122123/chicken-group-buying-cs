@@ -22,7 +22,7 @@ const VALID_ORDER = {
     user_line_name: '測試用戶',
     user_phone: '0912345678',
     address: '新北市三峽區',
-    delivery_date: '2026-06-18',
+    delivery_date: '2026-08-04',  // Round 35 C4：改為新 open_dates（2026-08-04）
     time_slot: '上午',
     items: [{ name: '鹽水雞', qty: 1, total: 380 }],
     subtotal: 380,
@@ -40,7 +40,7 @@ function startServer(portOffset, extraEnv) {
     PORT: String(port),
     API_USERNAME: USERNAME,
     API_PASSWORD: PASSWORD,
-    MOCK_TODAY: '2026-06-15T10:00:00+08:00',
+    MOCK_TODAY: '2026-08-03T10:00:00+08:00',  // Round 35 C4：改為 8 月（新 open_dates 2026-08-04 在本月）
   }, extraEnv || {});
   return {
     process: spawn('node', [SERVER_PATH], { env, stdio: ['ignore', 'pipe', 'pipe'] }),
