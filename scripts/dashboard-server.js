@@ -167,7 +167,7 @@ function pingApiServer() {
 function pingWorker() {
   return new Promise((resolve) => {
     const workerUrl = process.env.WORKER_HEALTH_URL
-      || 'https://external-user-line-security.kaden1122123.workers.dev/';
+      || 'https://external-user-line-security.kaden1122123.workers.dev/api/knowledge/stats';
     const lib = workerUrl.startsWith('https') ? require('https') : require('http');
     const req2 = lib.request(
       workerUrl,
