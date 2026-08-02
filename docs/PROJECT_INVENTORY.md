@@ -50,7 +50,7 @@
 **編輯流程**（永遠）：
 
 1. 在 dev repo 改檔
-2. `bash scripts/check-quality.sh` 確認 10 checks 全綠
+2. `bash scripts/check-quality.sh` 確認 12 checks 全綠
 3. `git add -A && git commit && git push`
 4. `bash scripts/sync-mirror.sh from-legacy` 同步到 main 鏡像
 5. 重啟對應 services（如改 src/config.js → 重啟 api-server + dashboard）
@@ -110,7 +110,7 @@ disown
 | `scripts/cleanup-test-orders.js` | 清測試訂單（保護 6/13 + 6/16 真實）| 手動或 cron |
 | `scripts/sync-config.sh` | 單向 mirror chicken.yaml → config.yaml | 每次改 chicken.yaml 後跑 |
 | `scripts/sync-mirror.sh` | dev → main 鏡像同步（rsync）| commit + push 後 |
-| `scripts/check-quality.sh` | 10 項品質檢查（Check 1-10）| commit 前必跑 |
+| `scripts/check-quality.sh` | 12 項品質檢查（Check 1-12）| commit 前必跑 |
 | `scripts/manage-tunnel.sh` | Cloudflare Quick Tunnel 管理 | 啟動 / 停 / 查 / 測 |
 | `scripts/dashboard-watchdog.sh` | 透過 /healthz 監控 dashboard | cron `36d2ca19` |
 | `scripts/backup.sh` | 每日備份（22K, 7 天 retention）| cron `bd933551` |
@@ -129,13 +129,13 @@ disown
 
 ### 3.4 Tests
 
-`tests/*.test.js` — 49 套 unit test + 1 套 integration。`npm test` 跑全部。Check 1 in check-quality.sh 跑 `npm test`。
+`tests/*.test.js` — 51 套 unit test + 1 套 integration。`npm test` 跑全部。Check 1 in check-quality.sh 跑 `npm test`。
 
 ### 3.5 Docs
 
 | 路徑 | 用途 |
 |------|------|
-| `HANDOFF.md` | 當前狀態 + 1-10 區塊（含待修整清單）|
+| `NEW_SESSION_README.md` | 當前狀態 + 5 分鐘上手（Round 34 取代舊 HANDOFF.md，LEGACY 標頭）|
 | `CHANGELOG.md` | commit 級變更歷史 |
 | `docs/INDEX.md` | 文檔總索引 |
 | `docs/CEO_DECISION_GUIDE.md` | 13 個 session 決策 |
@@ -158,7 +158,7 @@ disown
 - `docs/TODO_2026-06-26.md` — 評估與修整 TODO（6/26 最後更新）
 - `docs/CLEANUP_PHASE_2_PLAN.md` — Cleanup Phase 2 修整計畫（6/28 最後更新）
 
-**如果你要快速了解系統現狀**：直接讀 `CHANGELOG.md` + `HANDOFF.md` + `docs/SYSTEM_AUDIT_2026-07-19.md` 就夠了。
+**如果你要快速了解系統現狀**：直接讀 `CHANGELOG.md` + `NEW_SESSION_README.md` + `docs/SYSTEM_AUDIT_2026-07-19.md` 就夠了。
 
 ### 3.6 /tmp 的 chicken 服務檔（mode 600，永不 commit）
 

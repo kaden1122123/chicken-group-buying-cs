@@ -90,7 +90,7 @@ curl -s "https://external-user-line-security.kaden1122123.workers.dev/api/knowle
 
 ```bash
 cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service
-npm test                    # 30+ 個 test（unit + integration）
+npm test                    # 51 個 test（unit + integration）
 bash scripts/check-quality.sh  # 12 checks
 ```
 
@@ -198,7 +198,7 @@ cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-servic
 
 # 2. dev 本地測試
 bash scripts/check-quality.sh  # 12 checks
-npm test                        # 30+ tests
+npm test                        # 51 tests
 
 # 3. commit + push（先 chicken）
 git add -A

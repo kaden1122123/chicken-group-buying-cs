@@ -64,13 +64,13 @@ cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-servic
 git status --short
 git log --oneline -5
 
-# 2. 品質檢查（13 項）
+# 2. 品質檢查（12 項）
 bash scripts/check-quality.sh
-# 預期：13 通過 / 0-1 警告 / 0 失敗
+# 預期：12 通過 / 0-2 警告 / 0 失敗
 
 # 3. 跑全套測試
 npm test
-# 預期：15 套全綠
+# 預期：51 套全綠
 
 # 4. 三服務健康檢查
 curl http://localhost:3000/healthz
