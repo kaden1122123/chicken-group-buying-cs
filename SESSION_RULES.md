@@ -132,6 +132,20 @@ Session 結束：
 
 ## 🔄 變更歷史
 
+### 2026-08-02 20:00+（Round 35）
+
+**Round 35 完整修理**：Hubert 19:39 訊息觸發，盤點 15 個 drift/bug
+
+- **5 個 commits**：
+  - `6ce4ffc` fix(dashboard): worker /healthz fallback URL 修正（worker 404 bug 真因）
+  - `b299ef4` docs(changelog): 補登 Round 20-33 + 34（51 commits + 4 hotfixes）
+  - `9be364d` docs(readme): 修正 §1.1 npm test 套數（30+ → 51）
+  - `44018ee` docs(known-issues): 補 4 個未關問題 + U5 已修
+  - `59740f2` docs(drift): 修 8 個文件 drift（PROJECT_INVENTORY/DEVELOPMENT/HUBERT_USER_GUIDE）
+- **1 個系統級 edit**：HEARTBEAT.md 3 個 edits（最後更新時間 + Round 35 段 + 下次第一件事）
+- **驗證**：/healthz 三服務全 up、npm test 51 全綠、check-quality 12/2/0
+- **完整紀錄**：`docs/handoff/rounds/ROUND_35_2026-08-02.md`
+
 ### 2026-08-01 19:21+（Round 34）
 
 **首次建立（本檔）**

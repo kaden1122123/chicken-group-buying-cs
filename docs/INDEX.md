@@ -1,4 +1,4 @@
-# 雞味客服 文件 INDEX（自動生成於 2026-08-01 22:04:00）
+# 雞味客服 文件 INDEX（自動生成於 2026-08-02 20:04:49）
 
 > **本檔由 `scripts/generate-docs-index.sh` 自動生成**（Round 23）
 > **手動編輯請注意**：下次跑 script 會被覆蓋
@@ -8,7 +8,7 @@
 
 | 類別 | 檔案數 | 行數 |
 |------|-------|------|
-| Chicken repo docs/ (md, 不含 INDEX) | 13 | 3509 |
+| Chicken repo docs/ (md, 不含 INDEX) | 13 | 3543 |
 | System-level (~/.openclaw/workspace/) | 13 | - |
 | Worker repo docs/ | 0 | - |
 | **總計** | 26 | - |
@@ -38,7 +38,7 @@
 | `ENGINEERING_HANDBOOK.md` | 📄 其他 | 489 行 |
 | `GCP_ROTATION_SOP.md` | 📋 SOP | 249 行 |
 | `HUBERT_USER_GUIDE.md` | 📄 其他 | 343 行 |
-| `KNOWN_ISSUES.md` | 📄 其他 | 132 行 |
+| `KNOWN_ISSUES.md` | 📄 其他 | 166 行 |
 | `MULTI_TENANT_DESIGN.md` | 🛠 開發 | 233 行 |
 | `NAMED_TUNNEL_MIGRATION.md` | 📚 通用 | 90 行 |
 | `OPERATIONS.md` | 🔥 必讀 | 206 行 |
