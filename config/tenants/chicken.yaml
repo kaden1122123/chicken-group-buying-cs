@@ -170,23 +170,12 @@ api:
 # 4 種情境：menu / payment / hours / delivery
 # 注意：目前 OpenClaw pipeline 尚未支援 Quick Reply 渲染（見 main_idea.md §十二 「訂單確認流程」備註）
 # 所以這是「意圖定義」，等 OpenClaw 支援後 pipeline 讀這個 config 自動生成按鈕
-quick_replies:
-  menu:
-    - { label: "看完整菜單", text: "請給我完整菜單" }
-    - { label: "招牌鹽水雞", text: "我想了解鹽水雞" }
-    - { label: "煙燻雞", text: "我想了解煙燻雞" }
-    - { label: "玉米雞", text: "我想了解玉米雞" }
-  payment:
-    - { label: "LINE Pay", text: "我選 LINE Pay" }
-    - { label: "街口支付", text: "我選街口支付" }
-    - { label: "銀行轉帳", text: "我選銀行轉帳" }
-    - { label: "現金", text: "我選現金" }
-  hours:
-    - { label: "上午 10-12", text: "我選上午" }
-    - { label: "下午 16-18", text: "我選下午" }
-  delivery:
-    - { label: "三鶯地區", text: "我在三鶯地區" }
-    - { label: "其他地區", text: "我想確認配送範圍" }
+# Round 35 C1：quick_replies section 已刪除（OpenClaw pipeline 不支援 Quick Reply 渲染，dead config）
+# 後續實作該如何操作（如果要重新啟用 Quick Reply）：
+# 1. OpenClaw pipeline 加 Quick Reply renderer（支援 menu / payment / hours / delivery 4 種情境）
+# 2. chicken.yaml 加回 quick_replies section（從 git history 找 8655636 之前的版本複製）
+# 3. main_idea.md §十八 加回 Quick Reply 統一回覆段（C2 配套）
+# 4. 刪除本 comment block
 
 cutoff:
   reminder_time: 前一日 11:00~12:00
