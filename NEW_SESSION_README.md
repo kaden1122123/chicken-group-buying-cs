@@ -215,12 +215,14 @@ DASHPID=$(ps -eo pid,comm,args | awk '$2=="node" && $0~/dashboard-server/ {print
 
 nohup env API_USERNAME=api-user API_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/api-pwd \
   X_API_TOKEN_FILE=/home/clawuser/.config/chicken/secrets/api-token PORT=3001 \
-  node scripts/api-server.js > /tmp/api-server.log 2>&1 & disown
+  LOG_DIR=/home/clawuser/.openclaw/logs/chicken \
+  node scripts/api-server.js > ~/.openclaw/logs/chicken/api-server.log 2>&1 & disown
 
 nohup env DASHBOARD_USERNAME=admin DASHBOARD_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/dashboard-pwd \
   API_USERNAME=api-user API_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/api-pwd \
   WORKER_HEALTH_URL=https://external-user-line-security.kaden1122123.workers.dev/api/knowledge/stats \
-  PORT=3000 node scripts/dashboard-server.js > /tmp/dashboard-server.log 2>&1 & disown
+  LOG_DIR=/home/clawuser/.openclaw/logs/chicken \
+  PORT=3000 node scripts/dashboard-server.js > ~/.openclaw/logs/chicken/dashboard-server.log 2>&1 & disown
 
 curl http://localhost:3000/healthz
 ```

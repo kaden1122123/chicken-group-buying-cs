@@ -96,7 +96,8 @@ APIPID=$(ps -eo pid,comm,args | awk '$2=="node" && $0~/api-server/ {print $1; ex
 [ -n "$APIPID" ] && kill "$APIPID" && sleep 2
 nohup env API_USERNAME=api-user API_PASSWORD_FILE=/home/clawuser/.config/chicken/secrets/api-pwd \
   X_API_TOKEN_FILE=/home/clawuser/.config/chicken/secrets/api-token PORT=3001 \
-  node scripts/api-server.js > /tmp/api-server.log 2>&1 & disown
+  LOG_DIR=/home/clawuser/.openclaw/logs/chicken \
+  node scripts/api-server.js > ~/.openclaw/logs/chicken/api-server.log 2>&1 & disown
 ```
 
 ### Step 6：驗證
