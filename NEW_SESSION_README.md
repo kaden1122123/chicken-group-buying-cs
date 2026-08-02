@@ -23,7 +23,7 @@ bash scripts/check-quality.sh
 
 # 3. 跑全套測試
 npm test
-# 預期：30+ 套全綠
+# 預期：51 個 .test.js 全綠 / 0 fail（Round 35 驗證）
 
 # 4. 三服務健康檢查
 curl http://localhost:3000/healthz
