@@ -4,7 +4,7 @@
 > **維護者**：brtclaw
 > **自動產生**：`bash scripts/check-quality.sh`（6 項檢查）
 > **更新規則**：每次 Session 結束跑一次 check-quality.sh，更新本檔
-> **last_updated**：2026-07-27（Round 27 確認仍適用，無改動）
+> **last_updated**：2026-08-02（Round 35 補丁：加 4 個未關問題 + dashboard fallback 已修）
 
 ---
 
@@ -21,11 +21,33 @@
 
 ---
 
-## 問題清單（0 個失敗 + 0 個警告）
+## 問題清單（0 個失敗 + 4 個未關問題）
 
-> **2026-07-18 Session 整理**：W10 已修復（commit `97cb3af` 08:09 已收尾）。
-> 全部問題移到「已修復問題」段，當前 working tree 乾淨。
-> 下一輪 audit 跑 `bash scripts/check-quality.sh` 後，本檔會自動驗證狀態。
+> **Round 35 補丁（2026-08-02）**：從 Round 33 結尾（HEARTBEAT）與 NEW_SESSION_README §5.1 補入 4 個仍在調查的問題。check-quality 0 失敗、npm test 0 fail，但仍有 4 個「未關」問題需追蹤。
+
+### 🟡 U1：客戶「客服邏輯錯亂」（Round 33 確認仍存在）
+
+**影響**：客戶回報回覆邏輯錯亂
+**推測 root cause**：可能源自 Round 32-33 期間 chat log 污染（sanitize 只能防未來 outbound）
+**處理**：從 OpenClaw session 重建客戶 context
+
+### 🟡 U2：`Exec failed` 原始來源（grep 全 src/ 找不到）
+
+**影響**：客戶偶爾收到「Exec failed」訊息（sanitize 會 fallback 為友善訊息）
+**推測 root cause**：OpenClaw pipeline 底層某個 tool 失敗漏訊息
+**處理**：翻 OpenClaw source
+
+### 🟡 U3：LLM 沒動態讀 chicken.yaml 的能力
+
+**影響**：LLM 不知道當前 chicken.yaml 的設定（產品、價格、運費等）
+**推測 root cause**：目前靠 prompt 引導，prompt 改動後 1 分鐘才生效
+**處理**：設計 chicken.yaml 動態注入 prompt 機制
+
+### 🟡 U4：main_idea.md drift（Check 11 警告）
+
+**影響**：check-quality Check 11 警告 production runtime 改但 docs/production-prompt/ 沒跟
+**推測 root cause**：sync-canonical.sh 漏跑或 md5 drift
+**處理**：重新 sync-canonical 或調整 Check 11 容忍度
 
 ---
 
@@ -49,6 +71,18 @@
 ---
 
 ## 已修復問題
+
+### ✅ U5：dashboard /healthz worker=down:404（2026-08-02 Round 35 修整）
+
+**問題**：`scripts/dashboard-server.js:168` fallback URL = Worker 根 `/`（不是 `/api/knowledge/stats`）→ 進程沒設 `WORKER_HEALTH_URL` → 永遠走 fallback → /healthz 永遠報 worker=down
+
+**修法**：fallback 改為 `/api/knowledge/stats`（1 行 URL 修正）
+
+**commit**：`6ce4ffc fix(dashboard): worker /healthz fallback URL 修正（Round 35）`
+
+**驗證**：/healthz 3 服務全 up（dashboard=up, api_server=up, worker=up）
+
+---
 
 ### ✅ F1：客服收到大額現金訂單不會被擋下（2026-07-01 Session D3 修整）
 
