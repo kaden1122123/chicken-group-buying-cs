@@ -249,9 +249,9 @@ OpenClaw Agent (external-user)
 
 新 session 接手時必讀：
 
-1. 📘 [`HANDOFF.md`](./HANDOFF.md) — 系統狀態摘要
+1. 📘 [`NEW_SESSION_README.md`](./NEW_SESSION_README.md) — 系統狀態摘要（Round 34 整合，取代舊 HANDOFF.md / SESSION_NEXT_PROMPT.md）
 2. 🗺 [`docs/PROJECT_INVENTORY.md`](./docs/PROJECT_INVENTORY.md) — 完整系統目錄
-3. 🎯 [`docs/handoff/sessions/SESSION_NEXT_PROMPT.md`](./docs/handoff/sessions/SESSION_NEXT_PROMPT.md) — 下個 session 開局 prompt
+3. 🎯 [`NEW_SESSION_README.md`](./NEW_SESSION_README.md) — 下個 session 開局 prompt（Round 34 整合）
 4. 🔍 **`docs/.archive/SYSTEM_AUDIT_2026-07-19.md`**（已歸檔，內容已併入 NEW_SESSION_README.md） — audit 報告（已歸檔）
 5. 🏛 [`docs/ENGINEERING_HANDBOOK.md`](./docs/ENGINEERING_HANDBOOK.md) — 工程慣例
 
