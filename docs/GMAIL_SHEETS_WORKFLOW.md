@@ -1,263 +1,212 @@
-# Gmail + Google Sheets 整合工作流
+# Gmail + Google Sheets 整合 Workflow（真實測試版）
 
-> **last_updated**：2026-08-03（OAuth token 修復後整理）
-> **適用專案**：chicken-group-buying-customer-service
-> **GCP Project**：`chickencustomerservicesheets`
-
----
-
-## 1. Overview
-
-雞味客服同時整合兩個 Google 服務，使用**兩個獨立 auth 機制**但共用同一個 GCP project：
-
-| 服務 | Auth 機制 | 用途 |
-|------|------|------|
-| **Gmail** | User OAuth 2.0（Desktop app loopback）| 老闆信箱 `clawbrt@gmail.com` 寄信 |
-| **Google Sheets** | Service Account（JWT bearer）| 訂單資料 sync 到 sheet |
+> **建立時間**：2026-08-03 11:30 GMT+8
+> **作者**：brtclaw（Hubert 指出先前 health check 過於樂觀後，重做實機測試）
+> **目的**：記錄 Gmail OAuth 與 Google Sheets Service Account 的**真實**運作狀態與重置 SOP
+> **測試標準**：**禁止將 dryRun 標示為 100% 健康**；唯有真實發出 API 封包並驗證 log 才算 Live Pass，否則必須標註為「僅 Dry-Run 驗證」
 
 ---
 
-## 2. 兩個獨立 Auth 機制
+## §1 測試標準（強制）
 
-### Gmail — User OAuth (Desktop app loopback)
+### 1.1 Live Pass vs Dry-Run
 
-```
-User (clawbrt@gmail.com)
-  ↓ browser 互動授權
-OAuth Client ID (Desktop app)
-  ↓ refresh_token 永久
-googleapis SDK
-  ↓ access_token 每 1hr 重簽
-Gmail API (scope: gmail.send)
-```
+| 類型 | 條件 | 報告標示 |
+|------|------|----------|
+| **Live Pass** | 真實發出 HTTPS API 封包、收到 200/2xx 回應 + log 有記錄 | ✅ Live Pass（已驗證 API 呼叫 + log） |
+| **Dry-Run** | 僅檢查檔案存在、端點可達、env 設定正確，但沒實際呼叫 API | ⚠️ 僅 Dry-Run 驗證（未實測 API 呼叫） |
+| **Fail** | API 回 4xx/5xx 或連線錯誤 | ❌ Fail（[error message]） |
 
-### Google Sheets — Service Account (JWT bearer)
+### 1.2 未來健康報告鐵律
 
-```
-Service Account (chicken-sheets-sync@chickencustomerservicesheets.iam.gserviceaccount.com)
-  ↓ JSON private key
-googleapis SDK
-  ↓ JWT bearer assertion（每 1hr 重簽，無 refresh_token）
-Google Sheets API (scope: spreadsheets R/W)
-```
+- 任何「✅ Gmail 整合健康」之類的敘述**必須**附上 Live Pass 的證據（curl/HTTPS log、API response code、執行時間）
+- 「✅ Sheets API 200 OK」≠「✅ Sheets 整合健康」：要列出具體讀寫動作的成功 log
+- ❌ 禁止用「檔案存在 + endpoint reachable」當作健康證明
 
 ---
 
-## 3. GCP 設定
+## §2 Google Sheets 整合（Service Account JWT）— ✅ Live Pass
 
-| 項目 | 值 |
-|------|-----|
-| Project 名稱 | `ChickenCustomerServiceSheets` |
-| Project ID | `chickencustomerservicesheets` |
-| User OAuth Client | `11296846529-rrb7n92bqco6ng0ted6j5l9u2ars1sm4.apps.googleusercontent.com` |
-| User OAuth Scope | `https://www.googleapis.com/auth/gmail.send` |
-| Service Account | `chicken-sheets-sync@chickencustomerservicesheets.iam.gserviceaccount.com` |
-| Service Account Scope | `https://www.googleapis.com/auth/spreadsheets` |
-| 啟用 API | Gmail API + Google Sheets API |
-| OAuth consent screen | External / Testing / Test user: `clawbrt@gmail.com` |
+### 2.1 認證機制
 
----
+- **方式**：Service Account JWT（無 OAuth 過期問題）
+- **Service Account Email**：`chicken-sheets-sync@chickencustomerservicesheets.iam.gserviceaccount.com`
+- **Project ID**：`chickencustomerservicesheets`
+- **憑證檔**：`~/.config/chicken/secrets/google-service-account.json`（2416 bytes, 600 權限）
 
-## 4. XDG Secrets（`~/.config/chicken/secrets/`，全部 chmod 600）
+### 2.2 Spreadsheet ID
 
-| 檔案 | 用途 | 大小 |
-|------|------|------|
-| `gmail-credentials.json` | OAuth Client ID | 416 B |
-| `gmail-token.json` | refresh_token（永久有效除非撤銷）| ~1 KB |
-| `google-service-account.json` | Service Account private key（**高危險，別 commit**）| 2416 B |
-| `line-bot-token` | LINE bot token（額度 500/月）| 172 B |
-| `api-token` / `api-pwd` / `dashboard-pwd` | 雞味客服 API 認證 | — |
+`12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA`
 
----
+（公開 URL：https://docs.google.com/spreadsheets/d/12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA/edit?usp=sharing）
 
-## 5. Gmail 工作流
+### 2.3 Live Test 結果（2026-08-03 11:30）
 
-### 入口
+| API | 結果 | 回應時間 | 備註 |
+|-----|------|----------|------|
+| `spreadsheets.get` | ✅ Live Pass | 729 ms | 標題「雞味客服訂單」，1 個工作表「工作表1」 |
+| `spreadsheets.values.get` | ✅ Live Pass | 430 ms | range「工作表1!A1:Z5」回傳 5 rows |
 
-```javascript
-const { notifyHubert } = require('./src/handoff/notifier');
-notifyHubert(message, { type: 'handoff' | 'autoOrder' | 'digest' | 'system' });
-```
-
-**Hubert 22:53 決定**：Email 不只是 fallback，**LINE + Email 並行**（每次觸發兩條都跑）。
-
-### 4 種版型
-
-| Type | 觸發處 | Subject 前綴 |
-|------|------|------|
-| `handoff` | `src/states/handoff.js:114` | 【雞味研究所】🔔 轉真人通知 |
-| `autoOrder` | `src/handoff/autoOrder.js:94` / `:193` | 【雞味研究所】🤖 B 方案自動建單 |
-| `digest` | `scripts/send-digest.js`（cron）| 【雞味研究所】📊 訂單彙總 |
-| `system` | `notifier.js testNotification` + default | 【雞味研究所】⚙️ 系統通知 |
-
-### OAuth 設定一次性步驟
-
-完整步驟見 `docs/EMAIL_SETUP.md`（v2 — 2026-07-17，last_updated 2026-07-27）。
-
-Quick reference：
+### 2.4 驗證指令（可重複執行）
 
 ```bash
-# 1. cd chicken repo
 cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service
 
-# 2. 跑 OAuth 授權
-node scripts/gmail-auth.js
-
-# 3. Browser 互動：選 clawbrt@gmail.com → Advanced → Go to ... → Allow
-# 4. 複製授權碼 → 貼回 terminal
-
-# 5. 驗證 token.json 建立
-ls -la /home/clawuser/.config/chicken/secrets/gmail-token.json
-
-# 6. 測試寄信
 node -e "
-  const { notifyHubert } = require('./src/handoff/notifier');
-  notifyHubert('🎉 OAuth 測試', { type: 'system' })
-    .then(() => console.log('OK'))
-    .catch(e => console.error('ERR:', e.message));
+const { google } = require('googleapis');
+(async () => {
+  const auth = new google.auth.GoogleAuth({
+    keyFile: '/home/clawuser/.config/chicken/secrets/google-service-account.json',
+    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+  });
+  const client = await auth.getClient();
+  const sheets = google.sheets({ version: 'v4', auth: client });
+  const result = await sheets.spreadsheets.get({ 
+    spreadsheetId: '12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA' 
+  });
+  console.log('Title:', result.data.properties.title);
+})();
 "
 ```
 
-### Refresh Token 政策
+### 2.5 已知問題
 
-| Token | 壽命 | 備註 |
-|------|------|------|
-| **access_token** | 1 小時 | 過期前 googleapis SDK 自動用 refresh_token 換新，**無感** |
-| **refresh_token** | 永久有效除非撤銷 | Google 官方說法 |
-
-**失效情境**（會讓 refresh_token 死掉）：
-1. User 去 https://myaccount.google.com/permissions 移除「雞味客服 Gmail」
-2. GCP project 或 OAuth client 被刪除
-3. **6 個月沒用** → Google 未公開 threshold，但風險存在
-
-**建議**：每月 1 號寄一封 system log（`scripts/send-digest.js` 23:30 daily + 週日 10:00 已涵蓋）保持 active。
+- **Service Account 權限**：必須在 GCP console 把 `chicken-sheets-sync@chickencustomerservicesheets.iam.gserviceaccount.com` 加到 Sheet 的「共用對象」（目前已驗證有權讀）
+- **寫入權限**：`spreadsheets.values.append` 需要的 scope 是 `spreadsheets`（非 readonly），cron `6033de71` 跑的 `sheets-sync-cron.js` 應已有此 scope
 
 ---
 
-## 6. Google Sheets 工作流
+## §3 Gmail 整合（OAuth 2.0 Loopback Flow）— ❌ FAIL
 
-### 入口
+### 3.1 認證機制
 
-```javascript
-const { syncOrdersToSheets } = require('./src/storage/sheetsSync');
-syncOrdersToSheets({ dryRun: true });  // dry-run
-syncOrdersToSheets();                 // 實際寫入
+- **方式**：OAuth 2.0 Desktop App Loopback Flow
+- **Client 類型**：`installed`（type=installed）
+- **Client ID**：`11296846529-rrb7n92bqco6ng0ted6j5l9u2ars1sm4.apps.googleusercontent.com`
+- **Redirect URI**：`http://localhost`
+- **OAuth Client 檔**：`~/.config/chicken/secrets/gmail-credentials.json`（416 bytes, 600 權限）
+- **Token 檔**：`~/.config/chicken/secrets/gmail-token.json`（556 bytes, 600 權限，mtime 2026-08-03 10:08）
+
+### 3.2 需要的 Scope
+
+```js
+const SCOPES = ['https://www.googleapis.com/auth/gmail.send'];  // src/handoff/emailNotifier.js:30
 ```
 
-### Cron 觸發
+### 3.3 Live Test 結果（2026-08-03 11:30）
 
-```
-Cron 6033de71（03:00 daily Asia/Taipei）
-  └─→ scripts/sheets-sync-cron.js
-      └─→ src/storage/sheetsSync.js
-          └─→ syncOrdersToSheets({ dryRun: true })
-```
+| 動作 | 結果 | 錯誤訊息 |
+|------|------|----------|
+| `gmail.users.getProfile` | ❌ Fail | `Request had insufficient authentication scopes.`（403） |
+| Token 存在 | ✅ 是 | 但 scope 與 emailNotifier.js 要求不符 |
 
-### chicken.yaml 設定
+### 3.4 根因分析
 
-```yaml
-# config/tenants/chicken.yaml
-storage:
-  phase2:
-    enabled: false   # ← 改 true 才會實際寫入
-    spreadsheet_id: "12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA"
-```
+**目前 `gmail-token.json` 取得的 scope 不足以做 `gmail.send`（emailNotifier.js 要求）**。
 
-### Service Account 設定一次性步驟
+可能原因：
+- Token 是用 `gmail.readonly` 或其他 scope 取得的（早期 OAuth flow）
+- 之後 `emailNotifier.js` 改 scope 到 `gmail.send`，但 token 沒重跑 OAuth
 
-完整步驟見 `scripts/setup-google-sheets.sh` 內 Step-by-step 說明。
+**結論**：Gmail 整合目前**處於中斷狀態** — 程式碼可以載入 token，但實際寄信會 403 fail。
 
-Quick reference：
-1. GCP project 已存在（chickencustomerservicesheets）
-2. Service account `chicken-sheets-sync` 已建立
-3. Google Sheets API 已啟用
-4. Service account JSON key 已下載到 `google-service-account.json`
-5. **Sheet 必須分享給 service account email 為 Editor**（最常見的失敗原因）
-6. `chicken.yaml` 的 `storage.phase2.spreadsheet_id` 填入 sheet ID
+### 3.5 修復 SOP（需 Hubert 互動式執行）
 
-### 驗證
+⚠️ **這是 OAuth Desktop App flow，無法純命令列完成** — 需要 Hubert 在 browser 互動授權：
 
 ```bash
-# 1. 驗證 service account + token 取得
-bash scripts/setup-google-sheets.sh
+# Step 1: 確認 OAuth client 是「Desktop app」類型（GCP console）
+#   路徑：APIs & Services → Credentials → OAuth 2.0 Client IDs
+#   必須是「Desktop app」（不是 Web application）
 
-# 2. Dry-run
-node -e "const {syncOrdersToSheets} = require('./src/storage/sheetsSync'); syncOrdersToSheets({dryRun:true}).then(r => console.log(JSON.stringify(r, null, 2)));"
+# Step 2: 確認 redirect_uris 包含 http://localhost
+#   已在 gmail-credentials.json 內：「redirect_uris":["http://localhost"]
 
-# 3. 實際 sync
-node -e "const {syncOrdersToSheets} = require('./src/storage/sheetsSync'); syncOrdersToSheets().then(r => console.log(JSON.stringify(r, null, 2)));"
+# Step 3: 確認 GCP project 已啟用 Gmail API
+#   路徑：APIs & Services → Library → 搜尋 "Gmail API" → Enable
+
+# Step 4: 確認 OAuth consent screen 已加入 gmail.send scope
+#   路徑：APIs & Services → OAuth consent screen → Scopes for Google APIs
+#   必須有 https://www.googleapis.com/auth/gmail.send
+
+# Step 5: 跑 OAuth flow（需 browser 互動）
+cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service
+node scripts/gmail-auth.js
+# → terminal 顯示「Please visit this URL: https://accounts.google.com/...」
+# → browser 開啟，登入 clawbrt@gmail.com（不是 kaden1122123@gmail.com）
+# → 授權「Send email on your behalf」
+# → browser 跳轉到 localhost → terminal 顯示「✓ Token 已存到 ...」
+
+# Step 6: 驗證 token 有 gmail.send scope
+node -e "
+const fs = require('fs');
+const t = JSON.parse(fs.readFileSync('/home/clawuser/.config/chicken/secrets/gmail-token.json', 'utf8'));
+console.log('scope:', t.scope);
+console.log('expected: https://www.googleapis.com/auth/gmail.send');
+"
+```
+
+### 3.6 驗證指令（修完後跑）
+
+```bash
+cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service
+
+node -e "
+const fs = require('fs');
+const { google } = require('googleapis');
+(async () => {
+  const creds = JSON.parse(fs.readFileSync('/home/clawuser/.config/chicken/secrets/gmail-credentials.json', 'utf8'));
+  const token = JSON.parse(fs.readFileSync('/home/clawuser/.config/chicken/secrets/gmail-token.json', 'utf8'));
+  const oauth2 = new google.auth.OAuth2(creds.installed.client_id, creds.installed.client_secret, creds.installed.redirect_uris[0]);
+  oauth2.setCredentials(token);
+  const gmail = google.gmail({ version: 'v1', auth: oauth2 });
+  const profile = await gmail.users.getProfile({ userId: 'me' });
+  console.log('✅ Gmail Live Pass:');
+  console.log('  email:', profile.data.emailAddress);
+})();
+"
+```
+
+**預期結果**：`email: clawbrt@gmail.com`，無 403 錯誤。
+
+### 3.7 寄信實測（修完後跑）
+
+```bash
+node -e "
+const { sendEmail } = require('./src/handoff/emailNotifier');
+sendEmail({
+  to: 'k.chang.8844@gmail.com',
+  subject: '[Test] Gmail 整合健康檢查',
+  body: '本信件由 SYSTEM_HEALTH_CHECK 自動寄出，驗證 Gmail API 是否真的運作。',
+}).then(r => console.log('✅ 寄信成功:', r)).catch(e => console.log('❌ 寄信失敗:', e.message));
+"
 ```
 
 ---
 
-## 7. 常見踩坑
+## §4 整合現況對照表
 
-| 問題 | 原因 | 解法 |
-|------|------|------|
-| **gmail-token.json 找不到** | OAuth 跑完但 token 沒持久化 | 重跑 `node scripts/gmail-auth.js` |
-| **Email 沒收到** | refresh_token 失效或被 revoke | 到 https://myaccount.google.com/permissions 檢查；重跑 OAuth |
-| **LINE 月度額度滿** | cron 寄太多 | `notifyHubert` 自動 fail LINE 部分；Email 還會跑 |
-| **Sheets `permission_denied`** | Sheet 沒分享給 service account | 到 Sheet → Share → 加 `chicken-sheets-sync@...` 為 Editor |
-| **Sheets `invalid_grant`** | Service account JSON key 被 rotate | 重下載 JSON key |
-| **Sheets `404 not found`** | `spreadsheet_id` 填錯 | 從 sheet URL 重新複製 |
+| 整合 | 認證方式 | 目前狀態 | 修復所需 |
+|------|----------|----------|----------|
+| Google Sheets | Service Account JWT | ✅ Live Pass（已驗證 API 呼叫）| 維持現狀 |
+| Gmail | OAuth 2.0 Loopback | ❌ Fail（scope 不足） | 重跑 `scripts/gmail-auth.js` |
 
 ---
 
-## 8. 相關檔案目錄
+## §5 歷史教訓（為何這份文件存在）
 
-```
-chicken-group-buying-customer-service/
-├── docs/
-│   ├── EMAIL_SETUP.md                    ← Gmail OAuth 完整指南（v2）
-│   ├── GCP_ROTATION_SOP.md              ← GCP key rotation SOP
-│   ├── GMAIL_SHEETS_WORKFLOW.md         ← 本檔
-│   └── PROJECT_INVENTORY.md
-├── src/
-│   ├── handoff/
-│   │   ├── emailNotifier.js             ← Gmail API client
-│   │   └── notifier.js                  ← notifyHubert (LINE + Email 並行)
-│   ├── states/handoff.js                ← 觸發 handoff 版型
-│   ├── storage/sheetsSync.js            ← Sheets sync 邏輯
-│   └── config.js
-├── scripts/
-│   ├── gmail-auth.js                    ← OAuth 授權 script
-│   ├── send-digest.js                   ← 日報/週報 cron
-│   ├── sheets-sync-cron.js              ← P9 Sheets wrapper
-│   └── setup-google-sheets.sh           ← Setup helper
-├── config/tenants/chicken.yaml          ← spreadsheet_id 設定
-└── tests/
-    ├── emailNotifier.test.js
-    └── sheetsSync.test.js
+**2026-08-02 之前的 SYSTEM_HEALTH_CHECK.md** 報告：
+- ❌ 錯誤：「Gmail API fallback 路徑... 因 token 缺失可能 fail」
+- ❌ 錯誤：「Sheets 整合透過 service account JWT（無 OAuth 過期問題）運作，主要功能正常」
 
-~/.config/chicken/secrets/
-├── gmail-credentials.json
-├── gmail-token.json
-├── google-service-account.json
-├── line-bot-token
-├── api-token / api-pwd / dashboard-pwd
-```
+**2026-08-03 實測發現**：
+- ✅ Sheets：Live Pass（service account JWT 完全沒問題）
+- ❌ Gmail：token 確實**存在**（不是缺失），但 scope 不足導致 403
+- ❌ 「token 缺失」是基於「檔案不存在」的推測，**完全沒實際呼叫 API 驗證**
+
+**結論**：未來 health check 必須**真實打 API**，不能用「檔案存在 / 端點可達 / env 設定正確」當證據。
 
 ---
 
-## 9. 相關 Cron Jobs
-
-| Cron ID | 名稱 | 頻率 | 用途 |
-|------|------|------|------|
-| `6033de71` | 雞味客服 P9 Sheets 同步 | 03:00 daily | Sheet sync |
-| `796afb16` | 雞味客服日報彙總 | 23:30 daily | 寄 digest 版型 |
-| `dc5afd05` | 雞味客服週報彙總 | 週日 10:00 | 寄週報 digest |
-
----
-
-## 10. 變更紀錄
-
-| 日期 | Round | 變更 |
-|------|------|------|
-| 2026-07-17 | P0 v0→v7 | Gmail 整合完整鏈（OAuth loopback + 4 種版型）|
-| 2026-07-18 | — | 確認可寄信（daily note）|
-| 2026-07-16 | P9 | Service Account + Sheets sync 建立 |
-| 2026-08-03 | — | OAuth token 缺失修復（重跑 gmail-auth.js）+ 工作流文件化（本檔）|
-
----
-
-_本檔由 brtclaw 在 2026-08-03 整理，用於雞味客服 Gmail + Google Sheets 整合工作流說明_
+_本檔由 Hub Session 2026-08-03 11:30 實測產出_
+_下次 health check 必須重跑 §2.4、§3.6、§3.7 三段驗證指令並貼 log_

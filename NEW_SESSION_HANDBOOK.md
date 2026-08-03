@@ -130,7 +130,53 @@ git status --short && git add -A && git commit -m "..."
 - commit 前忘 `git add -A`（C2 事故教訓）
 - 改 code 但不更新 `docs/`（drift 會誤導未來 session）
 
-## §10 求助順序
+## §10 文件同步鐵律（2026-08-03 Round 36 新增）
+
+> **未來任何程式碼或工作流改動，必須同步更新 `docs/` 與 Handbook 才能 Commit。**
+
+### 10.1 觸發條件（必須同步更新的情境）
+
+| 改動類型 | 必更新的文件 |
+|---------|-------------|
+| 新增 / 修改 `src/` 規則邏輯 | `knowledge/tenants/chicken/*.md`（對應章節）+ `docs/INDEX.md` |
+| 新增 / 修改 `scripts/` 工具 | `README.md` 工具列表 + 該工具的 docstring |
+| 修改外部服務整合（Gmail / Sheets / Worker / Dashboard） | `docs/GMAIL_SHEETS_WORKFLOW.md` 或對應 workflow 文件 |
+| 修改 KB 內容（價格 / 截止時間 / 規則） | `knowledge/tenants/chicken/*.md` + `docs/PROJECT_INVENTORY.md` |
+| 修改部署 / cron / sync 流程 | `docs/OPERATIONS.md` + 本檔 §6 部署指令 |
+| 修改 3 層位置規則 | `docs/handoff/ARCHITECTURE_CURRENT_STATE_*.md` + 本檔 §2 |
+| Round handoff 完成 | `docs/handoff/rounds/ROUND_X_YYYY-MM-DD.md` + `CHANGELOG.md` |
+
+### 10.2 Commit 前 Checklist（必跑）
+
+```bash
+# 1. 確認 docs/ 與 code 同步
+diff <(grep -E "function|const" src/path/changed.js) <(grep -E "function|const" docs/path/changed.md)
+
+# 2. 確認沒 stale 引用
+grep -rn "TODO\|待執行\|未完成" docs/ 2>/dev/null | head -5
+
+# 3. 跑文檔完整性檢查
+bash scripts/check-md-links.js   # 確認沒有 broken links
+
+# 4. 更新 INDEX.md（如有新增 / 刪除檔案）
+bash scripts/generate-docs-index.sh
+
+# 5. 更新 CHANGELOG.md（commit message 也要寫）
+```
+
+### 10.3 違反後果
+
+- **commit 會被 reject**（若啟用 husky/lint-staged hook）
+- **未來 session 會誤讀**（文件 vs 程式碼 drift）
+- **Hubert 會在 review 抓出**（已發生多次）
+
+### 10.4 健康檢查新鐵律（2026-08-03）
+
+> **禁止將 dryRun 標示為 100% 健康**。唯有真實發出 API 封包並驗證 Log 才算 Live Pass，否則必須標註為「僅 Dry-Run 驗證」。
+
+詳見 `docs/GMAIL_SHEETS_WORKFLOW.md` §1。
+
+## §11 求助順序
 
 1. `docs/INDEX.md` → 文件總覽
 2. `docs/handoff/rounds/ROUND_X_YYYY-MM-DD.md` → 對應 round 的 handoff
