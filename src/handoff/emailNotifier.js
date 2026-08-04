@@ -297,11 +297,16 @@ async function sendOrderDigest({ orders, type = 'daily' }) {
   return sendEmail({ to, subject, body });
 }
 
+// buildEmailContent 在 notifier.js 定義，這邊 re-export 供測試使用
+const notifier = require('./notifier');
+const { buildEmailContent } = notifier;
+
 module.exports = {
   // 主要 API
   sendEmail,
   sendOrderDigest,
   formatOrderDigest,
+  buildEmailContent,
   // OAuth setup 工具（給 scripts/gmail-auth.js 用）
   getOAuth2Client,
   loadCredentials,

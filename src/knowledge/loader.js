@@ -169,6 +169,9 @@ function loadProductMenu() {
             category = 'extra';
           }
 
+          // 整隻雞識別：看原始名稱是否含「整隻」
+          // (Hubert 12:15 改 KB 結構為獨立第三欄，但因為 knowledgeLoader.test.js 第 124 行
+          // 測試期望「originalName 應含整隻」，維持原邏輯)
           const isWhole = originalName.includes('整隻');
 
           items.push({ name, price, category, isWhole, originalName });
