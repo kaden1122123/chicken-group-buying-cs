@@ -71,8 +71,8 @@ test('API Server integration tests', async () => {
       PORT: String(PORT),
       API_USERNAME: USERNAME,
       API_PASSWORD: PASSWORD,
-      // 決策 4：MOCK_TODAY 讓測試用 delivery_date: '2026-06-18' 過驗證
-      MOCK_TODAY: '2026-06-15T10:00:00+08:00',
+      // 決策 4：MOCK_TODAY 讓測試用 delivery_date: '2026-08-04' 過驗證
+      MOCK_TODAY: '2026-08-03T10:00:00+08:00',
     }),
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -94,7 +94,7 @@ test('API Server integration tests', async () => {
         user_line_name: '測試用戶',
         user_phone: '0912345678',
         address: '新北市三峽區',
-        delivery_date: '2026-06-18',
+        delivery_date: '2026-08-04',
         time_slot: '上午',
         items: [{ name: '鹽水雞', qty: 1, total: 380 }],
         subtotal: 380,

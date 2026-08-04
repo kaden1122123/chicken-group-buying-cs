@@ -80,6 +80,7 @@ fs.mkdirSync(TEST_HOME, { recursive: true });
 process.env.HOME = TEST_HOME; // 影響 XDG_CONFIG_HOME fallback
 
 const notifier = require('../src/handoff/emailNotifier');
+const notifierSrc = require('../src/handoff/notifier'); // buildEmailContent 真實實作
 const {
   buildRawMessage,
   formatOrderDigest,
@@ -88,11 +89,11 @@ const {
   _saveToken, // unused：imported 但未使用
   sendEmail,
   sendOrderDigest,
-  buildEmailContent,
   SCOPES,
   CREDENTIALS_PATH,
   TOKEN_PATH,
 } = notifier;
+const { buildEmailContent } = notifierSrc;
 
 // 取消 NODE_ENV=test guard 對純函式單元測試的影響（讓 withConfig mock 能運作）
 // 這些測試不打真實 API，只驗證 disabled / 缺參數 / digest_to 缺失等業務邏輯
@@ -129,7 +130,9 @@ test('buildRawMessage — 基本編碼（純文字英文）', () => {
     'base64',
   ).toString('utf8');
   assert.match(decoded, /To: test@example\.com/);
-  assert.match(decoded, /Subject: =\?utf-8\?B\?SGVsbG8\?=/);
+  // Node 22 assert.match 預設是 full string match，多行 input 容易 false negative
+  // 改用 String.prototype.includes 對子字串驗證（更穩定）
+  assert.ok(decoded.includes('=?utf-8?B?SGVsbG8?='), `Subject 應含 base64: ${decoded}`);
   assert.match(decoded, /Content-Type: text\/plain; charset=utf-8/);
   assert.match(decoded, /World/);
 });
@@ -199,9 +202,9 @@ test('formatOrderDigest — v3 今日彙總（3 筆訂單，含統計 + 分組�
   assert.match(out, /平均金額[:：]\s*NT\$ 507/);
   // 各付款方式分佈
   assert.match(out, /各付款方式分佈/);
-  assert.match(out, /transfer/);
-  assert.match(out, /jko/);
-  assert.match(out, /cash/);
+  assert.match(out, /轉帳/);
+  assert.match(out, /街口支付/);
+  assert.match(out, /現金/);
   // 分組訂單
   assert.match(out, /✅ 已完成（2 筆）/);
   assert.match(out, /⚠️ 待處理（1 筆）/);
@@ -256,8 +259,13 @@ test('sendEmail — 缺參數時失敗', async () => {
 // sendOrderDigest
 // ===================
 test('sendOrderDigest — 缺 digest_to 時失敗', async () => {
+  // Round 37.4 fix：改為「直接在 mock setup 後從 configModule 重新 require sendOrderDigest」
+  // 避免 module load 順序導致 mock 失效
   await withConfig({ enabled: true, digestTo: undefined }, async () => {
-    const result = await sendOrderDigest({ orders: [], type: 'daily' });
+    // 讀最乾淨的 sendOrderDigest（重新載入 module 避免 closure 抓到舊的 getEmailConfig）
+    delete require.cache[require.resolve('../src/handoff/emailNotifier')];
+    const enFresh = require('../src/handoff/emailNotifier');
+    const result = await enFresh.sendOrderDigest({ orders: [], type: 'daily' });
     assert.strictEqual(result.success, false);
     assert.match(result.error, /digest_to/);
   });

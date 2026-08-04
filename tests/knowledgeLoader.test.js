@@ -121,12 +121,14 @@ test('loadProductMenu — category 正確（雞肉 / 小菜 / 加購）', () => 
   assert.ok(chickenItems.length > 0, '應有 chicken 分類的品項');
 });
 
-test('loadProductMenu — isWhole 偵測（原品項含「整隻」）', () => {
+test('loadProductMenu — isWhole 偵測（單位欄含「整隻」）', () => {
   const menu = loader.loadProductMenu();
   const wholeItems = menu.items.filter((i) => i.isWhole);
-  // 至少有 1 個整隻品項（KB 應該有「XX（整隻）」）
+  // 至少有 1 個整隻品項（KB 12:15 修訂後，整隻標記在「單位」欄）
+  assert.ok(wholeItems.length > 0, '應有整隻品項');
+  // 驗證 name 欄位仍是清理後的純品項名（不含「整隻」）
   for (const item of wholeItems) {
-    assert.ok(item.originalName.includes('整隻'), `${item.name} 的 originalName 應含「整隻」`);
+    assert.ok(!item.name.includes('（'), `${item.name} 的 name 應已清理括號`);
   }
 });
 

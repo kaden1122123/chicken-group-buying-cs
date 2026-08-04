@@ -169,10 +169,11 @@ function loadProductMenu() {
             category = 'extra';
           }
 
-          // 整隻雞識別：看原始名稱是否含「整隻」
-          // (Hubert 12:15 改 KB 結構為獨立第三欄，但因為 knowledgeLoader.test.js 第 124 行
-          // 測試期望「originalName 應含整隻」，維持原邏輯)
-          const isWhole = originalName.includes('整隻');
+          // Round 37.4：對標 Hubert 12:15 改後的 KB 格式
+          // 整隻雞標記在「單位」欄（第 3 欄），不再在品項名稱內
+          // 同時 fallback：若名稱內含「整隻」也算整隻（向後相容舊 KB 格式）
+          const unitCell = cols.length >= 3 ? cols[2] : '';
+          const isWhole = (unitCell && unitCell.includes('整隻')) || originalName.includes('整隻');
 
           items.push({ name, price, category, isWhole, originalName });
           prices[name] = price;

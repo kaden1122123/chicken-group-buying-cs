@@ -20,7 +20,11 @@
 const fs = require('fs');
 // const path = require('path'); // unused 2026-07-25 Round 26 #2 lint cleanup
 const logger = require('../utils/logger');
-const { isFeatureEnabled, getEmailConfig } = require('../config');
+// Round 37.4：改用 namespace import 讓測試能 mock isFeatureEnabled
+// (withConfig 透過 configModule.isFeatureEnabled = ... 注入 mock，destructure 會 freeze 原始參考)
+const configModule = require('../config');
+const isFeatureEnabled = (...args) => configModule.isFeatureEnabled(...args);
+const getEmailConfig = (...args) => configModule.getEmailConfig(...args);
 
 // XDG secrets 標準位置
 const CREDENTIALS_PATH = '/home/clawuser/.config/chicken/secrets/gmail-credentials.json';
@@ -297,16 +301,14 @@ async function sendOrderDigest({ orders, type = 'daily' }) {
   return sendEmail({ to, subject, body });
 }
 
-// buildEmailContent 在 notifier.js 定義，這邊 re-export 供測試使用
-const notifier = require('./notifier');
-const { buildEmailContent } = notifier;
-
+// Round 37.4 fix：移除 buildEmailContent re-export（避免 circular dep）
+// notifier.js 透過 emailNotifier.js require，emailNotifier.js 不能再 require notifier.js
+// buildEmailContent 的測試請改從 notifier.js 直接 import
 module.exports = {
   // 主要 API
   sendEmail,
   sendOrderDigest,
   formatOrderDigest,
-  buildEmailContent,
   // OAuth setup 工具（給 scripts/gmail-auth.js 用）
   getOAuth2Client,
   loadCredentials,

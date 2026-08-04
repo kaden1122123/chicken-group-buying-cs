@@ -12,11 +12,16 @@ diff -rq "$DEV_REPO" "$MAIN_MIRROR" 2>&1 | grep -v "^Only in\|Permission denied"
 
 echo ""
 echo "2. dev repo docs/production-prompt/ <-> prod runtime (canonical files)"
+# Round 37.4 fix：使用 latest symlink 而非 hardcode 2026-07-03
+CANONICAL_DIR="$DEV_REPO/docs/production-prompt/latest"
+if [ ! -d "$CANONICAL_DIR" ]; then
+  CANONICAL_DIR="$DEV_REPO/docs/production-prompt/2026-07-03"  # fallback
+fi
 for f in AGENTS.md SOUL.md main_idea.md; do
-  if [ -f "$DEV_REPO/docs/production-prompt/2026-07-03/$f" ] && [ -f "$PROD_RUNTIME/$f" ]; then
-    if [ "$DEV_REPO/docs/production-prompt/2026-07-03/$f" -nt "$PROD_RUNTIME/$f" ]; then
+  if [ -f "$CANONICAL_DIR/$f" ] && [ -f "$PROD_RUNTIME/$f" ]; then
+    if [ "$CANONICAL_DIR/$f" -nt "$PROD_RUNTIME/$f" ]; then
       echo "⚠️  $f: dev repo newer than prod runtime"
-    elif [ "$DEV_REPO/docs/production-prompt/2026-07-03/$f" -ot "$PROD_RUNTIME/$f" ]; then
+    elif [ "$CANONICAL_DIR/$f" -ot "$PROD_RUNTIME/$f" ]; then
       echo "⚠️  $f: prod runtime newer than dev repo"
     else
       echo "✅ $f: 同步"
