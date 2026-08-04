@@ -36,7 +36,6 @@ const EXPECTED_FILES = [
   '06_faq.md',
   '07_transfer_rules.md',
   '08_owner_info.md',
-  '09_order_standard.md',
   '10_customer_tags.md',
   '11_lead_followup.md',
   '12_reply_examples.md',
@@ -103,7 +102,7 @@ if (fs.existsSync(INDEX_PATH)) {
       filesInIndex++;
     }
   });
-  check(`INDEX.md 列出所有 12 個檔案`, filesInIndex === 12, `got ${filesInIndex}/12`);
+  check(`INDEX.md 列出所有 12 個檔案`, filesInIndex === 11, `got ${filesInIndex}/11`);
 } else {
   check('INDEX.md 存在', false, '找不到 INDEX.md');
 }

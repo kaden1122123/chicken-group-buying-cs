@@ -25,7 +25,6 @@ const INTENT_KB_MAP = {
   faq: ['06_faq.md'],
   lead_followup: ['11_lead_followup.md'],
   customer_tag: ['10_customer_tags.md'],
-  order_standard: ['09_order_standard.md'],
 };
 
 // state → 知識庫檔案對照
