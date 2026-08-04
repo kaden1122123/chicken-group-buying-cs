@@ -102,6 +102,23 @@ function parseAuth(req) {
 /**
  * 檢查 Basic Auth
  */
+
+// Round 37.10 (Hubert 21:55)：預設查詢日期 = 今日，若無訂單降級最新有訂單的日期
+function getDefaultDate() {
+  const today = new Date().toISOString().slice(0, 10);
+  const tenantDir = path.join(__dirname, '..', 'data', 'orders', getTenantId());
+  if (!fs.existsSync(tenantDir)) return today;
+  const todayPath = path.join(tenantDir, today + '.csv');
+  if (fs.existsSync(todayPath)) return today;
+  // 今日無訂單 → 找最新有訂單的日期
+  const files = fs.readdirSync(tenantDir)
+    .filter((f) => f.endsWith('.csv'))
+    .map((f) => f.replace('.csv', ''))
+    .sort()
+    .reverse();
+  return files[0] || today;
+}
+
 function checkAuth(req, res) {
   if (!PASSWORD) {
     // 未設定密碼 → 允許全部（不安全，但方便測試）
@@ -667,6 +684,69 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 200, { success: true, config: newConfig, message: 'Config 已更新' });
     } catch (e) {
       sendJson(res, 400, { success: false, error: e.message });
+    }
+    return;
+  }
+
+
+  // Round 37.10 (Hubert 21:55)：POST /api/orders/:orderId/status — 變更訂單狀態
+  const statusMatch = url.match(/^\/api\/orders\/([^\/]+)\/status$/);
+  if (statusMatch && method === 'POST') {
+    try {
+      const orderId = decodeURIComponent(statusMatch[1]);
+      const body = await parseBody(req);
+      const validStatuses = ['PENDING', 'CONFIRMED', 'PAID', 'CANCELLED'];
+      if (!validStatuses.includes(body.status)) {
+        sendJson(res, 400, { success: false, error: 'status 必須是 ' + validStatuses.join('/') });
+        return;
+      }
+      const csvPath = path.join(__dirname, '..', 'data', 'orders', 'chicken', body.date + '.csv');
+      if (!fs.existsSync(csvPath)) {
+        sendJson(res, 404, { success: false, error: '該日期無訂單 CSV: ' + body.date });
+        return;
+      }
+      const csv = fs.readFileSync(csvPath, 'utf8');
+      const lines = csv.split('\n');
+      const header = lines[0].split(',');
+      const idIdx = header.indexOf('order_id');
+      const statusIdx = header.indexOf('order_status');
+      let updated = false;
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols[idIdx] === orderId) {
+          cols[statusIdx] = body.status;
+          lines[i] = cols.join(',');
+          updated = true;
+          break;
+        }
+      }
+      if (updated) {
+        fs.writeFileSync(csvPath, lines.join('\n'), 'utf8');
+        sendJson(res, 200, { success: true, message: '訂單狀態已更新', order_id: orderId, status: body.status });
+      } else {
+        sendJson(res, 404, { success: false, error: '找不到訂單: ' + orderId });
+      }
+    } catch (e) {
+      sendJson(res, 500, { success: false, error: e.message });
+    }
+    return;
+  }
+
+  // Round 37.10 (Hubert 21:55)：GET /api/config/open-dates — 讀取 chicken.yaml 當前開團日期
+  if (url === '/api/config/open-dates' && method === 'GET') {
+    try {
+      const config = readTenantConfig();
+      const openDates = (config.storage && config.storage.open_dates) || [];
+      const today = new Date().toISOString().slice(0, 10);
+      sendJson(res, 200, {
+        tenant: getTenantId(),
+        today,
+        open_dates: openDates,
+        count: openDates.length,
+        next_open_date: openDates.find((d) => d >= today) || null,
+      });
+    } catch (e) {
+      sendJson(res, 500, { success: false, error: e.message });
     }
     return;
   }

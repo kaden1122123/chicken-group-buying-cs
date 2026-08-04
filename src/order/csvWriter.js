@@ -144,13 +144,11 @@ function writeOrder(orderData) {
     throw new Error('[csvWriter] storage.phase1.enabled = false，CSV 寫入已關閉。請檢查 chicken.yaml 設定。');
   }
   // Session D4-7：storage.phase2.enabled flag 檢查
-  // Phase 2 = Google Sheets 寫入（未實作）。若雞味老闆不小心在 yaml 設為 enabled = true，
-  // 應以明確錯誤告知「此功能未實作」，避免以為有啟用但實際沒作用。
+  // Round 37.10 (Hubert 21:55)：Phase 2 = Google Sheets 寫入已實作（sheetsSync.js）
+  // 若 enabled = true → 仍先寫 CSV（必要步驟），再交給 sheetsSync cron 同步到 Sheets
+  // 不再 throw 阻擋（之前會讓 handoff 等流程「CSV寫入失敗」誤報）
   if (isFeatureEnabled('storage.phase2.enabled')) {
-    throw new Error(
-      '[csvWriter] storage.phase2.enabled = true，但 Phase 2（Google Sheets 寫入）尚未實作。\n' +
-      '請檢查 chicken.yaml：storage.phase2.enabled 應設為 false，或等待 Phase 2 實作。',
-    );
+    logger.info('[csvWriter] Phase 2 (Sheets sync) 啟用，先寫 CSV 讓 sheetsSync cron 同步');
   }
   ensureDataDir();
 

@@ -27,7 +27,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROD_LOC="/home/clawuser/.openclaw/agents/external-user"
-PP_LOC="$PROJECT_ROOT/docs/production-prompt/2026-07-03"
+# Round 37.10 (Hubert 21:55)：改用 latest/ symlink 而非 hardcode 2026-07-03
+PP_LOC="$PROJECT_ROOT/docs/production-prompt/latest"
+if [ ! -e "$PP_LOC" ]; then
+  # fallback：latest 不存在時用 2026-07-03
+  PP_LOC="$PROJECT_ROOT/docs/production-prompt/2026-07-03"
+fi
 
 echo "=== sync-canonical.sh — 同步 canonical files 到 production runtime ==="
 echo ""
@@ -40,7 +45,7 @@ if [ ! -d "$PROD_LOC" ]; then
 fi
 
 if [ ! -d "$PP_LOC" ]; then
-  echo "❌ docs/production-prompt/2026-07-03 不存在：$PP_LOC"
+  echo "❌ docs/production-prompt/latest 不存在：$PP_LOC"
   exit 1
 fi
 
