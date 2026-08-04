@@ -1,11 +1,11 @@
 {
   "name": "chicken-group-buying-customer-service",
   "version": "1.0.0",
-  "description": "雞肉團購智能客服 — Phase 1 核心功能",
+  "description": "\u96de\u8089\u5718\u8cfc\u667a\u80fd\u5ba2\u670d \u2014 Phase 1 \u6838\u5fc3\u529f\u80fd",
   "main": "src/index.js",
   "scripts": {
-    "test": "bash scripts/run-tests.sh",
-    "test:all": "for f in tests/*.test.js; do echo \"▶▶▶ $f ◀◀◀\"; node \"$f\" || exit 1; done && node scripts/dashboard-server-test.js && echo \"✅ All tests (including server integration) passed\"",
+    "test": "NODE_ENV=test bash scripts/run-tests.sh",
+    "test:all": "for f in tests/*.test.js; do echo \"\u25b6\u25b6\u25b6 $f \u25c0\u25c0\u25c0\"; node \"$f\" || exit 1; done && node scripts/dashboard-server-test.js && echo \"\u2705 All tests (including server integration) passed\"",
     "test:rules": "node tests/rules.test.js",
     "test:states": "node tests/states.test.js",
     "test:handoff": "node tests/handoff.test.js",
