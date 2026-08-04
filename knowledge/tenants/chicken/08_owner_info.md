@@ -1,9 +1,9 @@
 # 08 老闆（Hubert）資訊
 
 ## 聯絡
-- **Hubert LINE User ID**：`Uf56650056d35626deb64165926a26182`（系統內部用）
-- **老闆個人 LINE**：`Willy0221`（❌ 不可透露給用戶）
-- **LINE 社群**：`@620boqol`
+- Hubert LINE User ID：`Uf56650056d35626deb64165926a26182`（系統內部用）
+- 老闆個人 LINE：`Willy0221`（❌ 不可透露給用戶）
+- LINE 社群：`@620boqol`
 - 邀請連結：https://line.me/ti/g2/4Qsf5GqgDlR2Liiy1asPTj8IFGHddyQKcD4yQA
 
 ## 品牌

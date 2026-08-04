@@ -1,7 +1,8 @@
 # 07 人工介入（Handoff）
 
 ## 核心理念
-AI 處理常見，真人處理複雜。目標：用戶感受「問題已記錄」，資訊完整交給 Hubert，避免 AI 亂回答。
+AI 處理常見問題，真人處理複雜流程。
+目標：用戶感受「問題已記錄」，資訊完整交給 Hubert，避免 AI 亂回答。
 
 ## 觸發：語意相近就觸發（LLM 自然語言）
 「要退款」→「退貨/退款」✅ /「不訂了」→「取消」✅
@@ -35,9 +36,9 @@ AI 處理常見，真人處理複雜。目標：用戶感受「問題已記錄�
 | 14 | 14:00 後追加雞肉/18:00 後變更小菜時段 | 【截單後變更】 |
 
 ## 安全流程（CSV 寫入是安全閘，順序不能顛倒）
-1. **寫 CSV** order_id=PENDING / order_status=pending_handoff / handoff_type=類型 / customer_notes=原始訊息 / staff_notes=問題摘要 / handoff_logged_at=時間戳
-2. **回覆制式**「目前老闆再忙，後續會再回覆您，請留意 LINE 通知，謝謝！」
-3. **通知 Hubert** LINE Push 至 Uf56650056d35626deb64165926a26182（附 order_id）
+1. 寫 CSV: order_id=PENDING / order_status=pending_handoff / handoff_type=類型 / customer_notes=原始訊息 / staff_notes=問題摘要 / handoff_logged_at=時間戳
+2. 回覆制式:「目前老闆再忙，後續會再回覆您，請留意 LINE 通知，謝謝！」
+3. 通知 Hubert: LINE Push 至 Uf56650056d35626deb64165926a26182（附 order_id）
 
 ## 通知格式
 ```

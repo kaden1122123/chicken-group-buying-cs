@@ -1,62 +1,51 @@
-# knowledge/tenants/chicken/ — INDEX 驗證清單
+# knowledge/tenants/chicken/ — INDEX 對齊清單
 
 > **建立時間**：2026-06-28（Session F）
-> **維護者**：brtclaw
-> **目的**：列出所有 chicken tenant 知識檔案的 single source of truth 狀態
+> **最近對齊**：2026-08-04 12:18（Hubert 12:15 手動修訂後，brtclaw 對齊本 INDEX）
+> **維護者**：Hubert（檔案內容）+ brtclaw（INDEX 同步）
+> **目的**：single source of truth — 12 個章節各自一個主題，避免內容散落
 
 ---
 
 ## 用途
 
-`knowledge/tenants/chicken/` 是雞味客服 LLM 用的結構化知識庫，分為 12 個章節。每個章節是「特定主題的 single source of truth」，避免內容散落。
+`knowledge/tenants/chicken/` 是雞味客服 LLM 用的結構化知識庫。每個 .md 檔是「特定主題的 single source of truth」。
 
 **與 production prompt 的關係**：
-- `~/.openclaw/agents/external-user/knowledge/main_idea.md`（prompt）— **對話規則**
-- `knowledge/tenants/chicken/*.md`（知識庫）— **領域知識**
-- 兩者搭配使用：prompt 告訴 LLM 怎麼對話，知識庫告訴 LLM 領域細節
+- `docs/production-prompt/2026-07-03/main_idea.md`（prompt）— **對話規則 + 人設語氣**
+- `knowledge/tenants/chicken/*.md`（知識庫）— **領域事實**
+- 兩者搭配：prompt 教 LLM 怎麼說話，知識庫告訴 LLM 領域細節
 
 ---
 
-## 檔案清單（12 個）
+## 12 個檔案結構（2026-08-04 12:15 對齊）
 
-| # | 檔案 | 主題 | 大小 | 最後修改 | 驗證狀態 |
-|---|------|------|------|----------|----------|
-| 01 | `01_product.md` | 產品（雞肉品項、重量、價格）| 3620 | 2026-06-14 | ✅ Active |
-| 02 | `02_order_flow.md` | 訂單流程（含 A 方案）| 3835 | 2026-06-14 | ✅ Active（待 A 方案後更新）|
-| 03 | `03_payment.md` | 付款方式（4 種）| 2904 | 2026-06-14 | ✅ Active |
-| 04 | `04_delivery.md` | 配送規則 | 2092 | 2026-06-15 | ✅ Active |
-| 05 | `05_promotion.md` | 促銷活動 | 2200 | 2026-06-14 | ✅ Active |
-| 06 | `06_faq.md` | 常見問題 | 4438 | 2026-06-14 | ✅ Active |
-| 07 | `07_transfer_rules.md` | 轉帳規則 | 8966 | 2026-06-14 | ✅ Active |
-| 08 | `08_owner_info.md` | 老闆資訊（敏感）| 1578 | 2026-06-14 | ⚠️ 含敏感資料，需保護 |
-| 09 | `09_order_standard.md` | 訂單整理標準 | 3220 | 2026-06-14 | ✅ Active |
-| 10 | `10_customer_tags.md` | 客戶標籤規則 | 2905 | 2026-06-14 | ✅ Active |
-| 11 | `11_lead_followup.md` | 潛在客戶跟進 | 3876 | 2026-06-14 | ✅ Active |
-| 12 | `12_reply_examples.md` | 回覆範例 | 4037 | 2026-06-14 | ✅ Active |
+| # | 檔案 | 主題 | byte | 章節 |
+|---|------|------|------|------|
+| 01 | `01_product.md` | 商品（雞肉/小菜/限量加購/保存） | 1850 | 菜單 / 小菜 / 限量加購 / 保存 / 推薦組合 / 製程 / AI 守則 |
+| 02 | `02_order_flow.md` | 下單流程與收單時間 | 3225 | 開團日期 / LINE 下單步驟 / 訂購格式 / 時段 / 收單時間規則（核心）/ 訂單確認模板 / 訂單成立步驟 / 訂單成立標準 |
+| 03 | `03_payment.md` | 付款方式（4 種） | 1032 | 1. 現金 / 2. 銀行轉帳 / 3. 街口支付 / 4. LINE Pay / 訂單成立核心 / AI 守則 |
+| 04 | `04_delivery.md` | 配送規則 | 770 | 時段 / 門檻 / 配送範圍 / AI 判斷 / AI 守則 |
+| 05 | `05_promotion.md` | 促銷活動 | 909 | 基本原則 / 開團規則 / LINE 社群 / 公告時程 / 公告語氣 / AI 回覆 |
+| 06 | `06_faq.md` | 常見問題 | 1451 | 訂購與保存 / 付款 / 配送 / 訂購流程 / 商品 / 其他 |
+| 07 | `07_transfer_rules.md` | 人工介入（Handoff）14 種情況 | 2880 | 核心理念 / 觸發：語意相近就觸發 / 14 種情況分級 / 安全流程（CSV 安全閘）/ 通知格式 / AI 邏輯分流 / 禁止 / 語意觸發四原則 |
+| 08 | `08_owner_info.md` | 老闆（Hubert）資訊 | 1052 | 聯絡 / 品牌 / 老闆親自回覆 / AI 定位 / 對外口徑 / 禁止 |
+| 09 | `09_order_standard.md` | 接單 10 步驟 | 77 | ⚠️ **Hubert 已清空**，僅剩標題（待重新設計或刪除 — 已授權可刪） |
+| 10 | `10_customer_tags.md` | 客戶標籤 | 1256 | 客戶身份 / 訂單狀態 / 需注意 / 客戶偏好 / 成交機會 / 範例 / 標籤時機 / 真人交接 |
+| 11 | `11_lead_followup.md` | 潛客跟進 | 1430 | 原則 / 7 情境話術 / 禁止 |
+| 12 | `12_reply_examples.md` | 回覆範例 | 2402 | 人格 / 開場 / 常用 12 場景回覆 / 禁止 vs 正確回覆 |
 
-**總計**：12 個檔案，43,571 bytes（約 42.5 KB）
-
----
-
-## 驗證 SOP（每次更新後）
-
-```
-1. 改動某檔案 → 更新本 INDEX 對應行的「最後修改」
-2. 跑 grep 確認該檔案無 duplicate content（避免散落）
-3. 跑 check-knowledge.sh（待建立）確認檔案結構
-4. commit + push + rsync
-```
+**12 檔總 byte**：18,254 bytes（不含本 INDEX）
+**含 INDEX**：21,318 bytes
 
 ---
 
-## 待辦事項
+## Single Source of Truth 鐵律
 
-| 項目 | 狀態 | 備註 |
-|------|------|------|
-| 02_order_flow.md 更新 A 方案內容 | ⏸ 待做 | Session N A 方案改的是 main_idea.md prompt，但 02 可能也有相關內容需同步 |
-| 12_reply_examples.md 加 A 方案範例 | ⏸ 待做 | 客戶打「確認」後的 LLM reply 範例 |
-| check-knowledge.sh 驗證腳本 | ⏸ 待做 | Session G 之後評估 |
-| 08_owner_info.md 敏感資料保護 | ⚠️ 待評估 | 是否要從 git 移到 env 或加密 |
+- 任何「領域事實」（品項/價格/配送/付款/開團日/轉人工條件/客戶標籤）**必須**從 L1 KB 12 檔讀
+- LLM prompt（main_idea.md）**不再硬編碼** 領域事實表（避免 double-source-of-truth）
+- 改 L1 KB → 同步更新本 INDEX 的「最近對齊」日期
+- 12 檔任意改動 → brtclaw 必須重新生成 INDEX 並驗證
 
 ---
 
@@ -64,9 +53,20 @@
 
 | 引用本目錄 | 位置 |
 |-----------|------|
-| `~/.openclaw/agents/external-user/knowledge/main_idea.md`（prompt）| 多處章節引用（§十一菜單 → 01_product.md）|
-| `SPEC.md` line 225 | 知識庫重構記錄 |
+| `docs/production-prompt/2026-07-03/main_idea.md`（prompt）| §五 A 開團日期動態讀 config、§九 收單時間規則、§十二 通知管理員守則 → 各章節對應 KB |
+| `docs/production-prompt/main_idea_pure.md`（純人設）| Round 37.2 新增；不再硬編碼 KB 涵蓋的價格/配送/付款 |
 
 ---
 
-_本檔由 brtclaw 維護，Session F 2026-06-28 建立_
+## 待辦
+
+| 項目 | 狀態 | 備註 |
+|------|------|------|
+| 09_order_standard.md 重新設計 or 刪除 | ⏸ 待 Hubert 決定 | 已授權可刪，目前僅 77 bytes 標題檔 |
+| 12_reply_examples.md 加 A 方案範例 | ⏸ 待做 | 客戶「確認」後 LLM reply 範例 |
+| 08_owner_info.md 敏感資料保護 | ⚠️ 待評估 | 是否要從 git 移到 env 或加密 |
+
+---
+
+_本 INDEX 由 brtclaw 同步維護；下次 KB 任一檔改動後必須重生成_
+_2026-08-04 12:18 對齊 Hubert 12:15 手動修訂版_
