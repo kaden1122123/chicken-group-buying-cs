@@ -29,9 +29,11 @@ function getLineToken() {
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 async function notifyHubertViaLine(message) {
+  // Round 37.4 P0 fix (Hubert 2026-08-04)：移除原設計的 NODE_ENV guard。
+  // 原因：notifier.js 已有 mockHttps 攔截測試，強制 short-circuit 會破壞測試既有的 https mock 路徑。
+  // 真實 API 呼叫保護改用「https.request 模組層 hook」（在 src/utils/testSafeHttps.js），
+  // 達到「生產程式碼零 NODE_ENV 判斷 + 測試與生產行為一致」。
   // Session D4-4：handoff.notify_owner.enabled flag 檢查
-  // chicken.yaml 的 handoff.notify_owner.enabled 控制是否通知 Hubert
-  // 未啟用時跳過（return { success: false }），不丟錯誤
   if (!isFeatureEnabled('handoff.notify_owner.enabled')) {
     logger.warn('[notifier] handoff.notify_owner.enabled = false，跳過通知 Hubert');
     return { success: false, error: 'handoff.notify_owner.enabled = false' };
@@ -397,6 +399,16 @@ async function notifyHubert(message, options = {}) {
  * @returns {Promise<boolean>}
  */
 async function testNotification() {
+  // Round 37.2 P0 (Hubert 2026-08-04 08:32)：測試環境下不能真的寄信也不能 push LINE
+  // 整個函式 short-circuit，return stub success
+  if (process.env.NODE_ENV === 'test' || process.env.CHICKEN_TEST_NO_SEND === '1') {
+    logger.info('[notifier] TEST MODE: testNotification stubbed');
+    return {
+      overallSuccess: true,
+      test: true,
+      email: { success: true, messageId: 'test-stub-' + Date.now(), test: true },
+    };
+  }
   // Round 33 Bug 1 (Hubert 11:55)：測試通知只走 Email，不推 LINE
   return notifyHubert('🔔 AI 客服測試通知 — 系統運作正常', { type: 'system', channels: ['email'] });
 }

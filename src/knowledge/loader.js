@@ -299,14 +299,16 @@ function loadFAQ() {
   for (const line of lines) {
     // Round 30 P1.4 bug fix：原本 ##? 只 match # 或 ##（1-2 個 #），但 06_faq.md 用 ### Q1:（3 個 #）
     // 修法：改為 ###?（1 或 3 個 #）以支援實際檔案格式
-    const qMatch = line.match(/^###?\s*Q\d?[：:]\s*(.+)/);
-    if (qMatch) {
-      // Push previous Q/A pair（若有）
+    // Round 37.3 fix：accept list format `- Q1 xxx？→ yyy`
+    // - Q1 xxx → 盡量配合但無法保證 (Q 與 A 在同一行, 用 → 分隔)
+    // 同時 fallback 舊格式 `### Q1: xxx`
+    const qaMatch = line.match(/^[\s-]*Q\d+\s+(.+?)\s*[？\?]\s*[→\->:]?\s*(.*)$/);
+    if (qaMatch) {
       if (currentQ && currentA) {
         faqs.push({ q: currentQ, a: currentA.trim() });
       }
-      currentQ = qMatch[1];
-      currentA = '';
+      currentQ = qaMatch[1];
+      currentA = qaMatch[2] ? qaMatch[2].trim() : '';
       continue;
     }
     // 累積答案：非空、非標題 (#/##/###)、非分隔 (---) 的行

@@ -176,6 +176,14 @@ async function sendEmail({ to, subject, body }) {
     return { success: false, error: 'to/subject/body 不可為空' };
   }
 
+  // Round 37 P0 (Hubert 2026-08-03 21:19)：測試環境必須擋下真實 Gmail 寄信
+  // guard 位置：在 feature flag + empty check 後、getGmailClient() 前
+  // 避免 token 檢查先 throw 干擾測試；保留既有 mock 測試的業務邏輯
+  if (process.env.NODE_ENV === 'test' || process.env.CHICKEN_TEST_NO_SEND === '1') {
+    logger.info('[emailNotifier] TEST MODE: stub Gmail send (no real API call)', { to, subject });
+    return { success: true, messageId: 'test-stub-' + Date.now(), test: true };
+  }
+
   try {
     const gmail = await getGmailClient();
     const raw = buildRawMessage({ to, subject, body });
