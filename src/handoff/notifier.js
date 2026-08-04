@@ -365,11 +365,20 @@ async function sendEmailWithThrottle(message, options) {
 async function notifyHubert(message, options = {}) {
   // Round 33 Bug 1 (Hubert 2026-08-01 11:55)：測試階段不再用 LINE push，改為 channels: ['email']
   // 預設 ['line', 'email'] 維持向後相容，測試用戶通知、auto-create-order 失敗等呼叫點明確傳 channels: ['email']
+  // Round 37.8 (Hubert 20:41)：LINE 429 monthly limit → Email 100% 成功 fallback
   const channels = Array.isArray(options.channels) ? options.channels : ['line', 'email'];
   const results = {};
 
   if (channels.includes('line')) {
     results.line = await notifyHubertViaLine(message);
+    // LINE 額度滿 → 自動 fallback 強制寄 Email（確保老闆不漏接）
+    if (results.line && !results.line.success && results.line.status === 429) {
+      logger.warn('[notifier] LINE 額度滿，fallback 強制寄 Email');
+      if (!channels.includes('email')) {
+        channels.push('email');
+      }
+      results.lineFallback = true;
+    }
   }
 
   if (channels.includes('email')) {

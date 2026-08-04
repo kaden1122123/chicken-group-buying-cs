@@ -216,8 +216,9 @@ function collectAllOrders() {
  */
 function ordersToSheetValues(orders) {
   if (orders.length === 0) return [];
-  // Header row
-  const header = [
+  // Round 37.8 (Hubert 20:41)：改為精準對齊 Sheet 實際 29 個 header
+  // 用 SHEET_HEADER 常數讓 Sheet 變更時能快速對應
+  const SHEET_HEADER = [
     'order_id', 'created_at', 'user_line_name', 'user_phone', 'address', 'community',
     'delivery_date', 'time_slot', 'chicken_items', 'side_items', 'extra_items',
     'chicken_count', 'side_count', 'total_boxes', 'subtotal', 'delivery_fee',
@@ -225,9 +226,11 @@ function ordersToSheetValues(orders) {
     'customer_notes', 'customer_tags', 'handoff_type', 'handoff_logged_at',
     'handoff_resolved_at', 'source', 'intent_confirmed', 'receipts_path',
   ];
-  const rows = [header];
+  const rows = [SHEET_HEADER];
   for (const o of orders) {
-    const row = header.map((key) => {
+    // Round 37.8：精準對齊 Sheet 29 個欄位（不要寫 Sheet 沒有的欄位）
+    // CSV 多出的 6 個欄位（likely_paid, detected_amount 等）會被忽略
+    const row = SHEET_HEADER.map((key) => {
       const v = o[key];
       if (v === null || v === undefined) return '';
       if (typeof v === 'object') return JSON.stringify(v);
