@@ -11,7 +11,7 @@ storage:
     filename_pattern: '{date}.csv'
     backup_path: data/orders/archive
   phase2:
-    enabled: false  # P9：2026-07-16 23:50 改回 false（writeOrder 不支援 phase2 會拋錯；sheetsSync.js 獨立運作，sheets sync 用 cli 跑）
+    enabled: true  # Round 37.6 (Hubert 19:15 19:30 開關)：正式啟用 Google Sheet 同步寫入
     type: google_sheets
     spreadsheet_id: '12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA'  # Google Sheets ID（Hubert 建立試算表後從 URL 複製）
     sheet_name: '工作表一'  # Google Sheets 預設工作表名稱（Hubert 建立試算表時未改名）
