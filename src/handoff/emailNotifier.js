@@ -92,8 +92,23 @@ function getOAuth2Client() {
  * 讀取已存的 token
  */
 function loadToken() {
+  // Round 37.9 (Hubert 21:09 終極結案)：主 token 檔不存在 → 自動從 .bak 還原再讀取
+  // 徹底杜絕 Token 消失問題（從 Round 35 開始反覆發生）
   if (!fs.existsSync(TOKEN_PATH)) {
-    return null;
+    const bakPath = TOKEN_PATH + '.bak';
+    if (fs.existsSync(bakPath)) {
+      logger.warn(`[emailNotifier] TOKEN_PATH 不存在，自動從 .bak 還原: ${bakPath}`);
+      try {
+        fs.copyFileSync(bakPath, TOKEN_PATH);
+        fs.chmodSync(TOKEN_PATH, 0o600);
+        logger.info('[emailNotifier] 從 .bak 還原成功，繼續使用');
+      } catch (e) {
+        logger.error(`[emailNotifier] 從 .bak 還原失敗: ${e.message}`);
+        return null;
+      }
+    } else {
+      return null;
+    }
   }
   return JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
 }
@@ -102,8 +117,16 @@ function loadToken() {
  * 儲存 token（mode 600）
  */
 function saveToken(token) {
+  // Round 37.9 終極結案：每次寫入都順便更新 .bak（雙重防護）
   fs.writeFileSync(TOKEN_PATH, JSON.stringify(token, null, 2));
   fs.chmodSync(TOKEN_PATH, 0o600);
+  // 同步備份（token 換新時舊 token 仍能從 .bak 救回）
+  try {
+    fs.writeFileSync(TOKEN_PATH + '.bak', JSON.stringify(token, null, 2));
+    fs.chmodSync(TOKEN_PATH + '.bak', 0o600);
+  } catch (e) {
+    // .bak 寫入失敗不影響主流程
+  }
 }
 
 /**
