@@ -76,7 +76,7 @@ const { google } = require('googleapis');
 
 ---
 
-## §3 Gmail 整合（OAuth 2.0 Loopback Flow）— ❌ FAIL
+## §3 Gmail 整合（OAuth 2.0 Loopback Flow）— ❌ Fail（Round 37.1 Hubert 11:25 實測）
 
 ### 3.1 認證機制
 
@@ -85,7 +85,7 @@ const { google } = require('googleapis');
 - **Client ID**：`11296846529-rrb7n92bqco6ng0ted6j5l9u2ars1sm4.apps.googleusercontent.com`
 - **Redirect URI**：`http://localhost`
 - **OAuth Client 檔**：`~/.config/chicken/secrets/gmail-credentials.json`（416 bytes, 600 權限）
-- **Token 檔**：`~/.config/chicken/secrets/gmail-token.json`（556 bytes, 600 權限，mtime 2026-08-03 10:08）
+- **Token 檔**：`~/.config/chicken/secrets/gmail-token.json`（**目前不存在** — Round 37.1 11:25 實測 ls -la 無該檔）
 
 ### 3.2 需要的 Scope
 
@@ -93,26 +93,28 @@ const { google } = require('googleapis');
 const SCOPES = ['https://www.googleapis.com/auth/gmail.send'];  // src/handoff/emailNotifier.js:30
 ```
 
-### 3.3 Live Test 結果（2026-08-03 11:30）
+### 3.3 Live Test 結果（Round 37.1 = 2026-08-04 11:25，使用 `sendEmail()` 真實 API 呼叫 — Hubert 指定的正確認證方法）
 
-| 動作 | 結果 | 錯誤訊息 |
-|------|------|----------|
-| `gmail.users.getProfile` | ❌ Fail | `Request had insufficient authentication scopes.`（403） |
-| Token 存在 | ✅ 是 | 但 scope 與 emailNotifier.js 要求不符 |
+| 動作 | 結果 | 訊息 |
+|------|------|------|
+| `ls -la ~/.config/chicken/secrets/` 看 gmail-token.json | ❌ Not Found | secrets/ 只有 api-pwd/api-token/dashboard-pwd/gmail-credentials/google-service-account/line-bot-token |
+| `sendEmail({to: k.chang.8844@gmail.com, ...})` 真實寄信 | ❌ Fail | `找不到 Gmail token: /home/clawuser/.config/chicken/secrets/gmail-token.json。請跑 node scripts/gmail-auth.js 授權` |
 
-### 3.4 根因分析
+### 3.4 根因分析（更正 Round 37 前的判斷）
 
-**目前 `gmail-token.json` 取得的 scope 不足以做 `gmail.send`（emailNotifier.js 要求）**。
+**當前狀態（Round 37.1 11:25 實測修正）**：`gmail-token.json` **真的不存在** — 不是 scope 不足，是 token 整個沒設。
 
-可能原因：
-- Token 是用 `gmail.readonly` 或其他 scope 取得的（早期 OAuth flow）
-- 之後 `emailNotifier.js` 改 scope 到 `gmail.send`，但 token 沒重跑 OAuth
+**前次錯誤判斷（Round 35 健康檢查）的原因**：
+1. 我跑了互動式 `scripts/gmail-auth.js`（會等 Terminal 輸入 OAuth callback URL）
+2. 我把這個 **blocking 等待狀態** 誤判成「Gmail 服務損壞」（False Positive）
+3. 當時並未真正測試「檔案是否真的存在」，也沒跑 `sendEmail()` 驗證
 
-**結論**：Gmail 整合目前**處於中斷狀態** — 程式碼可以載入 token，但實際寄信會 403 fail。
+**結論**：Gmail 整合目前**整個未授權狀態** — 程式碼可以載入（code 路徑完整），但 `sendEmail()` 在 init 時會因 `getGmailClient()` 找不到 token 直接 fail。
 
-### 3.5 修復 SOP（需 Hubert 互動式執行）
+### 3.5 正確認證流程（Hubert 11:25 強調：禁止跑 blocking setup 腳本）
 
-⚠️ **這是 OAuth Desktop App flow，無法純命令列完成** — 需要 Hubert 在 browser 互動授權：
+⚠️ **新鐵律**：以下 SOP 嚴禁在 brtclaw session 內跑互動式 OAuth flow（會 block terminal 等 callback）。
+請由 Hubert 本人在 terminal / browser 互動完成：
 
 ```bash
 # Step 1: 確認 OAuth client 是「Desktop app」類型（GCP console）
@@ -129,57 +131,42 @@ const SCOPES = ['https://www.googleapis.com/auth/gmail.send'];  // src/handoff/e
 #   路徑：APIs & Services → OAuth consent screen → Scopes for Google APIs
 #   必須有 https://www.googleapis.com/auth/gmail.send
 
-# Step 5: 跑 OAuth flow（需 browser 互動）
-cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service
+# Step 5: Hubert 在本地 terminal 跑 OAuth flow（不要在 brtclaw session）
+#   為什麼不在 brtclaw 跑：OAuth 會等待 browser callback，brtclaw 會誤判為 blocking=fail
 node scripts/gmail-auth.js
 # → terminal 顯示「Please visit this URL: https://accounts.google.com/...」
-# → browser 開啟，登入 clawbrt@gmail.com（不是 kaden1122123@gmail.com）
-# → 授權「Send email on your behalf」
-# → browser 跳轉到 localhost → terminal 顯示「✓ Token 已存到 ...」
+# → browser 開啟 → 登入 clawbrt@gmail.com → 授權「Send email on your behalf」
+# → browser 跳轉到 localhost → token 寫入 gmail-token.json
 
-# Step 6: 驗證 token 有 gmail.send scope
-node -e "
-const fs = require('fs');
-const t = JSON.parse(fs.readFileSync('/home/clawuser/.config/chicken/secrets/gmail-token.json', 'utf8'));
-console.log('scope:', t.scope);
-console.log('expected: https://www.googleapis.com/auth/gmail.send');
-"
-```
-
-### 3.6 驗證指令（修完後跑）
-
-```bash
+# Step 6: 用 sendEmail() Live Test 驗證（非 gmail-auth.js，也不是 getProfile）
 cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service
-
-node -e "
-const fs = require('fs');
-const { google } = require('googleapis');
-(async () => {
-  const creds = JSON.parse(fs.readFileSync('/home/clawuser/.config/chicken/secrets/gmail-credentials.json', 'utf8'));
-  const token = JSON.parse(fs.readFileSync('/home/clawuser/.config/chicken/secrets/gmail-token.json', 'utf8'));
-  const oauth2 = new google.auth.OAuth2(creds.installed.client_id, creds.installed.client_secret, creds.installed.redirect_uris[0]);
-  oauth2.setCredentials(token);
-  const gmail = google.gmail({ version: 'v1', auth: oauth2 });
-  const profile = await gmail.users.getProfile({ userId: 'me' });
-  console.log('✅ Gmail Live Pass:');
-  console.log('  email:', profile.data.emailAddress);
-})();
-"
-```
-
-**預期結果**：`email: clawbrt@gmail.com`，無 403 錯誤。
-
-### 3.7 寄信實測（修完後跑）
-
-```bash
 node -e "
 const { sendEmail } = require('./src/handoff/emailNotifier');
-sendEmail({
-  to: 'k.chang.8844@gmail.com',
-  subject: '[Test] Gmail 整合健康檢查',
-  body: '本信件由 SYSTEM_HEALTH_CHECK 自動寄出，驗證 Gmail API 是否真的運作。',
-}).then(r => console.log('✅ 寄信成功:', r)).catch(e => console.log('❌ 寄信失敗:', e.message));
+sendEmail({ to: 'k.chang.8844@gmail.com', subject: '[Test] Gmail OAuth 修復後驗證', body: 'step 5 完成後的驗證信' })
+  .then(r => process.exit(r.success ? 0 : 1))
+  .catch(e => { console.error(e.message); process.exit(2); });
 "
+# 預期：exit 0 + 收到回條
+```
+
+### 3.6 反模式（Round 37.1 永久禁止）
+
+❌ **用 `gmail-auth.js` 或 `getProfile()` 當 health check 指標**：
+- `gmail-auth.js` 是 setup 腳本（會等 browser callback）≠ health probe
+- `getProfile()` 只驗證 token 存在但**不能驗證 `gmail.send` scope**
+- 「檔案存在」≠「scope 對」≠「實際能寄」
+
+✅ **唯一正確健康檢測**：
+```bash
+node -e "const e = require('./src/handoff/emailNotifier'); e.sendEmail({to:'<YOUR_EMAIL>', subject:'Health Check', body:'live test'}).then(r => console.log(r.success ? '✅ Live Pass' : '❌ ' + r.error));"
+```
+
+### 3.7 預期結果（修完後 Live Pass）
+
+```
+✅ Live Pass:
+  messageId: <gmail thread id>
+Hubert 信箱收到主旨 [Test] Gmail OAuth 修復後驗證 的信件
 ```
 
 ---

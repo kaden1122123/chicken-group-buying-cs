@@ -98,6 +98,47 @@ bash bin/cron-list
 | GitHub 主倉庫 | `kaden1122123/chicken-group-buying-cs` |
 | GitHub Worker | `kaden1122123/external-user-line-security` |
 
+---
+
+## §8 檢測規範（防盲目假警報 · 2026-08-04 11:25 Hubert 教訓整合）
+
+> **背景**：Round 35 健康檢查時 brtclaw 跑了 `scripts/gmail-auth.js`（會 block 等 browser OAuth callback），誤判為「Gmail 中斷」。**False Positive**。
+
+### 8.1 禁止的 health check 方式
+
+- ❌ 跑任何「會等待 Terminal 輸入」的 setup 腳本當 health check
+- ❌ `scripts/gmail-auth.js` / `scripts/some-interactive-setup.js`
+- ❌ 「檔案存在」≠「功能正常」⇒ 只看 `ls -la` 當指標
+- ❌ 看到 process 還在跑 ≄「health」
+
+### 8.2 正確認證：發送實體 API 呼叫
+
+| 服務 | 正確 Live Test 指令 |
+|------|-------|
+| Gmail | `node -e "const e=require('./src/handoff/emailNotifier'); e.sendEmail({to:'k.chang.8844@gmail.com',subject:'Health Check',body:'live test'}).then(r=>console.log(r));"` |
+| Sheets | `node -e "..."`  `sheets.spreadsheets.get(...)` + `values.get(...)` |
+| LINE Bot | 跑 Cloudflare Worker 內 `notifyHubert()` push + 抓 response code |
+
+### 8.3 結果標示 3 狀態
+
+- ✅ **Live Pass**：真實 API call + 2xx + log 記錄
+- ❌ **Fail**：API 回 4xx/5xx 或 error + 錯誤訊息
+- ⚠️ **未驗證**：本回合沒測，不下結論
+
+### 8.4 禁止 ⊘ 「看起來」、「應該」、「猜的」的結論詞
+
+每次回報 health 時必須附 `exec` 原始輸出（`ls`、`sendEmail` 返回、API response code）。
+
+### 8.5 反例 vs 正例
+
+| ❌ 錯 | ✅ 正 |
+|--------|-------|
+| 「Gmail OAuth 中斷」（跑了 blocking `gmail-auth.js`） | 「Gmail Fail — `sendEmail()` returned: `{success:false, error:'找不到 Gmail token'}`」 |
+| 「Sheets 整合健康」（读了 service-account.json 檔存在） | 「Sheets ✅ Live Pass — `getTitle()` 回傳 '雞味客服訂單'」 |
+| 「LINE Bot 正常」（看到 process 在跑） | 「LINE Bot ⚠️ 未驗證 — 本回合沒跑 push call」 |
+
+#### §8 原始 commit 參考：`git log --oneline | grep -i "GMAIL_SHEETS_WORKFLOW"`
+
 ## §8 Session 結束必跑（5 動作）
 
 ```bash
