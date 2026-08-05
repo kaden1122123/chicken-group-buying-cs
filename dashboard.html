@@ -187,14 +187,26 @@
         options: {
           indexAxis: 'y',
           plugins: { legend: { display: false } },
-          // ===== Round 37.18 (Hubert 12:19)：消除 X 軸小數點刻度 (0.5, 1.5) =====
+          // ===== Round 37.19 (Hubert 12:50) Top 10 圖表軸修復 =====
           scales: {
+            // Y 軸（類別軸）：顯示商品名稱
+            y: {
+              ticks: {
+                font: { size: 13 },
+                autoSkip: false,
+              },
+              grid: { display: false },
+            },
+            // X 軸（線性軸）：顯示銷量盒數（整數刻度，無小數點）
             x: {
+              type: 'linear',
+              beginAtZero: true,
               ticks: {
                 stepSize: 1,
                 precision: 0,
                 callback: function(value) { return Math.round(value); },
               },
+              title: { display: true, text: '銷售總數量（盒）' },
             },
           },
         },

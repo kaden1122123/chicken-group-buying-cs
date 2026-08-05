@@ -521,7 +521,21 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const html = fs.readFileSync(DASHBOARD_HTML, 'utf-8');
-    sendHtml(res, 200, html);
+
+    // ===== Round 37.19 (Hubert 12:50) 注入 API Token 到 HTML =====
+    // 讓前端 window.__API_TOKEN__ 有值，按鈕 POST /api/orders/:id/status 能帶上 X-API-Token
+    // 從 /home/clawuser/.config/chicken/secrets/api-token 讀取
+    let apiToken = '';
+    try {
+      apiToken = fs.readFileSync('/home/clawuser/.config/chicken/secrets/api-token', 'utf-8').trim();
+    } catch (e) {
+      logger.error('[dashboard] 讀 api-token 失敗:', e.message);
+    }
+    const injectedHtml = html.replace(
+      '</head>',
+      '<script>window.__API_TOKEN__ = ' + JSON.stringify(apiToken) + ';</script></head>'
+    );
+    sendHtml(res, 200, injectedHtml);
     return;
   }
 
