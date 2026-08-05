@@ -17,14 +17,20 @@ CANONICAL_DIR="$DEV_REPO/docs/production-prompt/latest"
 if [ ! -d "$CANONICAL_DIR" ]; then
   CANONICAL_DIR="$DEV_REPO/docs/production-prompt/2026-07-03"  # fallback
 fi
+# Round 37.22 (Hubert 15:20) 修整：改用 md5 比對內容，避開 sync-canonical.sh 後 mtime 必新於 docs 但內容一致的誤判警告
+# AGENTS.md 特殊：prod 有 14 行 CANONICAL header（by design），需 skip
 for f in AGENTS.md SOUL.md main_idea.md; do
   if [ -f "$CANONICAL_DIR/$f" ] && [ -f "$PROD_RUNTIME/$f" ]; then
-    if [ "$CANONICAL_DIR/$f" -nt "$PROD_RUNTIME/$f" ]; then
-      echo "⚠️  $f: dev repo newer than prod runtime"
-    elif [ "$CANONICAL_DIR/$f" -ot "$PROD_RUNTIME/$f" ]; then
-      echo "⚠️  $f: prod runtime newer than dev repo"
+    DEV_MD5=$(md5sum "$CANONICAL_DIR/$f" 2>/dev/null | awk '{print $1}')
+    if [ "$f" = "AGENTS.md" ]; then
+      PROD_MD5=$(tail -n +14 "$PROD_RUNTIME/$f" 2>/dev/null | md5sum | awk '{print $1}')
     else
-      echo "✅ $f: 同步"
+      PROD_MD5=$(md5sum "$PROD_RUNTIME/$f" 2>/dev/null | awk '{print $1}')
+    fi
+    if [ -z "$DEV_MD5" ] || [ -z "$PROD_MD5" ] || [ "$DEV_MD5" != "$PROD_MD5" ]; then
+      echo "⚠️  $f: content drift（md5 不一致）"
+    else
+      echo "✅ $f: 同步（md5 一致）"
     fi
   else
     echo "❌ $f: missing"
@@ -35,7 +41,7 @@ echo ""
 echo "3. config.yaml drift (vs chicken.yaml)"
 cd "$DEV_REPO"
 if [ -f config.yaml ] && [ -f config/tenants/chicken.yaml ]; then
-  if bash scripts/sync-config.sh 2>&1 | tail -1 | grep -q "預期 1"; then
+  if bash scripts/sync-config.sh 2>&1 | grep -q "預期 1"; then
     echo "✅ config.yaml 同步（separator count 1）"
   else
     echo "⚠️  config.yaml 可能 drift，run sync-config.sh 確認"
