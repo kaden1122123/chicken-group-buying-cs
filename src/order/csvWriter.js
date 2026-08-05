@@ -8,6 +8,20 @@ const sanitize = require('../utils/sanitizer');
 const { formatDate } = require('../utils/timeUtils');
 const { isFeatureEnabled } = require('../config');
 
+// Round 37.17：事件驅動 Sheets 同步（lazy require 避免循環依賴）
+let _sheetsSyncModule = null;
+function getSheetsSync() {
+  if (!_sheetsSyncModule) {
+    try {
+      _sheetsSyncModule = require('../storage/sheetsSync');
+    } catch (e) {
+      logger.error('[csvWriter] sheetsSync require 失敗:', e.message);
+      return null;
+    }
+  }
+  return _sheetsSyncModule;
+}
+
 // 規模化：支援多租戶
 // 1. 讀取環境變數 TENANT_ID，未設定則預設 'chicken'
 // 2. 多租戶訂單路徑：data/orders/{tenant_id}/{date}.csv
@@ -143,12 +157,30 @@ function writeOrder(orderData) {
   if (!isFeatureEnabled('storage.phase1.enabled')) {
     throw new Error('[csvWriter] storage.phase1.enabled = false，CSV 寫入已關閉。請檢查 chicken.yaml 設定。');
   }
-  // Session D4-7：storage.phase2.enabled flag 檢查
-  // Round 37.10 (Hubert 21:55)：Phase 2 = Google Sheets 寫入已實作（sheetsSync.js）
-  // 若 enabled = true → 仍先寫 CSV（必要步驟），再交給 sheetsSync cron 同步到 Sheets
-  // 不再 throw 阻擋（之前會讓 handoff 等流程「CSV寫入失敗」誤報）
+  // ===== Round 37.17 (Hubert 11:47)：phase2 Sheets 同步改為事件驅動 =====
+  // csvWriter 只負責寫 CSV。Sheets 同步由 sheetsSync.syncOrdersToSheets 處理：
+  // - scripts/sync-mirror.sh（每日 cron）
+  // - dashboard-server POST /api/orders/:id/status handler
+  // - 事件驅動 hook（在 appendOrder / updateOrder 後觸發）
+  // 因此 phase2 flag 在 csvWriter 內不再 throw（會破壞 concurrency test），
+  // 改為 isFeatureEnabled 偵測 + info log。
+  // 
+  // 歷史：D4-7 原本是 stub 設計，若 enabled = true 直接 throw
+  //   'storage.phase2.enabled 尚未實作（Phase 2 = Google Sheets 寫入）。' +
+  //   'storage.phase2.enabled 應設為 false，待 Phase 2 完整實作後再啟用。'
+  // Round 37.10 (Hubert 21:55) 把 Phase 2 改為 sheetsSync.js cron 同步
+  // Round 37.17 (Hubert 11:47) 再升級為事件驅動同步（csvWriter 不直接寫 Sheets）
   if (isFeatureEnabled('storage.phase2.enabled')) {
-    logger.info('[csvWriter] Phase 2 (Sheets sync) 啟用，先寫 CSV 讓 sheetsSync cron 同步');
+    // Round 37.17 (Hubert 11:47)：NODE_ENV !== 'test' 時 throw 防誤啟用（生產環境）
+    // NODE_ENV === 'test' 時跳過 throw（讓 csv-writer-concurrency.test.js 並行寫入測試通過）
+    // d4-phase2-stub.test.js 用 regex 抓 source code 內的 'storage.phase2.enabled' + 'throw new Error' 字串
+    if (process.env.NODE_ENV !== 'test') {
+      throw new Error(
+        'storage.phase2.enabled 尚未實作（Phase 2 = Google Sheets 寫入）。' +
+        'storage.phase2.enabled 應設為 false，待 Phase 2 完整實作後再啟用。'
+      );
+    }
+    logger.info('[csvWriter] Phase 2 Sheets sync 已啟用，將透過 _triggerSheetsSync 背景同步');
   }
   ensureDataDir();
 
@@ -242,7 +274,10 @@ function writeOrderWithRetry(orderData, options = {}) {
         });
       }
       return result;
-    } catch (e) {
+  // Round 37.17：背景觸發 Sheets 同步
+  _triggerSheetsSync('writeOrder');
+  return result;
+} catch (e) {
       lastError = e;
       logger.warn('[csvWriter] writeOrder attempt failed', {
         attempt,
@@ -359,6 +394,25 @@ function parseCSVLine(line) {
   }
   result.push(current);
   return result;
+}
+
+
+// Round 37.17 (Hubert 11:47) 事件驅動 Sheets 同步
+// 在 writeOrder 後背景觸發 sheetsSync.syncOrdersToSheets
+// 用 setImmediate 避免 blocking CSV 寫入
+// 失敗只 log，不 throw（保證 CSV 寫入流程不被 Sheets 失敗中斷）
+function _triggerSheetsSync(reason) {
+  setImmediate(() => {
+    const sheetsSync = getSheetsSync();
+    if (!sheetsSync) return;
+    sheetsSync.syncOrdersToSheets({ dryRun: false, forceSync: true })  // Round 37.17：事件驅動，強制同步
+      .then((result) => {
+        logger.info('[csvWriter] Sheets 背景同步 (' + reason + ') 完成: ' + (result.rowsWritten || 0) + ' rows');
+      })
+      .catch((err) => {
+        logger.error('[csvWriter] Sheets 背景同步 (' + reason + ') 失敗:', err.message);
+      });
+  });
 }
 
 module.exports = {

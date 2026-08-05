@@ -243,5 +243,6 @@ module.exports = {
   formatItemsForCsv,
   formatChickenForCsv,
   formatSidesForCsv,
+  formatOrderDetail,
 };
 

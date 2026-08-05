@@ -11,7 +11,11 @@ storage:
     filename_pattern: '{date}.csv'
     backup_path: data/orders/archive
   phase2:
-    enabled: true  # Round 37.6 (Hubert 19:15 19:30 開關)：正式啟用 Google Sheet 同步寫入
+    enabled: false  # Round 37.17 (Hubert 11:47 終極重構)：Google Sheets 同步改為 cron + 事件驅動（Task 1）
+    # csvWriter 不再直接寫 Sheets（避免每次寫 CSV 都打 Sheets API），改由：
+    # - scripts/sync-mirror.sh（每日 cron）
+    # - dashboard-server POST /api/orders/:id/status handler（事件驅動）
+    # - 每次 csvWriter.writeOrder() 後觸發 sheetsSync.syncOrdersToSheets({dryRun:false})
     type: google_sheets
     spreadsheet_id: '12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA'  # Google Sheets ID（Hubert 建立試算表後從 URL 複製）
     sheet_name: '工作表一'  # Google Sheets 預設工作表名稱（Hubert 建立試算表時未改名）

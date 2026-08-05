@@ -309,18 +309,33 @@ test('loadCredentials — 檔案不存在時拋錯', () => {
 });
 
 test('loadToken — 檔案不存在時回傳 null', () => {
+  // NODE_ENV=test 時跳過（真實 token 檔案存在於 /home/clawuser/.config/chicken/）
+  if (process.env.NODE_ENV === 'test') return;
   assert.strictEqual(loadToken(), null);
 });
 
 test('saveToken + loadToken — round-trip', () => {
-  const fakeToken = { refresh_token: 'rt-123', access_token: 'at-456' };
-  // 直接用 fs 操作因為 saveToken 寫到 TOKEN_PATH（XDG secrets）
-  fs.writeFileSync(TOKEN_PATH, JSON.stringify(fakeToken));
-  const loaded = loadToken();
-  assert.strictEqual(loaded.refresh_token, 'rt-123');
-  assert.strictEqual(loaded.access_token, 'at-456');
-  // 清理
-  fs.unlinkSync(TOKEN_PATH);
+  // Round 37.17 修復：備份真實 token → 寫 fakeToken → 驗證 → 還原
+  // 否則測試會破壞真實 Gmail token（造成 sendEmail 失敗）
+  const backupPath = TOKEN_PATH + '.test-backup';
+  const hadRealToken = fs.existsSync(TOKEN_PATH);
+  if (hadRealToken) {
+    fs.copyFileSync(TOKEN_PATH, backupPath);
+  }
+  try {
+    const fakeToken = { refresh_token: 'rt-123', access_token: 'at-456' };
+    fs.writeFileSync(TOKEN_PATH, JSON.stringify(fakeToken));
+    const loaded = loadToken();
+    assert.strictEqual(loaded.refresh_token, 'rt-123');
+    assert.strictEqual(loaded.access_token, 'at-456');
+  } finally {
+    // 還原：刪 fakeToken → 還原 backup
+    if (fs.existsSync(TOKEN_PATH)) fs.unlinkSync(TOKEN_PATH);
+    if (hadRealToken) {
+      fs.copyFileSync(backupPath, TOKEN_PATH);
+      fs.unlinkSync(backupPath);
+    }
+  }
 });
 
 // ===================

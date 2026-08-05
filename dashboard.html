@@ -77,42 +77,105 @@
     </tbody>
   </table>
   <script>
-    new Chart(document.getElementById('dateChart'), {
-      type: 'line',
-      data: {
-        labels: ["2026-06-13","2026-06-18","2026-07-15","2026-07-16"],
-        datasets: [{
-          label: '訂單數',
-          data: [21,55,204,356],
-          borderColor: '#4caf50',
-          tension: 0.1,
-        }],
-      },
-    });
+    // ===== Round 37.17 (Hubert 11:47) 動態圖表 — 從 /api/recent-orders 抓真實數據 =====
+    let dateChartInstance = null;
+    let statusChartInstance = null;
+    let itemChartInstance = null;
 
-    new Chart(document.getElementById('statusChart'), {
-      type: 'doughnut',
-      data: {
-        labels: ["pending_handoff","confirmed"],
-        datasets: [{
-          data: [581,55],
-          backgroundColor: ['#4caf50', '#2196f3', '#ff9800', '#f44336', '#9c27b0'],
-        }],
-      },
-    });
+    function calcDailyCounts(orders) {
+      const counts = {};
+      orders.forEach(function(o) {
+        var d = (o.delivery_date || o.created_at || '').substring(0, 10);
+        if (!d) return;
+        counts[d] = (counts[d] || 0) + 1;
+      });
+      var today = new Date();
+      var labels = [];
+      var data = [];
+      for (var i = 6; i >= 0; i--) {
+        var dt = new Date(today.getTime() - i * 86400000);
+        var ds = dt.getFullYear() + '-' + ('0' + (dt.getMonth()+1)).slice(-2) + '-' + ('0' + dt.getDate()).slice(-2);
+        labels.push(ds.substring(5));
+        data.push(counts[ds] || 0);
+      }
+      return { labels: labels, data: data };
+    }
 
-    new Chart(document.getElementById('itemChart'), {
-      type: 'bar',
-      data: {
-        labels: [],
-        datasets: [{
-          label: '數量',
-          data: [],
-          backgroundColor: '#2196f3',
-        }],
-      },
-      options: { indexAxis: 'y' },
-    });
+    function calcStatusDist(orders) {
+      var dist = {};
+      orders.forEach(function(o) {
+        var s = (o.order_status || 'OTHER').toUpperCase();
+        dist[s] = (dist[s] || 0) + 1;
+      });
+      return dist;
+    }
+
+    function calcTopItems(orders, topN) {
+      topN = topN || 10;
+      var counts = {};
+      orders.forEach(function(o) {
+        ['chicken_items','side_items','extra_items'].forEach(function(k) {
+          var items = o[k] || {};
+          Object.keys(items).forEach(function(name) {
+            counts[name] = (counts[name] || 0) + (parseInt(items[name]) || 0);
+          });
+        });
+      });
+      var sorted = Object.keys(counts).map(function(k){ return [k, counts[k]]; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0, topN);
+      return { labels: sorted.map(function(e){ return e[0]; }), data: sorted.map(function(e){ return e[1]; }) };
+    }
+
+    function renderCharts(orders) {
+      // 1. dateChart — 最近 7 天每日訂單數
+      var daily = calcDailyCounts(orders);
+      if (dateChartInstance) dateChartInstance.destroy();
+      dateChartInstance = new Chart(document.getElementById('dateChart'), {
+        type: 'bar',
+        data: {
+          labels: daily.labels,
+          datasets: [{ label: '訂單數', data: daily.data, backgroundColor: '#4caf50' }],
+        },
+        options: { plugins: { legend: { display: false } } },
+      });
+
+      // 2. statusChart — 訂單狀態分佈
+      var dist = calcStatusDist(orders);
+      var distLabels = Object.keys(dist);
+      var distData = distLabels.map(function(k){ return dist[k]; });
+      var colorMap = { PENDING: '#ff9800', CONFIRMED: '#2196f3', PAID: '#4caf50', CANCELLED: '#f44336', PENDING_HANDOFF: '#9c27b0', NEW: '#607d8b' };
+      var distColors = distLabels.map(function(k){ return colorMap[k] || '#666'; });
+      if (statusChartInstance) statusChartInstance.destroy();
+      statusChartInstance = new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: { labels: distLabels, datasets: [{ data: distData, backgroundColor: distColors }] },
+        options: { plugins: { legend: { position: 'right' } } },
+      });
+
+      // 3. itemChart — Top 10 品項
+      var top = calcTopItems(orders, 10);
+      if (itemChartInstance) itemChartInstance.destroy();
+      itemChartInstance = new Chart(document.getElementById('itemChart'), {
+        type: 'bar',
+        data: {
+          labels: top.labels.length > 0 ? top.labels : ['（無資料）'],
+          datasets: [{ label: '銷售總數量', data: top.data.length > 0 ? top.data : [0], backgroundColor: '#2196f3' }],
+        },
+        options: { indexAxis: 'y', plugins: { legend: { display: false } } },
+      });
+    }
+
+    async function loadAllOrdersAndRenderCharts() {
+      try {
+        var r = await fetch('/api/recent-orders?limit=1000', { cache: 'no-store' });
+        var data = await r.json();
+        renderCharts(data.orders || []);
+      } catch (err) {
+        console.error('[Dashboard] 圖表載入失敗:', err);
+      }
+    }
+
+    // 初始化時立即載入圖表
+    document.addEventListener('DOMContentLoaded', loadAllOrdersAndRenderCharts);
   </script>
 
   <!-- P2：Hubert 手動核准訂單 — 點擊「✓ 核准」按鈕呼叫 POST /api/orders/:id/approve -->
@@ -208,32 +271,36 @@
       }
 
       // P5 標記已收款按鈕
-      if (e.target.classList.contains('mark-paid-btn')) {
-        if (!confirm('確認標記訂單 ' + orderId + ' 為已收款？')) return;
+      // ===== Round 37.17 統一 handler：PAID/SHIPPED/CANCEL 都 POST /api/orders/:id/status =====
+      if (e.target.classList.contains('mark-paid-btn') ||
+          e.target.classList.contains('shipped-btn') ||
+          e.target.classList.contains('cancel-btn')) {
+        var action = e.target.classList.contains('mark-paid-btn') ? 'PAID' :
+                     e.target.classList.contains('shipped-btn') ? 'CONFIRMED' : 'CANCELLED';
+        var actionLabel = action === 'PAID' ? '已收款' : (action === 'CONFIRMED' ? '已出貨' : '取消');
+        if (!confirm('確認將訂單 ' + orderId + ' 標記為 ' + actionLabel + '？')) return;
         e.target.disabled = true;
+        var origText = e.target.textContent;
         e.target.textContent = '處理中...';
         try {
-          const r = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/mark-paid', { method: 'POST' });
-          const data = await r.json();
-          if (data.success) {
-            e.target.textContent = '✓ 已收款';
-            e.target.style.background = '#4caf50';
-            e.target.classList.remove('mark-paid-btn');
-            const row = e.target.closest('tr');
-            if (row) {
-              const cells = row.querySelectorAll('td');
-              if (cells[6]) cells[6].innerHTML = '<span style="color:#2e7d32;font-weight:600">✓ 已收款</span>';
-              if (cells[7]) cells[7].innerHTML = '<span style="color:#999;font-size:12px">已確認收款</span>';
-            }
+          var r2 = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date: e.target.dataset.date || '', status: action }),
+          });
+          var data2 = await r2.json();
+          if (data2.success) {
+            alert('✅ 已標記 ' + actionLabel + ': ' + orderId);
+            loadRecentOrders(true);
           } else {
             e.target.disabled = false;
-            e.target.textContent = '✓ 已收款';
-            alert('標記失敗：' + (data.error || '未知錯誤'));
+            e.target.textContent = origText;
+            alert('標記失敗：' + (data2.error || '未知錯誤'));
           }
-        } catch (err) {
+        } catch (err2) {
           e.target.disabled = false;
-          e.target.textContent = '✓ 已收款';
-          alert('網路錯誤：' + err.message);
+          e.target.textContent = origText;
+          alert('網路錯誤：' + err2.message);
         }
       }
     });
@@ -365,7 +432,7 @@
           '<td><span style="color:' + statusColor(orderStatus) + ';font-weight:600">' + orderStatus + '</span></td>' +
           '<td><span style="color:' + statusColor(paymentMethod) + ';font-weight:600">' + paymentMethod + '</span></td>' +
           '<td><span style="color:' + statusColor(paymentStatus) + ';font-weight:600">' + paymentStatus + '</span></td>' +
-          '<td><button class="approve-btn" data-order-id="' + orderId + '" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="' + orderId + '" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="' + orderId + '" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button></td>' +
+          '<td style="white-space:nowrap"><button class="mark-paid-btn" data-order-id="' + orderId + '" data-date="' + (o.delivery_date || '').substring(0, 10) + '" style="background:#4caf50;color:white;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;margin:1px">✓ PAID</button><button class="shipped-btn" data-order-id="' + orderId + '" data-date="' + (o.delivery_date || '').substring(0, 10) + '" style="background:#2196f3;color:white;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;margin:1px">🚚 SHIPPED</button><button class="cancel-btn" data-order-id="' + orderId + '" data-date="' + (o.delivery_date || '').substring(0, 10) + '" style="background:#f44336;color:white;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;margin:1px">✕ CANCEL</button></td>' +
         '</tr>';
       });
       tbody.innerHTML = rows.join('\n');

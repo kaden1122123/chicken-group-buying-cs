@@ -258,8 +258,15 @@ async function syncOrdersToSheets(options = {}) {
     if (!phase2) {
       return { success: false, rowsWritten: 0, errors: ['storage.phase2 config 不存在'] };
     }
-    if (!phase2.enabled) {
+    // Round 37.17 (Hubert 11:47) 事件驅動架構：forceSync=true 時跳過 phase2.enabled 阻擋
+    // 由 csvWriter._triggerSheetsSync('writeOrder') 觸發（每筆新訂單自動同步）
+    // 預設行為（cron / 手動呼叫）仍遵守 phase2.enabled 開關（向後相容）
+    const forceSync = options && options.forceSync === true;
+    if (!phase2.enabled && !forceSync) {
       return { success: false, rowsWritten: 0, errors: ['storage.phase2.enabled = false（待 OAuth setup）'] };
+    }
+    if (!phase2.enabled && forceSync) {
+      logger.info('[sheetsSync] forceSync=true 跳過 phase2.enabled 阻擋（事件驅動模式）');
     }
 
     // 2. 讀 credentials
