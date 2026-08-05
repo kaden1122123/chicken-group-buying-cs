@@ -276,9 +276,45 @@ async function handleWebhookEvent(event) {
     return null;
   }
 
-  // 處理訊息
-  const result = await handleMessage(userId, messageText, userProfile);
-  return result.reply;
+  // Round 37.25 (Hubert 19:06)：3 秒內連續訊息鎖定（防止快速連發丟回覆）
+  if (!acquireMessageLock(userId)) {
+    logger.info(`[index] 3 秒鎖定跳過 ${userId.slice(0, 8)}... 的快速連發訊息（避免打斷上一條回覆連線）`);
+    return null;
+  }
+
+  try {
+    // 處理訊息
+    const result = await handleMessage(userId, messageText, userProfile);
+    return result.reply;
+  } finally {
+    // 延遲釋放鎖（確保第一條訊息的處理連線不被打斷）
+    setTimeout(() => releaseMessageLock(userId), MESSAGE_LOCK_MS);
+  }
+}
+
+// Round 37.25 (Hubert 19:06) 3 秒 Session 鎖定：同用戶在 3 秒內只處理第一條訊息
+const MESSAGE_LOCK_MS = 3000;
+const _messageLocks = new Map(); // userId → lock timestamp
+
+function acquireMessageLock(userId) {
+  const now = Date.now();
+  const lastLock = _messageLocks.get(userId);
+  if (lastLock && (now - lastLock) < MESSAGE_LOCK_MS) {
+    return false; // 還在鎖定中
+  }
+  _messageLocks.set(userId, now);
+  // 清理超過 30 秒沒使用的 entries（防止 memory leak）
+  if (_messageLocks.size > 500) {
+    const cutoff = now - 30000;
+    for (const [k, v] of _messageLocks.entries()) {
+      if (v < cutoff) _messageLocks.delete(k);
+    }
+  }
+  return true;
+}
+
+function releaseMessageLock(userId) {
+  _messageLocks.delete(userId);
 }
 
 /**
@@ -317,4 +353,8 @@ module.exports = {
   clearUserState,
   getUserState,
   STATES,
+  // Round 37.25 (Hubert 19:06) 3 秒鎖定 API 供 webhook 路由器使用
+  acquireMessageLock,
+  releaseMessageLock,
+  MESSAGE_LOCK_MS,
 };

@@ -164,6 +164,8 @@ function handleIdle(userId, message, context = {}) {
  * @returns {object}
  */
 function buildOrderFormatReply() {
+  // Round 37.25 (Hubert 19:06)：動態讀 open_dates（嚴禁硬編碼 8/8、8/9 等）
+  const openDatesStr = formatOpenDatesForPrompt();
   return quickReply(
     '📌 請填寫以下訂購資訊：\n\n' +
     '地址：（完整地址，如有社區名稱請提供）\n' +
@@ -172,6 +174,7 @@ function buildOrderFormatReply() {
     '日期&訂購品項：\n' +
     '送達時段：上午 / 下午\n' +
     '付款方式：現金 / 轉帳\n\n' +
+    (openDatesStr ? '📅 本期開團日：' + openDatesStr + '\n' : '') +
     '🌞 上午時段：10:00~12:00\n' +
     '🌛 下午時段：16:00~18:00',
     [
@@ -180,6 +183,33 @@ function buildOrderFormatReply() {
       { label: '常見問題', text: '常見問題' },
     ],
   );
+}
+
+/**
+ * Round 37.25 (Hubert 19:06)：動態從 chicken.yaml 的 open_dates 讀取開團日
+ * 轉成 "M/D (週X)" 格式（例如 "8/7 (週五)"），供 prompt 參考
+ * 嚴禁硬編碼日期 — 一律從 config 讀
+ * @returns {string}
+ */
+function formatOpenDatesForPrompt() {
+  try {
+    const { getUpcomingOpenDates, formatDateWithWeekday } = require('../rules/dateRule');
+    const dates = getUpcomingOpenDates({ weeks: 2 });
+    if (!dates || dates.length === 0) return '';
+    return dates
+      .slice(0, 4)
+      .map((d) => {
+        const withDay = formatDateWithWeekday(d);
+        const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (!m) return withDay;
+        const md = parseInt(m[2], 10) + '/' + parseInt(m[3], 10);
+        const weekday = withDay.match(/（(.+)）/);
+        return md + ' (' + (weekday ? weekday[1] : '') + ')';
+      })
+      .join('、');
+  } catch (e) {
+    return '';
+  }
 }
 
 module.exports = {

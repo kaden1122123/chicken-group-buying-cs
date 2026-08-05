@@ -78,6 +78,16 @@ function validateAddress(address) {
   const addr = address.trim();
   const { allowed: ALLOWED_KEYWORDS, denied: DENIED_KEYWORDS } = getKeywords();
 
+  // Round 37.25 (Hubert 19:06) 外科手術修：只要地址包含「三峽區」就直判 in-range
+  // 不論是『三峽區民生街1號』還是『新北市三峽區』，都屬於三峽生活圈
+  if (addr.includes('三峽區')) {
+    return { valid: true, errorMessage: null };
+  }
+  // 同樣處理鶯歌區（鶯歌全區可配送）
+  if (addr.includes('鶯歌區')) {
+    return { valid: true, errorMessage: null };
+  }
+
   const deniedFound = DENIED_KEYWORDS.find((kw) => addr.includes(kw));
   if (deniedFound) {
     return {

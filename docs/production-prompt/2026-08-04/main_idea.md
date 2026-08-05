@@ -94,9 +94,13 @@ LLM 必須主動告知客戶「下次可訂日 / 現可訂日 / 即將截止」�
 
 客戶問「下次開團何時」→ 主動讀 config 回應；config 沒值 → 「目前公告時間依週日群組為主」。
 
+**Round 37.25 (Hubert 19:06) 修整**：`buildOrderFormatReply` (in `src/states/idle.js`) 在客戶點「我要訂購」時，主動注入 `📅 本期開團日：M/D (週X)、...` 提示，**一律從 `dateRule.getUpcomingOpenDates({weeks:2})` 動態讀**，**絕不在程式碼/prompt 寫死 8/8、8/9 等字串**。
+
 ### 5.4 訂單確認流程（A 方案）
 
 客戶表示「確認」「OK」「就這樣」「可以」→ LLM 整理成訂單格式回傳確認一次。客戶**再次確認**後才正式成立訂單，並告知轉帳帳號。
+
+**Round 37.25 (Hubert 19:06) 三峽區地址外科手術修整**：地址包含「三峽區」或「鶯歌區」一律 `valid: true`（不再走 needs_confirmation 轉真人流程）。規則在 `src/rules/addressRule.js`，客戶輸入『新北市三峽區民生街1號』→ 直接判定可配送，不再丟出「民生街配送範圍需請專人核對」這種回答。
 
 ### 5.5 通知管理員（Hubert）守則 🚨
 
