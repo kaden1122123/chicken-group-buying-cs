@@ -42,6 +42,34 @@
     th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; }
     th { background: #f9f9f9; font-weight: 600; }
     .meta { color: #999; font-size: 12px; }
+
+    /* ===== Round 37.23 (Hubert 16:07) 搜尋/篩選/分頁控制列 ===== */
+    .toolbar {
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+      margin: 16px 0 12px 0; padding: 12px 14px;
+      background: #fafafa; border: 1px solid #e5e7eb; border-radius: 6px;
+    }
+    .toolbar label { font-size: 13px; color: #555; font-weight: 600; }
+    .toolbar input[type="text"], .toolbar input[type="search"], .toolbar select {
+      padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px;
+      font-size: 13px; font-family: inherit; background: white;
+    }
+    .toolbar input[type="text"] { min-width: 240px; }
+    .pagination-bar {
+      display: flex; gap: 8px; align-items: center; justify-content: space-between;
+      margin-top: 12px; padding: 10px 12px;
+      background: #fafafa; border: 1px solid #e5e7eb; border-radius: 6px;
+      font-size: 13px;
+    }
+    .pagination-bar button {
+      padding: 4px 12px; border: 1px solid #d1d5db; border-radius: 4px;
+      background: white; cursor: pointer; font-size: 13px;
+    }
+    .pagination-bar button:disabled {
+      opacity: 0.4; cursor: not-allowed;
+    }
+    .pagination-bar button:not(:disabled):hover { background: #f0f9ff; border-color: #1976d2; }
+    .pagination-info { color: #555; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -89,7 +117,31 @@
     </div>
   </div>
 
-  <h2>最近 20 筆訂單 <small id="orders-meta" class="meta" style="font-weight:normal">（載入中...）</small> <button id="orders-refresh-btn" onclick="loadRecentOrders(true)" style="margin-left:8px;padding:2px 10px;background:#1976d2;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px">↻ 手動刷新</button></h2>
+  <h2>訂單列表 <small id="orders-meta" class="meta" style="font-weight:normal">（載入中...）</small> <button id="orders-refresh-btn" onclick="loadRecentOrders(true)" style="margin-left:8px;padding:2px 10px;background:#1976d2;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px">↻ 手動刷新</button></h2>
+
+  <!-- Round 37.23 工具列：搜尋 + 狀態篩選 + 每頁筆數 -->
+  <div class="toolbar">
+    <label for="search-input">🔍 搜尋：</label>
+    <input type="text" id="search-input" placeholder="搜尋 姓名 / 電話 / 訂單號..." oninput="onFilterChange()" />
+    <label for="status-filter">狀態：</label>
+    <select id="status-filter" onchange="onFilterChange()">
+      <option value="all">全部</option>
+      <option value="pending_verify">待對帳 (pending_verify)</option>
+      <option value="paid">已對帳 (paid)</option>
+      <option value="shipped">已出貨 (shipped / CONFIRMED)</option>
+      <option value="cancelled">已取消 (cancelled)</option>
+      <option value="pending">待處理 (pending)</option>
+    </select>
+    <label for="page-size-select">每頁：</label>
+    <select id="page-size-select" onchange="onFilterChange()">
+      <option value="20" selected>20 筆</option>
+      <option value="50">50 筆</option>
+      <option value="100">100 筆</option>
+      <option value="500">500 筆</option>
+    </select>
+    <span id="filter-summary" class="meta" style="margin-left:auto"></span>
+  </div>
+
   <table>
     <thead>
       <tr>
@@ -108,6 +160,21 @@
       <tr><td colspan="9" style="text-align:center;color:#999;padding:24px">⏳ 載入中…</td></tr>
     </tbody>
   </table>
+
+  <!-- Round 37.23 分頁控制列 -->
+  <div class="pagination-bar">
+    <div>
+      <button id="prev-page-btn" onclick="goToPage(_currentPage - 1)" disabled>← 上一頁</button>
+      <button id="next-page-btn" onclick="goToPage(_currentPage + 1)" disabled>下一頁 →</button>
+    </div>
+    <div class="pagination-info">
+      第 <span id="current-page-num">1</span> / <span id="total-page-num">1</span> 頁（過濾後共 <span id="total-filtered-count">0</span> 筆 / 全部 <span id="total-all-count">0</span> 筆）
+    </div>
+    <div class="meta" id="page-jump-wrap">
+      跳至第 <input type="number" id="page-jump-input" min="1" max="1" value="1" style="width:60px;padding:4px 6px;border:1px solid #d1d5db;border-radius:4px" /> 頁
+      <button onclick="jumpToPage()" style="padding:4px 10px;margin-left:6px;background:#1976d2;color:white;border:none;border-radius:4px;cursor:pointer">Go</button>
+    </div>
+  </div>
   <script>
     // ===== Round 37.17 (Hubert 11:47) 動態圖表 — 從 /api/recent-orders 抓真實數據 =====
     let dateChartInstance = null;
@@ -147,9 +214,9 @@
       var counts = {};
       orders.forEach(function(o) {
         ['chicken_items','side_items','extra_items'].forEach(function(k) {
-          var items = o[k] || {};
-          Object.keys(items).forEach(function(name) {
-            counts[name] = (counts[name] || 0) + (parseInt(items[name]) || 0);
+          var parsed = parseItemsField(o[k]);
+          Object.keys(parsed).forEach(function(name) {
+            counts[name] = (counts[name] || 0) + (parseInt(parsed[name]) || 0);
           });
         });
       });
@@ -157,10 +224,47 @@
       return { labels: sorted.map(function(e){ return e[0]; }), data: sorted.map(function(e){ return e[1]; }) };
     }
 
+    // ===== Round 37.23 (Hubert 16:07) 強健品項解析器 =====
+    // 支援 3 種格式：(1) JSON 物件 {"鹽水雞":1}、(2) "鹽水雞x1|毛豆x2"、(3) "鹽水雞(半隻) x 2"
+    function parseItemsField(field) {
+      if (!field) return {};
+      if (typeof field === 'object') return field;  // 已是物件（csvReader 已 parse 過）
+      if (typeof field !== 'string') return {};
+      var s = field.trim();
+      if (!s || s === '{}' || s === '[]') return {};
+
+      // 先試 JSON
+      if (s.startsWith('{') || s.startsWith('[')) {
+        try {
+          var obj = JSON.parse(s);
+          if (typeof obj === 'object' && obj !== null) return obj;
+        } catch (e) { /* 不是 JSON，fall through */ }
+      }
+
+      // 字串格式解析：split '|'，每段用 regex '^(.+?)\s*[xX×]\s*(\d+)' 抓品項與數量
+      var result = {};
+      var parts = s.split('|');
+      parts.forEach(function(part) {
+        var m = part.match(/^(.+?)\s*[xX×]\s*(\d+)/);
+        if (m) {
+          var name = m[1].trim();
+          var qty = parseInt(m[2], 10) || 0;
+          if (name && qty > 0) result[name] = (result[name] || 0) + qty;
+        }
+      });
+      return result;
+    }
+
     // ===== Round 37.21 (Hubert 14:18) Top 10 全時期降級 =====
     // 模組層級 cache all-time orders（避免每次 filter 重新 fetch）
     var _allTimeOrdersCache = [];
     var _selectedTopItemsDate = null;  // null = 不篩選（全時期）
+
+    // ===== Round 37.23 (Hubert 16:07) 分頁 + 搜尋 + 狀態篩選 state =====
+    var _currentPage = 1;
+    var _pageSize = 20;
+    var _searchQuery = '';
+    var _statusFilter = 'all';
 
     function getSelectedTopItemsOrders() {
       if (!_selectedTopItemsDate) return _allTimeOrdersCache;
@@ -169,6 +273,109 @@
         var d = (o.delivery_date || o.created_at || '').substring(0, 10);
         return d === prefix;
       });
+    }
+
+    // 過濾 + 分頁：給 renderOrders / 統計卡 / Top10 用
+    function getFilteredOrders() {
+      var q = _searchQuery.toLowerCase().trim();
+      return _allTimeOrdersCache.filter(function(o) {
+        // 搜尋：order_id / user_line_name / user_phone
+        if (q) {
+          var hay = ((o.order_id || '') + ' ' + (o.user_line_name || '') + ' ' + (o.user_phone || '')).toLowerCase();
+          if (hay.indexOf(q) === -1) return false;
+        }
+        // 狀態篩選
+        if (_statusFilter !== 'all') {
+          var ps = (o.payment_status || '').toLowerCase();
+          var os = (o.order_status || '').toLowerCase();
+          if (_statusFilter === 'shipped') {
+            // shipped 對應 CONFIRMED（後端 SHIPPED 按鈕 → CONFIRMED）
+            if (os !== 'confirmed') return false;
+          } else if (_statusFilter === 'pending') {
+            if (ps !== 'pending' && os !== 'pending') return false;
+          } else {
+            if (ps !== _statusFilter && os !== _statusFilter) return false;
+          }
+        }
+        return true;
+      });
+    }
+
+    function getPagedOrders() {
+      var filtered = getFilteredOrders();
+      var total = filtered.length;
+      var totalPages = Math.max(1, Math.ceil(total / _pageSize));
+      if (_currentPage > totalPages) _currentPage = totalPages;
+      if (_currentPage < 1) _currentPage = 1;
+      var start = (_currentPage - 1) * _pageSize;
+      var end = start + _pageSize;
+      return {
+        filtered: filtered,
+        page: filtered.slice(start, end),
+        total: total,
+        totalPages: totalPages,
+        start: start,
+        end: Math.min(end, total),
+      };
+    }
+
+    function onFilterChange() {
+      var input = document.getElementById('search-input');
+      var select = document.getElementById('status-filter');
+      var pageSelect = document.getElementById('page-size-select');
+      if (input) _searchQuery = input.value || '';
+      if (select) _statusFilter = select.value || 'all';
+      if (pageSelect) _pageSize = parseInt(pageSelect.value, 10) || 20;
+      _currentPage = 1;  // 過濾條件變更 → 回第 1 頁
+      renderOrdersAndPagination();
+    }
+
+    function goToPage(p) {
+      var paged = getPagedOrders();
+      var newPage = Math.max(1, Math.min(p, paged.totalPages));
+      if (newPage === _currentPage) return;
+      _currentPage = newPage;
+      renderOrdersAndPagination();
+    }
+
+    function jumpToPage() {
+      var input = document.getElementById('page-jump-input');
+      if (!input) return;
+      var p = parseInt(input.value, 10) || 1;
+      goToPage(p);
+    }
+
+    function renderOrdersAndPagination() {
+      var paged = getPagedOrders();
+      renderOrders(paged.page);
+      updatePagination(paged);
+      updateFilterSummary(paged);
+    }
+
+    function updatePagination(paged) {
+      document.getElementById('current-page-num').textContent = _currentPage;
+      document.getElementById('total-page-num').textContent = paged.totalPages;
+      document.getElementById('total-filtered-count').textContent = paged.total;
+      document.getElementById('total-all-count').textContent = _allTimeOrdersCache.length;
+      var jumpInput = document.getElementById('page-jump-input');
+      if (jumpInput) { jumpInput.value = _currentPage; jumpInput.max = paged.totalPages; }
+      var prev = document.getElementById('prev-page-btn');
+      var next = document.getElementById('next-page-btn');
+      if (prev) prev.disabled = (_currentPage <= 1);
+      if (next) next.disabled = (_currentPage >= paged.totalPages);
+    }
+
+    function updateFilterSummary(paged) {
+      var el = document.getElementById('filter-summary');
+      if (!el) return;
+      var parts = [];
+      if (_searchQuery) parts.push('搜尋「' + _searchQuery + '」');
+      if (_statusFilter !== 'all') parts.push('狀態=' + _statusFilter);
+      if (parts.length === 0) {
+        el.textContent = '顯示全部 ' + _allTimeOrdersCache.length + ' 筆';
+      } else {
+        el.textContent = parts.join(' · ') + ' → 命中 ' + paged.total + ' 筆';
+      }
     }
 
     function updateTopItemsFallbackIndicator(filteredCount, fellBack) {
@@ -549,24 +756,30 @@
       const tbody = document.getElementById('orders-tbody');
       if (!tbody) return;
       if (!orders || orders.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:24px">📭 目前沒有訂單</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:24px">📭 目前這個分頁沒有訂單</td></tr>';
         return;
       }
       const rows = orders.map((o) => {
         const orderId = o.order_id || '?';
         const deliveryDate = o.delivery_date || o.created_at || '—';
         const userLineName = o.user_line_name || 'Unknown';
-        const items = typeof o.chicken_items === 'object' ? JSON.stringify(o.chicken_items) : (o.chicken_items || '—');
-        const amount = o.total_amount || '—';
+        // Round 37.23：用品項解析器顯示中文 + 數量
+        const ch = parseItemsField(o.chicken_items);
+        const sd = parseItemsField(o.side_items);
+        const ex = parseItemsField(o.extra_items);
+        const itemsStr = formatItemsForDisplay(ch, sd, ex);
+        // Round 37.23：金額千分位 (zh-TW locale)
+        const amountNum = parseFloat(o.total_amount);
+        const amountStr = isNaN(amountNum) ? '—' : formatNT(amountNum);
         const orderStatus = o.order_status || '—';
         const paymentMethod = o.payment_method || '—';
         const paymentStatus = o.payment_status || '—';
         return '<tr>' +
           '<td><small>' + orderId + '</small></td>' +
           '<td>' + deliveryDate + '</td>' +
-          '<td>' + userLineName + '<br><small style="color:#666">—</small></td>' +
-          '<td>' + items + '</td>' +
-          '<td>' + amount + '</td>' +
+          '<td>' + userLineName + '<br><small style="color:#666">' + (o.user_phone || '—') + '</small></td>' +
+          '<td><small>' + itemsStr + '</small></td>' +
+          '<td><b>' + amountStr + '</b></td>' +
           '<td><span style="color:' + statusColor(orderStatus) + ';font-weight:600">' + orderStatus + '</span></td>' +
           '<td><span style="color:' + statusColor(paymentMethod) + ';font-weight:600">' + paymentMethod + '</span></td>' +
           '<td><span style="color:' + statusColor(paymentStatus) + ';font-weight:600">' + paymentStatus + '</span></td>' +
@@ -574,6 +787,20 @@
         '</tr>';
       });
       tbody.innerHTML = rows.join('\n');
+    }
+
+    // ===== Round 37.23 (Hubert 16:07) 金額千分位（zh-TW） =====
+    function formatNT(n) {
+      return 'NT$ ' + Math.round(n).toLocaleString('zh-TW');
+    }
+
+    // 顯示品項：chicken 用 🐔、side 用 🥒、extra 用 ➕
+    function formatItemsForDisplay(ch, sd, ex) {
+      var parts = [];
+      Object.keys(ch).forEach(function(k) { parts.push('🐔 ' + k + 'x' + ch[k]); });
+      Object.keys(sd).forEach(function(k) { parts.push('🥒 ' + k + 'x' + sd[k]); });
+      Object.keys(ex).forEach(function(k) { parts.push('➕ ' + k + 'x' + ex[k]); });
+      return parts.length ? parts.join('<br>') : '—';
     }
 
     function updateLastUpdated() {
@@ -599,8 +826,9 @@
           pendingCount++;
         }
       });
+      // Round 37.23：總銷售額千分位（zh-TW locale）
       const totalAmtEl = document.getElementById('card-total-amount');
-      if (totalAmtEl) totalAmtEl.textContent = 'NT$ ' + totalAmount.toLocaleString();
+      if (totalAmtEl) totalAmtEl.textContent = formatNT(totalAmount);
       const totalOrdEl = document.getElementById('card-total-orders');
       if (totalOrdEl) totalOrdEl.textContent = orders.length.toLocaleString();
       const pendingEl = document.getElementById('card-pending-orders');
@@ -631,15 +859,17 @@
 
     async function loadRecentOrders(manual) {
       try {
-        const r = await fetch('/api/recent-orders?limit=20', { cache: 'no-store' });
+        // Round 37.23：fetch 全量（limit=1000）讓分頁/搜尋/篩選有資料可操作
+        const r = await fetch('/api/recent-orders?limit=1000', { cache: 'no-store' });
         const data = await r.json();
-        const orders = data.orders || [];
-        renderOrders(orders);
-        updateCards(orders);
-        updateMeta(orders);
+        _allTimeOrdersCache = data.orders || [];
+        // 用 getPagedOrders 過濾 + 分頁後渲染
+        renderOrdersAndPagination();
+        updateCards(_allTimeOrdersCache);
+        updateMeta(_allTimeOrdersCache);
         updateLastUpdated();
         secondsToNextRefresh = POLLING_INTERVAL;
-        if (manual) console.log('[Dashboard] 手動刷新完成，共 ' + orders.length + ' 筆');
+        if (manual) console.log('[Dashboard] 手動刷新完成，共 ' + _allTimeOrdersCache.length + ' 筆');
       } catch (err) {
         console.error('[Dashboard] 刷新失敗:', err);
         const tbody = document.getElementById('orders-tbody');

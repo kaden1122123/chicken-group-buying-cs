@@ -603,7 +603,7 @@ const server = http.createServer(async (req, res) => {
   if (url.startsWith('/api/recent-orders') && method === 'GET') {
     const urlObj = new URL(req.url, `http://${req.headers.host}`);
     const limit = parseInt(urlObj.searchParams.get('limit') || '20', 10);
-    const safeLimit = Math.min(Math.max(limit, 1), 100); // 限 1-100
+    const safeLimit = Math.min(Math.max(limit, 1), 1000); // Round 37.23 (Hubert 16:07) 擴大 limit cap 100 → 1000，讓全系統 670+ 筆訂單可一次載入供前端分頁 / 搜尋 / 狀態篩選
     const recent = getRecentOrders(safeLimit);
     sendJson(res, 200, { tenant: getTenantId(), count: recent.length, orders: recent });
     return;
