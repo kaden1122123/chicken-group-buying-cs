@@ -2,6 +2,8 @@
 
 const { STATES } = require('./stateMachine');
 const { textReply, quickReply } = require('../utils/lineReply');
+const { getOrdersByLineDisplayName } = require('../order/csvReader');
+const { formatCustomerReply } = require('../order/orderFormatter');
 
 /**
  * IDLE 狀態處理
@@ -12,6 +14,12 @@ const { textReply, quickReply } = require('../utils/lineReply');
 const ORDER_INTENT_PATTERNS = [
   /我要訂購/, /我要下單/, /我要買/, /想訂/, /要訂/, /下單/,
   /購買/, /訂雞/, /叫雞/, /團購/,
+];
+
+// Round 37.24 (Hubert 16:23) 客戶自助查詢 — 『我的訂單』 / 『查訂單』 / 『訂單查詢』
+const MY_ORDER_QUERY_PATTERNS = [
+  /我的訂單/, /查訂單/, /訂單查詢/, /查我的訂單/, /我的訂單查詢/,
+  /^訂單$/, /^訂單狀態$/, /^訂單詳情$/,
 ];
 
 // 問候回覆（無特定意圖）
@@ -41,6 +49,62 @@ function isGreeting(message) {
 }
 
 /**
+ * Round 37.24 (Hubert 16:23) 判斷是否為客戶「我的訂單」查詢
+ * @param {string} message
+ * @returns {boolean}
+ */
+function isMyOrderQuery(message) {
+  if (!message) return false;
+  return MY_ORDER_QUERY_PATTERNS.some((p) => p.test(message.trim()));
+}
+
+/**
+ * 構建『我的訂單』回覆卡片
+ * 根據 lineDisplayName 查詢該用戶的最新有效訂單
+ * @param {Array<object>} orders
+ * @returns {string}
+ */
+function buildMyOrdersReply(orders) {
+  if (!orders || orders.length === 0) {
+    return '目前查無您的近期訂單，歡迎參考菜單下單喔！🐔';
+  }
+  const lines = ['📋 您的近期訂單：\n'];
+  orders.forEach((o, i) => {
+    const orderId = o.order_id || '?';
+    const deliveryDate = o.delivery_date || '—';
+    const timeSlot = (o.time_slot || '').toLowerCase() === 'morning' ? '上午 🌞' : ((o.time_slot || '').toLowerCase() === 'afternoon' ? '下午 🌛' : (o.time_slot || '—'));
+    // 品項細項
+    const ch = typeof o.chicken_items === 'string' ? safeParseObj(o.chicken_items) : (o.chicken_items || {});
+    const sd = typeof o.side_items === 'string' ? safeParseObj(o.side_items) : (o.side_items || {});
+    const ex = typeof o.extra_items === 'string' ? safeParseObj(o.extra_items) : (o.extra_items || {});
+    const itemParts = [];
+    Object.keys(ch).forEach((k) => itemParts.push('🐔 ' + k + 'x' + ch[k]));
+    Object.keys(sd).forEach((k) => itemParts.push('🥒 ' + k + 'x' + sd[k]));
+    Object.keys(ex).forEach((k) => itemParts.push('➕ ' + k + 'x' + ex[k]));
+    const itemsStr = itemParts.length ? itemParts.join('、') : '（無品項）';
+    // 狀態
+    const ps = (o.payment_status || '—');
+    const os = (o.order_status || '—');
+    const total = parseFloat(o.total_amount) || 0;
+    const totalStr = 'NT$ ' + Math.round(total).toLocaleString('zh-TW');
+    lines.push((i + 1) + '. 🧾 ' + orderId);
+    lines.push('   📅 到貨：' + deliveryDate + ' ' + timeSlot);
+    lines.push('   🛒 品項：' + itemsStr);
+    lines.push('   💰 總金額：' + totalStr);
+    lines.push('   💳 付款：' + ps + ' / 訂單：' + os);
+    lines.push('');
+  });
+  lines.push('如有疑問請說「客服」或聯絡老闆。');
+  return lines.join('\n');
+}
+
+function safeParseObj(s) {
+  if (!s) return {};
+  if (typeof s === 'object') return s;
+  try { return JSON.parse(s); } catch (e) { return {}; }
+}
+
+/**
  * 處理 IDLE 狀態的訊息
  * @param {string} userId
  * @param {string} message
@@ -49,6 +113,17 @@ function isGreeting(message) {
  */
 function handleIdle(userId, message, context = {}) {
   const kbContent = context.kbContent || '';
+
+  // Round 37.24 (Hubert 16:23) 客戶自助查詢：先檢查『我的訂單』
+  if (isMyOrderQuery(message)) {
+    const displayName = context.lineDisplayName || context.userProfile && context.userProfile.lineDisplayName || '';
+    const orders = getOrdersByLineDisplayName(displayName, { limit: 5 });
+    return {
+      action: 'my_order_query',
+      reply: textReply(buildMyOrdersReply(orders)),
+      newState: STATES.IDLE,
+    };
+  }
 
   if (isOrderIntent(message)) {
     return {
@@ -110,6 +185,8 @@ function buildOrderFormatReply() {
 module.exports = {
   isOrderIntent,
   isGreeting,
+  isMyOrderQuery, // Round 37.24
   handleIdle,
   buildOrderFormatReply,
+  buildMyOrdersReply, // Round 37.24
 };

@@ -139,6 +139,7 @@
       <option value="100">100 筆</option>
       <option value="500">500 筆</option>
     </select>
+    <button id="export-driver-btn" onclick="exportDriverSheet()" style="margin-left:12px;padding:6px 14px;background:#ff5722;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600">🚚 匯出司機出貨單</button>
     <span id="filter-summary" class="meta" style="margin-left:auto"></span>
   </div>
 
@@ -376,6 +377,82 @@
       } else {
         el.textContent = parts.join(' · ') + ' → 命中 ' + paged.total + ' 筆';
       }
+    }
+
+    // ===== Round 37.24 (Hubert 16:23) 司機出貨單匯出（CURRENT 篩選範圍） =====
+    function exportDriverSheet() {
+      var filtered = getFilteredOrders();
+      if (filtered.length === 0) {
+        showToast('⚠️ 當前篩選範圍沒有訂單，無法匯出', 'error');
+        return;
+      }
+      // 依照配送日期 + 時段排序（司機方便看路線）
+      filtered.sort(function(a, b) {
+        var da = (a.delivery_date || '') + (a.time_slot || '');
+        var db = (b.delivery_date || '') + (b.time_slot || '');
+        return da.localeCompare(db);
+      });
+
+      // 只匯出「今天」起的訂單（避免過期）；若無日期則全匯
+      var today = todayStr();
+      var exportOrders = filtered.filter(function(o) {
+        return (o.delivery_date || '').substring(0, 10) >= today;
+      });
+      if (exportOrders.length === 0) exportOrders = filtered;  // fallback 全部匯
+
+      // 取第一筆的 delivery_date 當檔名日期（避免「今天」可能與訂單不同）
+      var fileDate = (exportOrders[0].delivery_date || today).substring(0, 10);
+
+      // CSV header：到貨時段 | 客戶姓名 | 電話 | 配送地址(含社區) | 配送品項 | 應收金額(若已付款顯示已付)
+      var headers = ['到貨時段', '客戶姓名', '電話', '配送地址(含社區)', '配送品項', '應收金額'];
+      var rows = [headers];
+      exportOrders.forEach(function(o) {
+        var timeSlot = (o.time_slot || '').toLowerCase() === 'morning' ? '上午 🌞' : ((o.time_slot || '').toLowerCase() === 'afternoon' ? '下午 🌛' : (o.time_slot || '—'));
+        var amount = parseFloat(o.total_amount) || 0;
+        var amountStr;
+        // 應收金額：若已付款顯示「已付 NT$ xxx」；未付款顯示「NT$ xxx」
+        if ((o.payment_status || '').toLowerCase() === 'paid') {
+          amountStr = '已付 NT$ ' + Math.round(amount).toLocaleString('zh-TW');
+        } else {
+          amountStr = 'NT$ ' + Math.round(amount).toLocaleString('zh-TW');
+        }
+        var address = (o.address || '') + (o.community ? ' (' + o.community + ')' : '');
+        var itemsStr = formatItemsForDisplay(
+          parseItemsField(o.chicken_items),
+          parseItemsField(o.side_items),
+          parseItemsField(o.extra_items)
+        ).replace(/<br>/g, '、').replace(/<[^>]+>/g, '');
+        rows.push([
+          timeSlot,
+          o.user_line_name || '—',
+          o.user_phone || '—',
+          address,
+          itemsStr || '—',
+          amountStr,
+        ]);
+      });
+
+      // 加上 BOM 讓 Excel 開啟中文不亂碼
+      var csvContent = '\ufeff' + rows.map(function(r) {
+        return r.map(function(cell) {
+          var s = String(cell);
+          if (s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0) {
+            return '"' + s.replace(/"/g, '""') + '"';
+          }
+          return s;
+        }).join(',');
+      }).join('\n');
+
+      var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = '司機出貨單_' + fileDate + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('✅ 已匯出司機出貨單 ' + exportOrders.length + ' 筆（' + fileDate + '）', 'success');
     }
 
     function updateTopItemsFallbackIndicator(filteredCount, fellBack) {

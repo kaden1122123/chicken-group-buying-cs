@@ -73,7 +73,7 @@ async function handleMessage(userId, message, userProfile = {}) {
         kbContent = loadKnowledgeForIntent(intent);
       }
 
-      const result = handleIdle(userId, cleanMessage, { ...context, kbContent });
+      const result = handleIdle(userId, cleanMessage, { ...context, kbContent, lineDisplayName: userProfile.lineDisplayName || '' });
       if (result.action === 'order_intent') {
         transition(userId, 'order_intent', {});
       }

@@ -159,6 +159,36 @@ function getRecentOrders(limit = 20) {
   return all.slice(0, limit);
 }
 
+/**
+ * Round 37.24 (Hubert 16:23) - LINE『我的訂單』客戶自查
+ * 根據 lineDisplayName（或 userLineId）查詢該客戶的訂單
+ * @param {string} lineDisplayName - LINE 顯示名稱
+ * @param {object} [opts]
+ * @param {number} [opts.limit=5] - 最多回幾筆
+ * @returns {Array<object>}
+ */
+function getOrdersByLineDisplayName(lineDisplayName, opts = {}) {
+  const limit = opts.limit || 5;
+  if (!lineDisplayName) return [];
+  const all = getAllOrders();
+  // 過濾：user_line_name 嚴格匹配；保留有效訂單（order_status != 'pending_handoff' 且 有 chicken/side items）
+  const filtered = all.filter((o) => {
+    if (o.user_line_name !== lineDisplayName) return false;
+    // 排除 pending_handoff（可能是 spurious 記錄）
+    if ((o.order_status || '').toLowerCase() === 'pending_handoff') return false;
+    // 排除空品項
+    const ch = typeof o.chicken_items === 'string' ? o.chicken_items : JSON.stringify(o.chicken_items || {});
+    const sd = typeof o.side_items === 'string' ? o.side_items : JSON.stringify(o.side_items || {});
+    const hasCh = ch && ch !== '{}' && ch !== '';
+    const hasSd = sd && sd !== '{}' && sd !== '';
+    if (!hasCh && !hasSd) return false;
+    return true;
+  });
+  // 按 created_at 降序
+  filtered.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+  return filtered.slice(0, limit);
+}
+
 module.exports = {
   getOrderById,
   getOrdersByDate,
@@ -166,5 +196,6 @@ module.exports = {
   isReturningCustomer,
   getAllOrders,
   getRecentOrders, // Session X3-A
+  getOrdersByLineDisplayName, // Round 37.24
   readCSV,
 };
