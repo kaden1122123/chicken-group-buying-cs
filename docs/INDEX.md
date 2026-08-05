@@ -1,49 +1,65 @@
-# 雞味客服 文件 INDEX（自動生成於 2026-08-03 07:45:30）
+# 雞味客服 文件 INDEX（Round 37.15 重整）
 
-> **本檔由 `scripts/generate-docs-index.sh` 自動生成**（Round 23）
-> **手動編輯請注意**：下次跑 script 會被覆蓋
-> **重新生成**：`bash scripts/generate-docs-index.sh`
-
-## 📊 統計
-
-| 類別 | 檔案數 | 行數 |
-|------|-------|------|
-| Chicken repo docs/ (md, 不含 INDEX) | 13 | 3544 |
-| System-level (~/.openclaw/workspace/) | 13 | - |
-| Worker repo docs/ | 0 | - |
-| **總計** | 26 | - |
+> **最後更新**：2026-08-05 09:46（Round 37.15 docs/ 歸檔大清掃）
+> **本檔為手動編輯**：docs/ 結構由 `scripts/sync-canonical.sh` 維護
 
 ---
 
-## 🔥 必讀（5 個 · Round 34 重整）
+## 📊 Round 37.15 重整後結構
+
+| 目錄 | 檔案數 | 用途 |
+|------|-------|------|
+| `docs/`（根目錄） | **4** | 永久常駐手冊 |
+| `docs/reports/` | **15** | 歷史審計、測試報告、操作 SOP、開發指南 |
+| `docs/adr/` | — | Architecture Decision Records |
+| `docs/handoff/` | — | Session handoff 紀錄 |
+| `docs/production-prompt/` | — | L3 runtime canonical 檔（AGENTS.md / SOUL.md / main_idea.md）|
+
+---
+
+## 🔥 必讀（4 個永久常駐手冊 · `docs/` 根目錄）
 
 | 檔案 | 用途 |
 |------|------|
-| NEW_SESSION_README.md | 單一入口 10 分鐘手冊（Round 34 新增，取代舊 HANDOFF.md、SESSION_NEXT_PROMPT.md、ARCHITECTURE_CURRENT_STATE） |
-| CHANGELOG.md | Commit-level 變更歷史 |
-| OPERATIONS.md (Round 22) | LINE bot + staging + secrets SOP |
-| DEVELOPMENT.md (Round 22) | 測試 + 開發 + Troubleshooting |
-| INDEX.md (本檔) | 單一入口（auto-generated）|
-
-> 接手變更：Round 34 後新 session 必讀清單單一化為 NEW_SESSION_README.md，舊 HANDOFF.md / SESSION_NEXT_PROMPT.md / ARCHITECTURE_CURRENT_STATE 標頭已標 LEGACY 指向新檔。
+| **`docs/OWNER_MANUAL.md`** | Hubert 日常操作總手冊（owner 視角）|
+| **`docs/NEW_SESSION_HANDBOOK.md`** | 新 session 接手 SOP（brtclaw 視角）|
+| **`docs/GMAIL_SHEETS_WORKFLOW.md`** | Gmail OAuth + Google Sheets 同步工作流 |
+| **`docs/INDEX.md`**（本檔）| 單一文件入口 |
 
 ---
 
-## 📋 Chicken repo docs/
+## 📋 `docs/reports/` 歷史報告（15 個 · 歸檔區）
 
-| `API_CURL.md` | 🛠 開發 | 242 行 |
-| `CEO_DECISION_GUIDE.md` | 📄 其他 | 504 行 |
-| `DEVELOPMENT.md` | 🔥 必讀 | 269 行 |
-| `EMAIL_SETUP.md` | 🛠 開發 | 307 行 |
-| `ENGINEERING_HANDBOOK.md` | 📄 其他 | 489 行 |
-| `GCP_ROTATION_SOP.md` | 📋 SOP | 249 行 |
-| `HUBERT_USER_GUIDE.md` | 📄 其他 | 343 行 |
-| `KNOWN_ISSUES.md` | 📄 其他 | 166 行 |
-| `MULTI_TENANT_DESIGN.md` | 🛠 開發 | 233 行 |
-| `NAMED_TUNNEL_MIGRATION.md` | 📚 通用 | 90 行 |
-| `OPERATIONS.md` | 🔥 必讀 | 207 行 |
-| `PROJECT_INVENTORY.md` | 📚 通用 | 306 行 |
-| `SESSION_END_SOP.md` | 🔥 必讀 | 139 行 |
+### 業務實測報告
+
+| 檔案 | Round | 行數 |
+|------|-------|------|
+| `docs/reports/BUSINESS_FLOW_VERIFICATION.md` | 37.14 | 301 |
+| `docs/reports/E2E_INTEGRATION_REPORT.md` | 35 | 269 |
+
+### 操作 / 工程手冊
+
+| 檔案 | 用途 |
+|------|------|
+| `docs/reports/OPERATIONS.md` | LINE bot + staging + secrets SOP |
+| `docs/reports/DEVELOPMENT.md` | 測試 + 開發 + Troubleshooting |
+| `docs/reports/ENGINEERING_HANDBOOK.md` | 完整工程手冊（架構 + 模組）|
+| `docs/reports/CEO_DECISION_GUIDE.md` | 商業 / 戰略決策指南 |
+| `docs/reports/PROJECT_INVENTORY.md` | 專案盤點 |
+
+### SOP / 教學
+
+| 檔案 | 用途 |
+|------|------|
+| `docs/reports/SESSION_END_SOP.md` | Session 結束 5 動作 SOP |
+| `docs/reports/KNOWN_ISSUES.md` | 已知問題與 workaround |
+| `docs/reports/EMAIL_SETUP.md` | Gmail OAuth setup 教學 |
+| `docs/reports/GCP_ROTATION_SOP.md` | GCP service account key rotation |
+| `docs/reports/API_CURL.md` | Dashboard API curl 範例 |
+| `docs/reports/HUBERT_USER_GUIDE.md` | Hubert 操作指南（Dashboard + Cron）|
+| `docs/reports/MULTI_TENANT_DESIGN.md` | 多租戶架構設計 |
+| `docs/reports/NAMED_TUNNEL_MIGRATION.md` | Cloudflare Tunnel 遷移紀錄 |
+| `docs/reports/TEST_MAP.md` | 測試套件與覆蓋率地圖 |
 
 ---
 
@@ -52,28 +68,29 @@
 | 檔案 | 用途 |
 |------|------|
 | `HEARTBEAT.md` | Cron jobs + 系統狀態 |
-| `memory/heartbeat-state.json` | 系統狀態 JSON |
-| `.task-state/active-tasks.md` | 進行中的任務 |
-| `memory/YYYY-MM-DD.md` | 每日 session summary |
 | `MEMORY.md` | brtclaw 長期記憶 + 工作方法論 |
 | `SOUL.md` | brtclaw 人格設定 |
+| `memory/YYYY-MM-DD.md` | 每日 session summary |
 
 ---
 
-## 🔧 Worker repo docs/（`external-user-line-security`）
+## 🔧 Worker repo（`external-user-line-security`）
 
+- 原始碼：`src/index.ts`
+- 部署：Cloudflare Workers + R2 public URLs
+- Dashboard 設定檔：環境變數（不在程式碼內）
 
 ---
 
 ## 🔗 快速連結
 
-- **Worker prod**: `https://external-user-line-security.kaden1122123.workers.dev`
-- **Worker staging**: `https://external-user-line-security-staging.kaden1122123.workers.dev`
 - **Dashboard**: `https://dashboard.brt1122.com`
+- **Worker prod**: `https://external-user-line-security.kaden1122123.workers.dev`
+- **OpenClaw Gateway**: `https://openclaw.brt1122.com`
+- **Google Sheet**（訂單）：`https://docs.google.com/spreadsheets/d/12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA`
 - **LINE Developer Console**: https://developers.line.biz/console/
-- **Cloudflare Dashboard**: https://dash.cloudflare.com
 
 ---
 
-_本檔由 `scripts/generate-docs-index.sh` 自動生成_
-_對應 Round 23 「自動生成腳本」_
+_本檔結構於 Round 37.15（2026-08-05）由 brtclaw 手動重整_
+_下次 docs/ 結構變動請同步更新本檔_

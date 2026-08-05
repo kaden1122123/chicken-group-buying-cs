@@ -68,7 +68,7 @@
     </div>
   </div>
 
-  <h2>最近 20 筆訂單</h2>
+  <h2>最近 20 筆訂單 <small id="orders-meta" class="meta" style="font-weight:normal">（載入中...）</small> <button id="orders-refresh-btn" onclick="loadRecentOrders(true)" style="margin-left:8px;padding:2px 10px;background:#1976d2;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px">↻ 手動刷新</button></h2>
   <table>
     <thead>
       <tr>
@@ -83,241 +83,10 @@
         <th>操作</th>
       </tr>
     </thead>
-    <tbody>
-<tr>
-          <td><small>PENDING-1781333917366</small></td>
-          <td>2026-06-13 06:58</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#2196f3;font-weight:600">confirmed</span></td>
-          <td><span style="color:#2196f3;font-weight:600">confirmed</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333917366" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333917366" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333917366" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333896341</small></td>
-          <td>2026-06-13 06:58</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333896341" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333896341" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333896341" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333896341" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333875038</small></td>
-          <td>2026-06-13 06:57</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333875038" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333875038" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333875038" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333875038" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333829248</small></td>
-          <td>2026-06-13 06:57</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333829248" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333829248" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333829248" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333829248" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333818233</small></td>
-          <td>2026-06-13 06:56</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333818233" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333818233" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333818233" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333818233" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333804443</small></td>
-          <td>2026-06-13 06:56</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333804443" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333804443" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333804443" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333804443" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333788648</small></td>
-          <td>2026-06-13 06:56</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333788648" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333788648" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333788648" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333788648" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333765420</small></td>
-          <td>2026-06-13 06:56</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333765420" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333765420" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333765420" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333765420" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333748793</small></td>
-          <td>2026-06-13 06:55</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333748793" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333748793" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333748793" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333748793" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333741132</small></td>
-          <td>2026-06-13 06:55</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333741132" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333741132" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333741132" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333741132" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333731754</small></td>
-          <td>2026-06-13 06:55</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333731754" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333731754" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333731754" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333731754" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333680976</small></td>
-          <td>2026-06-13 06:54</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333680976" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333680976" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333680976" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333680976" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333664008</small></td>
-          <td>2026-06-13 06:54</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333664008" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333664008" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333664008" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333664008" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333615162</small></td>
-          <td>2026-06-13 06:53</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333615162" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333615162" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333615162" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333615162" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333593294</small></td>
-          <td>2026-06-13 06:53</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333593294" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333593294" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333593294" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333593294" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333573651</small></td>
-          <td>2026-06-13 06:52</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333573651" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333573651" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333573651" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333573651" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333518357</small></td>
-          <td>2026-06-13 06:51</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333518357" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333518357" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333518357" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333518357" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333447624</small></td>
-          <td>2026-06-13 06:50</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333447624" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333447624" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333447624" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333447624" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333414875</small></td>
-          <td>2026-06-13 06:50</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333414875" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333414875" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333414875" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333414875" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333379344</small></td>
-          <td>2026-06-13 06:49</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333379344" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333379344" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333379344" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333379344" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-<tr>
-          <td><small>PENDING-1781333338789</small></td>
-          <td>2026-06-13 06:48</td>
-          <td>Unknown<br><small style="color:#666">—</small></td>
-          <td></td>
-          <td>—</td>
-          <td>—</td>
-          <td><span style="color:#ff9800;font-weight:600">pending</span></td>
-          <td><span style="color:#9c27b0;font-weight:600">pending_handoff</span></td>
-          <td><button class="approve-btn" data-order-id="PENDING-1781333338789" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="PENDING-1781333338789" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="PENDING-1781333338789" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button><button class="clear-handoff-btn" data-order-id="PENDING-1781333338789" style="background:#607d8b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">↩ 解除</button></td>
-        </tr>
-</tbody>
+    <tbody id="orders-tbody">
+      <tr><td colspan="9" style="text-align:center;color:#999;padding:24px">⏳ 載入中…</td></tr>
+    </tbody>
   </table>
-
   <script>
     new Chart(document.getElementById('dateChart'), {
       type: 'line',
@@ -544,6 +313,135 @@
     }
     document.getElementById('customer-tags-input').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') queryCustomerTags();
+    });
+  </script>
+
+  <!-- Round 37.15 (Hubert 09:45)：Dashboard 前端 30 秒自動輪詢 + 預設最新日期 -->
+  <script>
+    // ===== Auto Polling: 每 30 秒抓 /api/recent-orders + 重渲染 =====
+    let pollingTimer = null;
+    let countdownTimer = null;
+    let secondsToNextRefresh = 30;
+    const POLLING_INTERVAL = 30; // 秒
+
+    function fmtTime(d) {
+      const pad = (n) => n.toString().padStart(2, '0');
+      return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    }
+
+    function todayStr() {
+      const d = new Date();
+      const pad = (n) => n.toString().padStart(2, '0');
+      return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+    }
+
+    function statusColor(status) {
+      const map = {
+        'CONFIRMED': '#2196f3',
+        'confirmed': '#2196f3',
+        'PENDING': '#ff9800',
+        'pending': '#ff9800',
+        'pending_handoff': '#9c27b0',
+        'PAID': '#4caf50',
+        'paid': '#4caf50',
+        'CANCELLED': '#f44336',
+        'cancelled': '#f44336',
+        'new': '#607d8b',
+      };
+      return map[status] || '#666';
+    }
+
+    function renderOrders(orders) {
+      const tbody = document.getElementById('orders-tbody');
+      if (!tbody) return;
+      if (!orders || orders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:24px">📭 目前沒有訂單</td></tr>';
+        return;
+      }
+      const rows = orders.map((o) => {
+        const orderId = o.order_id || '?';
+        const deliveryDate = o.delivery_date || o.created_at || '—';
+        const userLineName = o.user_line_name || 'Unknown';
+        const items = typeof o.chicken_items === 'object' ? JSON.stringify(o.chicken_items) : (o.chicken_items || '—');
+        const amount = o.total_amount || '—';
+        const orderStatus = o.order_status || '—';
+        const paymentMethod = o.payment_method || '—';
+        const paymentStatus = o.payment_status || '—';
+        return '<tr>' +
+          '<td><small>' + orderId + '</small></td>' +
+          '<td>' + deliveryDate + '</td>' +
+          '<td>' + userLineName + '<br><small style="color:#666">—</small></td>' +
+          '<td>' + items + '</td>' +
+          '<td>' + amount + '</td>' +
+          '<td><span style="color:' + statusColor(orderStatus) + ';font-weight:600">' + orderStatus + '</span></td>' +
+          '<td><span style="color:' + statusColor(paymentMethod) + ';font-weight:600">' + paymentMethod + '</span></td>' +
+          '<td><span style="color:' + statusColor(paymentStatus) + ';font-weight:600">' + paymentStatus + '</span></td>' +
+          '<td><button class="approve-btn" data-order-id="' + orderId + '" style="background:#2196f3;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">✓ 核准</button><button class="upload-receipt-btn" data-order-id="' + orderId + '" style="background:#9c27b0;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">📎 上傳</button><button class="mark-paid-btn" data-order-id="' + orderId + '" style="background:#ff9800;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px">✓ 已收款</button></td>' +
+        '</tr>';
+      });
+      tbody.innerHTML = rows.join('\n');
+    }
+
+    function updateMeta(orders) {
+      const meta = document.getElementById('orders-meta');
+      if (!meta) return;
+      const today = todayStr();
+      const todayOrders = orders.filter((o) => (o.delivery_date || '').startsWith(today));
+      // 預設最新日期邏輯（Round 37.15 Task 1.2）
+      let latestDate = '—';
+      if (orders.length > 0) {
+        const dates = orders
+          .map((o) => o.delivery_date || o.created_at || '')
+          .filter((d) => d.length >= 10)
+          .map((d) => d.substring(0, 10))
+          .sort()
+          .reverse();
+        latestDate = dates[0] || '—';
+      }
+      const todayHighlight = todayOrders.length > 0 ? ' ✅ 今天有 ' + todayOrders.length + ' 筆' : '（今天無訂單）';
+      meta.innerHTML = '🕐 最後更新 ' + fmtTime(new Date()) + 
+        ' · 下次刷新 ' + secondsToNextRefresh + 's 後' +
+        ' · 最新訂單日 <b>' + latestDate + '</b>' + todayHighlight;
+    }
+
+    async function loadRecentOrders(manual) {
+      try {
+        const r = await fetch('/api/recent-orders?limit=20', { cache: 'no-store' });
+        const data = await r.json();
+        const orders = data.orders || [];
+        renderOrders(orders);
+        updateMeta(orders);
+        secondsToNextRefresh = POLLING_INTERVAL;
+        if (manual) console.log('[Dashboard] 手動刷新完成，共 ' + orders.length + ' 筆');
+      } catch (err) {
+        console.error('[Dashboard] 刷新失敗:', err);
+        const tbody = document.getElementById('orders-tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#c62828;padding:24px">⚠️ 載入失敗：' + err.message + '</td></tr>';
+      }
+    }
+
+    function startPolling() {
+      if (pollingTimer) clearInterval(pollingTimer);
+      if (countdownTimer) clearInterval(countdownTimer);
+      // 每 30 秒抓資料
+      pollingTimer = setInterval(() => {
+        loadRecentOrders(false);
+      }, POLLING_INTERVAL * 1000);
+      // 每秒更新倒數顯示
+      countdownTimer = setInterval(() => {
+        secondsToNextRefresh--;
+        if (secondsToNextRefresh <= 0) secondsToNextRefresh = POLLING_INTERVAL;
+        const meta = document.getElementById('orders-meta');
+        if (meta && meta.dataset.lastOrders !== undefined) {
+          // 由 updateMeta 控制完整內容
+        }
+      }, 1000);
+    }
+
+    // 頁面載入時立即抓 + 啟動 30s 輪詢
+    document.addEventListener('DOMContentLoaded', () => {
+      loadRecentOrders(false);
+      startPolling();
     });
   </script>
 </body>
