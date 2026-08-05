@@ -1,188 +1,263 @@
-# 老闆操作手冊 (OWNER_MANUAL.md)
+# 雞味研究所 Owner 操作手冊
 
-> **對象**：雞味研究所 Hubert（老闆）
-> **範圍**：日常營運、菜單管理、訂單審核、系統維護
-> **最後更新**：2026-08-04 22:04（Round 37.10）
+> **對象**：Hubert（雞味研究所老闆）
+> **最後更新**：2026-08-05 13:12（Round 37.20 docs 大更新）
+> **本檔定位**：日常操作 SOP（不講程式碼，講操作）
 
 ---
 
 ## 1. 修改菜單 / 價格 / 免運門檻 / 開團日期
 
-### 1.1 修改菜單與價格
-- **檔案**：`knowledge/tenants/chicken/01_product.md`
-- **格式**：Markdown 表格
-  - 第 1 欄：品項名稱（整隻雞標「（整隻）」）
-  - 第 2 欄：價格（純數字）
-  - 第 3 欄：單位
-  - 第 4 欄：備註
-- **改完後**：
-  ```bash
-  bash scripts/sync-mirror.sh from-legacy  # 同步 L1 → L2
-  bash scripts/sync-canonical.sh           # 同步 L1 → L3
-  ```
-  兩條都跑後，立即生效。
+### 1.1 修改品項 / 價格
 
-### 1.2 修改免運門檻
-- **檔案**：`knowledge/tenants/chicken/04_delivery.md`
-- **關鍵字**：`免運門檻`、`雞肉：1 盒`、`小菜：滿 NT$350`
+**位置**：`knowledge/tenants/chicken/01_product.md`
 
-### 1.3 修改開團日期
-- **檔案**：`config/tenants/chicken.yaml`
-- **位置**：
-  ```yaml
-  storage:
-    phase1:
-      enabled: true
-    open_dates:           ← 這裡
-      - '2026-08-04'
-      - '2026-08-07'
-  ```
-- **改完後**：
-  ```bash
-  bash scripts/sync-config.sh
-  bash scripts/sync-mirror.sh from-legacy
-  ```
-
-### 1.4 改完後驗證
-```bash
-curl -H "X-API-Token: $(cat /home/clawuser/.config/chicken/secrets/api-token)" \
-     "http://localhost:3001/api/config/open-dates"
-# 應回傳：今天日期 + 開團日期陣列
+格式範例：
+```markdown
+| 品項 | 價 | 單位 | 備註 |
+| --- | -- | ---- | ---- |
+| 鹽水雞 | 380 | 半隻 | - |
+| 土雞 | 820 | 整隻 | 需提前 2 天預定 |
 ```
+
+**重要**：客戶問「土雞多少錢」時，AI 會自動讀這個檔並列出所有相關品項與價格（main_idea.md §三-3a 價格鐵律，Round 37.16 新增）。
+
+### 1.2 修改開團日期（Open Dates）
+
+**位置**：`config/tenants/chicken.yaml`
+
+```yaml
+storage:
+  open_dates:
+    - "2026-08-08"
+    - "2026-08-09"
+    - "2026-08-15"
+```
+
+**或**：在 Dashboard 後台「訂單審核」頁面 → 「開團日期」區塊直接編輯。
+
+### 1.3 修改免運門檻 / 配送範圍
+
+**位置**：`config/tenants/chicken.yaml`
+
+```yaml
+delivery:
+  minimum_order: 380   # 免運門檻
+  hours:
+    am: 10:00~12:00
+    pm: 16:00~18:00
+```
+
+### 1.4 修改付款方式（已含白名單）
+
+**位置**：`src/rules/paymentRule.js`（已 Round 37.16 內建白名單）
+
+官方標準名稱僅限：`轉帳 / 現金 / 街口支付 / LINE Pay`。客戶輸入任何其他字，AI 會自動降級為「轉帳」（防呆機制）。
 
 ---
 
 ## 2. 在 Dashboard 後台審核訂單與對帳
 
 ### 2.1 進入 Dashboard
-- **URL（本機）**：`http://localhost:3001`
-- **URL（外網）**：`https://dashboard.brt1122.com`（透過 Cloudflare Tunnel）
-- **Auth**：用瀏覽器登入 → 右上「API Token」輸入 `/home/clawuser/.config/chicken/secrets/api-token`
 
-### 2.2 審核訂單流程
-1. 開 Dashboard → 看當日訂單
-2. 點「標記已收款」→ 訂單狀態 `PENDING` → `PAID`
-3. 點「審核通過」→ 訂單狀態 `PAID` → `CONFIRMED`
-4. 客戶棄單 → 點「取消訂單」→ 訂單狀態 → `CANCELLED`
+- **網址**：https://dashboard.brt1122.com
+- **認證**：HTTP Basic Auth
+  - Username: `admin`
+  - Password: `/home/clawuser/.config/chicken/secrets/dashboard-pwd`（15 chars）
 
-### 2.3 變更訂單狀態（API 模式）
+### 2.2 訂單審核（新版操作按鈕 · Round 37.19）
+
+訂單表格的 **「操作」欄**現在有 3 個真實功能按鈕（不再只是靜態假按鈕）：
+
+| 按鈕 | 動作 | 觸發 API |
+|------|------|----------|
+| ✓ **PAID** | 標記訂單為已收款 | POST `/api/orders/:id/status` body `{date, status:"PAID"}` |
+| 🚚 **SHIPPED** | 標記訂單為已出貨 | POST `/api/orders/:id/status` body `{date, status:"CONFIRMED"}` |
+| ✕ **CANCEL** | 取消訂單 | POST `/api/orders/:id/status` body `{date, status:"CANCELLED"}` |
+
+**操作流程**：
+1. 點按鈕
+2. 瀏覽器彈出確認框（confirm）
+3. 確認後送 POST 帶 X-API-Token
+4. 成功 → 右上角 Toast「✅ 訂單 ORD-xxx 狀態已更新為 PAID！」（3 秒）
+5. 表格自動重新載入（30 秒內也會自動刷新）
+
+**匯率**：無匯率（都是 NT$）
+
+### 2.3 對帳流程
+
+每筆訂單會出現在 Google Sheet `12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA`。
+
+**事件驅動同步**（Round 37.17 新架構）：
+- 每次客戶新訂單寫入 CSV → 5 秒內背景自動同步到 Sheet
+- 每次操作按鈕變更狀態 → 5 秒內背景同步
+- **不需手動跑任何 sync 指令**
+
+如果發現 Sheet 與 CSV 不一致，可手動觸發：
 ```bash
-curl -X POST "http://localhost:3001/api/orders/ORD-20260804-001/status" \
-  -H "Content-Type: application/json" \
-  -H "X-API-Token: $(cat /home/clawuser/.config/chicken/secrets/api-token)" \
-  -d '{"date": "2026-08-04", "status": "CONFIRMED"}'
+cd ~/openclaw-workspace/others/chicken-group-buying-customer-service
+node -e "require('./src/storage/sheetsSync').syncOrdersToSheets({dryRun:false, forceSync:true})"
 ```
-- 合法 status：`PENDING` / `CONFIRMED` / `PAID` / `CANCELLED`
 
-### 2.4 對帳
-- 每日 23:00 跑 `node scripts/send-digest.js` 寄送當日訂單彙總
-- 月底跑 `node scripts/sheets-sync-cron.js` 同步到 Google Sheets
-- 在 Dashboard 看 `total_amount` 加總
+### 2.4 查看 Dashboard 即時資訊
 
-### 2.5 看當日訂單（API）
-```bash
-curl -H "X-API-Token: $(cat /home/clawuser/.config/chicken/secrets/api-token)" \
-     "http://localhost:3001/api/orders?date=2026-08-04"
-# 預設查詢今日；若今日無訂單會自動降級顯示「最新有訂單的日期」
-```
+**頂部時間**：每 30 秒自動更新「最後更新：YYYY/MM/DD 下午 HH:MM:SS」
+
+**3 張統計卡片**（動態計算）：
+- 💰 **總銷售額**：所有訂單 total_amount 加總
+- 📦 **總訂單數**：當前載入的訂單數
+- ⏳ **待對帳訂單數**：payment_status = pending / pending_verify 的筆數
+
+**3 張圖表**（動態渲染，30 秒更新）：
+- 每日訂單數趨勢（最近 7 天）
+- 訂單狀態分佈（doughnut chart）
+- 熱門品項 Top 10（橫向 bar chart，Y 軸顯示商品名稱，X 軸整數刻度）
 
 ---
 
 ## 3. 使用 sync-mirror.sh 進行一鍵同步
 
-### 3.1 什麼時候需要同步
-- 修改 `knowledge/tenants/chicken/*.md`（菜單/FAQ/規則）
-- 修改 `config/tenants/chicken.yaml`（開團日期/免運門檻）
-- 修改 `src/` 任一檔案（程式碼）
+### 3.1 程式碼改完後必跑
 
-### 3.2 一鍵同步指令
 ```bash
-cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service
-
-# L1 (dev repo) → L2 (mirror)：所有改動推過去
-bash scripts/sync-mirror.sh from-legacy
-
-# L1 (dev repo) → L3 (production runtime)：prompt 與 canonical 檔
-bash scripts/sync-canonical.sh
-
-# L1 (chicken.yaml) → L1 (config.yaml)：config 統一
-bash scripts/sync-config.sh
-
-# 一鍵跑三條（最常用）
-bash scripts/sync-mirror.sh from-legacy && \
-bash scripts/sync-config.sh && \
-bash scripts/sync-canonical.sh
+cd ~/openclaw-workspace/others/chicken-group-buying-customer-service
+bash scripts/sync-mirror.sh from-legacy   # dev → primary mirror
+pkill -9 -f "node.*dashboard-server"       # 重啟 dashboard
+sleep 2
+cd /home/clawuser/.openclaw/workspace-external-user/projects/chicken-group-buying-customer-service
+nohup node scripts/dashboard-server.js > /tmp/dashboard-server.log 2>&1 &
+sleep 3
+curl -s http://localhost:3000/healthz       # 確認 up
 ```
 
-### 3.3 同步後驗證
-```bash
-# 看 L2 mirror 8/4 CSV 是否同步
-diff -q data/orders/chicken/2026-08-04.csv \
-        /home/clawuser/.openclaw/workspace-external-user/projects/chicken-group-buying-customer-service/data/orders/chicken/2026-08-04.csv
-# 沒輸出 = 一致
+### 3.2 Prompt 改完後必跑
 
-# 看 L3 production runtime prompt 是否同步
-ls -la /home/clawuser/.openclaw/agents/external-user/knowledge/main_idea.md
+```bash
+cd ~/openclaw-workspace/others/chicken-group-buying-customer-service
+bash scripts/sync-canonical.sh             # dev → L3 runtime
+bash bin/check-drift 2>&1 | tail -10       # 0 Missing 驗證
 ```
 
-### 3.4 同步失敗怎麼辦
-| 症狀 | 解法 |
-|------|------|
-| `sync-mirror.sh` 報權限錯 | `chmod +x scripts/sync-mirror.sh` |
-| `sync-canonical.sh` 找不到 `latest/` | `ln -sf 2026-08-04 docs/production-prompt/latest` |
-| `sync-config.sh` 報 separator count 不對 | 確認 chicken.yaml 沒特殊字元 |
+### 3.3 Sheets 事件驅動同步（Round 37.17+）
+
+不用手動跑。系統會在以下時機自動觸發：
+1. `csvWriter.writeOrder()` 後（背景 `setImmediate`）
+2. `dashboard-server` POST `/api/orders/:id/status` handler 後
+3. `scripts/sync-mirror.sh` 完成後（cron 也會跑）
 
 ---
 
 ## 4. 緊急聯絡 / 維護
 
-### 4.1 重啟服務
+### 4.1 brtclaw 失聯 / 系統崩潰
+
+1. SSH 到 `brt1122-System-09` (Hubert 主機)
+2. 看 `/tmp/dashboard-server.log`
+3. 看 `/home/clawuser/.openclaw/openclaw.log`
+4. 重啟 OpenClaw：`openclaw gateway restart`
+
+### 4.2 LINE Bot 沒回應
+
+1. 看 `~/openclaw-workspace/external-user/cloudflare-worker/` 的 `src/index.ts`
+2. 確認 Cloudflare Worker `external-user-line-security` 已部署
+3. 看 Worker logs：https://dash.cloudflare.com/
+
+### 4.3 Gmail / Sheets 失敗
+
+1. 看 `/home/clawuser/.config/chicken/secrets/` 是否有過期 token
+2. Service account JSON 是否還在（`google-service-account.json`）
+3. Gmail token 是否需要重新 OAuth：
+   ```bash
+   node scripts/gmail-auth.js   # 會彈瀏覽器，請在有 GUI 的環境跑
+   ```
+
+### 4.4 訂單資料消失 / 損壞
+
 ```bash
-# 重啟 Dashboard
-systemctl --user restart dashboard-server   # 若有 systemd
-# 或
-pkill -f dashboard-server.js && cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service && nohup node scripts/dashboard-server.js > /tmp/dashboard.log 2>&1 &
+# 從 git 恢復
+cd ~/openclaw-workspace/others/chicken-group-buying-customer-service
+git checkout HEAD -- data/orders/chicken/
 
-# 重啟 OpenClaw Gateway
-systemctl --user restart openclaw-gateway
+# 重啟 Sheets 同步
+bash scripts/sync-mirror.sh from-legacy
+node -e "require('./src/storage/sheetsSync').syncOrdersToSheets({dryRun:false, forceSync:true})"
 ```
-
-### 4.2 看 log
-```bash
-# Dashboard log
-tail -f /tmp/openclaw/openclaw-2026-08-04.log
-
-# Worker deploy log
-cd ~/openclaw-workspace/external-user/cloudflare-worker
-wrangler tail  # 即時看 Cloudflare Worker log
-```
-
-### 4.3 緊急撤銷 / 重跑 sync
-- **撤銷最近一次 sync**：`bash scripts/sync-mirror.sh from-legacy --delete`（慎用）
-- **手動強制覆蓋 L2**：`rsync -avz --delete data/ /home/clawuser/.openclaw/workspace-external-user/projects/chicken-group-buying-customer-service/data/`
 
 ---
 
 ## 5. 重要檔案位置速查
 
+### 5.1 主目錄（dev repo）
+```
+~/openclaw-workspace/others/chicken-group-buying-customer-service/
+├── src/
+│   ├── rules/
+│   │   ├── paymentRule.js         # 付款白名單（Round 37.16）
+│   │   └── ...
+│   ├── order/
+│   │   ├── csvWriter.js           # _triggerSheetsSync 事件驅動（Round 37.17）
+│   │   ├── orderFormatter.js      # formatItemsForCsv 多品項格式（Round 37.16）
+│   │   └── ...
+│   ├── storage/
+│   │   └── sheetsSync.js          # 動態表頭映射 headerMap（Round 37.18）
+│   ├── handoff/
+│   │   ├── emailNotifier.js
+│   │   └── notifier.js
+│   └── config.js
+├── scripts/
+│   ├── dashboard-server.js        # checkAuth X-API-Token（Round 37.19）
+│   ├── sync-mirror.sh
+│   ├── sync-canonical.sh
+│   └── check-quality.sh
+├── tests/                          # 60 個測試檔（npm test）
+├── dashboard.html                  # Dashboard 前端（圖表、按鈕、Toast）
+├── docs/                            # 4 個永久手冊 + reports/
+├── data/orders/chicken/             # CSV 訂單
+└── knowledge/tenants/chicken/       # KB（01_product.md 等）
+```
+
+### 5.2 配置文件
 | 用途 | 路徑 |
 |------|------|
-| 菜單 | `knowledge/tenants/chicken/01_product.md` |
-| 訂單流程 | `knowledge/tenants/chicken/02_order_flow.md` |
-| 付款方式 | `knowledge/tenants/chicken/03_payment.md` |
-| 配送規則 | `knowledge/tenants/chicken/04_delivery.md` |
-| 優惠活動 | `knowledge/tenants/chicken/05_promotion.md` |
-| FAQ | `knowledge/tenants/chicken/06_faq.md` |
-| 轉真人規則 | `knowledge/tenants/chicken/07_transfer_rules.md` |
-| 客戶標籤 | `knowledge/tenants/chicken/10_customer_tags.md` |
 | 主設定 | `config/tenants/chicken.yaml` |
-| 純人設 prompt | `docs/production-prompt/2026-08-04/main_idea.md` |
-| Secrets | `/home/clawuser/.config/chicken/secrets/` |
-| Dashboard | `http://localhost:3001`（外網 `dashboard.brt1122.com`） |
-| Cloudflare Worker | `~/openclaw-workspace/external-user/cloudflare-worker/` |
-| Chicken Repo | `~/openclaw-workspace/others/chicken-group-buying-customer-service/` |
+| 知識庫 | `knowledge/tenants/chicken/01_product.md` |
+| L3 Prompt | `docs/production-prompt/2026-08-04/{AGENTS,SOUL,main_idea}.md` |
+| Sheets 對應 | `spreadsheet_id: 12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA` |
+| 銀行帳號 | 007-23257030422（第一銀行） |
+
+### 5.3 Secret 檔（不要動）
+| 用途 | 路徑 |
+|------|------|
+| Gmail OAuth token | `/home/clawuser/.config/chicken/secrets/gmail-token.json` |
+| Gmail OAuth credentials | `/home/clawuser/.config/chicken/secrets/gmail-credentials.json` |
+| Google Sheets service account | `/home/clawuser/.config/chicken/secrets/google-service-account.json` |
+| **API Token（Dashboard X-API-Token 用）** | `/home/clawuser/.config/chicken/secrets/api-token` |
+| Dashboard HTTP Basic Auth 密碼 | `/home/clawuser/.config/chicken/secrets/dashboard-pwd` |
+| LINE Bot token | `/home/clawuser/.config/chicken/secrets/line-bot-token` |
 
 ---
 
-_本檔由 brtclaw 自動產生（Round 37.10 Hubert 21:55 大翻修）_
-_下次更新：當系統架構變更時_
+## 6. 日常檢查 SOP（每日 1 次，5 分鐘）
+
+```bash
+# 1. Dashboard 健康
+curl -s http://localhost:3000/healthz | head -5
+
+# 2. 最近 5 筆訂單
+ls -lt data/orders/chicken/ | head -7
+
+# 3. Sheets 同步狀態（事件驅動通常自動，這裡只是 sanity check）
+curl -s 'https://docs.google.com/spreadsheets/d/12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA/export?format=csv&gid=0' 2>&1 | head -5
+
+# 4. Cloudflare Worker 健康
+curl -s -o /dev/null -w "%{http_code}" https://external-user-line-security.kaden1122123.workers.dev
+# 預期：200
+
+# 5. OpenClaw Gateway 健康
+curl -s https://openclaw.brt1122.com/healthz 2>&1 | head -5
+```
+
+---
+
+_本檔由 Round 37.20（2026-08-05 13:12）大更新_
+_下次操作 SOP 變更必同步更新 §2-§5_

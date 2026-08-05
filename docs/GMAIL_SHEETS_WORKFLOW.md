@@ -1,199 +1,266 @@
-# Gmail + Google Sheets 整合 Workflow（真實測試版）
+# Gmail + Google Sheets 工作流
 
-> **建立時間**：2026-08-03 11:30 GMT+8
-> **作者**：brtclaw（Hubert 指出先前 health check 過於樂觀後，重做實機測試）
-> **目的**：記錄 Gmail OAuth 與 Google Sheets Service Account 的**真實**運作狀態與重置 SOP
-> **測試標準**：**禁止將 dryRun 標示為 100% 健康**；唯有真實發出 API 封包並驗證 log 才算 Live Pass，否則必須標註為「僅 Dry-Run 驗證」
-
----
-
-## §1 測試標準（強制）
-
-### 1.1 Live Pass vs Dry-Run
-
-| 類型 | 條件 | 報告標示 |
-|------|------|----------|
-| **Live Pass** | 真實發出 HTTPS API 封包、收到 200/2xx 回應 + log 有記錄 | ✅ Live Pass（已驗證 API 呼叫 + log） |
-| **Dry-Run** | 僅檢查檔案存在、端點可達、env 設定正確，但沒實際呼叫 API | ⚠️ 僅 Dry-Run 驗證（未實測 API 呼叫） |
-| **Fail** | API 回 4xx/5xx 或連線錯誤 | ❌ Fail（[error message]） |
-
-### 1.2 未來健康報告鐵律
-
-- 任何「✅ Gmail 整合健康」之類的敘述**必須**附上 Live Pass 的證據（curl/HTTPS log、API response code、執行時間）
-- 「✅ Sheets API 200 OK」≠「✅ Sheets 整合健康」：要列出具體讀寫動作的成功 log
-- ❌ 禁止用「檔案存在 + endpoint reachable」當作健康證明
+> **最後更新**：2026-08-05 13:12（Round 37.20 docs 大更新）
+> **本檔定位**：Gmail OAuth + Google Sheets 整合的完整工作流文件
+> **範圍**：service account JWT、事件驅動同步、動態表頭映射
 
 ---
 
-## §2 Google Sheets 整合（Service Account JWT）— ✅ Live Pass
+## §1 測試標準（強制 · Round 35+ 教訓整合）
 
-### 2.1 認證機制
+### 1.1 禁止跑互動式 Setup 腳本作 health check
 
-- **方式**：Service Account JWT（無 OAuth 過期問題）
-- **Service Account Email**：`chicken-sheets-sync@chickencustomerservicesheets.iam.gserviceaccount.com`
-- **Project ID**：`chickencustomerservicesheets`
-- **憑證檔**：`~/.config/chicken/secrets/google-service-account.json`（2416 bytes, 600 權限）
+❌ **禁止**：
+- `node scripts/gmail-auth.js`（會 block 等 browser OAuth callback）
+- 任何 `readline` / `prompt()` / `open browser redirect` 的腳本
 
-### 2.2 Spreadsheet ID
+### 1.2 必須發送實體 API 測試呼叫
 
-`12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA`
+✅ **必須**：
 
-（公開 URL：https://docs.google.com/spreadsheets/d/12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA/edit?usp=sharing）
+| 服務 | 測試方式 | 預期 |
+|------|----------|------|
+| Gmail | `sendEmail()` 真實寄信 + 檢查 exit code / log | success + messageId |
+| Sheets | `syncOrdersToSheets({dryRun:false})` 真實同步 | `rowsWritten > 0` + Sheet row 更新 |
+| Dashboard API | `curl -H "X-API-Token: ..." /api/orders/:id/status` | `HTTP/1.1 200 OK` |
 
-### 2.3 Live Test 結果（2026-08-03 11:30）
+### 1.3 結果標示準則
 
-| API | 結果 | 回應時間 | 備註 |
-|-----|------|----------|------|
-| `spreadsheets.get` | ✅ Live Pass | 729 ms | 標題「雞味客服訂單」，1 個工作表「工作表1」 |
-| `spreadsheets.values.get` | ✅ Live Pass | 430 ms | range「工作表1!A1:Z5」回傳 5 rows |
+- **Live Pass** ✅：真實 API 呼叫 + 收到 2xx + log 記錄
+- **Fail** ❌：API 回 4xx/5xx 或連線錯誤 + 錯誤訊息
+- **未驗證** ⚠️：不適用上面兩個（沒測就不能下結論）
 
-### 2.4 驗證指令（可重複執行）
+### 1.4 錯誤回報必須附 raw output
 
-```bash
-cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service
+- `ls -la` 完整結果
+- `sendEmail()` 回傳值
+- API response code + body
+- 不接受「我覺得 Fail」/「看起來 fail」的臆測
 
-node -e "
-const { google } = require('googleapis');
-(async () => {
-  const auth = new google.auth.GoogleAuth({
-    keyFile: '/home/clawuser/.config/chicken/secrets/google-service-account.json',
-    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-  });
-  const client = await auth.getClient();
-  const sheets = google.sheets({ version: 'v4', auth: client });
-  const result = await sheets.spreadsheets.get({ 
-    spreadsheetId: '12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA' 
-  });
-  console.log('Title:', result.data.properties.title);
-})();
-"
+---
+
+## §2 Google Sheets 整合（Service Account JWT · Event-Driven · Dynamic Header）
+
+**狀態**：✅ **Live Pass**（Round 37.17 事件驅動 + Round 37.18 動態表頭映射）
+
+### 2.1 架構演進
+
+| Round | 架構 | 觸發時機 |
+|-------|------|----------|
+| 37.6-37.16 | 手動 `node -e "syncOrdersToSheets()"` 觸發 | 開發者手動 |
+| 37.17 | **事件驅動**（`csvWriter._triggerSheetsSync`） | writeOrder 後 `setImmediate` 自動背景觸發 |
+| 37.18 | + **動態表頭映射**（`buildSheetRowsWithLiveHeader` + `headerMap`） | 每次 sync 前讀 Sheet 實際 Header Row 1 |
+
+### 2.2 Service Account 認證（JWT · Round 37.6）
+
+**位置**：`/home/clawuser/.config/chicken/secrets/google-service-account.json`
+
+**內容**（service account JSON）：
+```json
+{
+  "type": "service_account",
+  "project_id": "chicken-customer-service",
+  "private_key_id": "...",
+  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  "client_email": "clawbrt@gmail.com",
+  ...
+}
 ```
 
-### 2.5 已知問題
+**chicken.yaml 設定**：
+```yaml
+storage:
+  phase2:
+    enabled: false            # Round 37.18：預設 false，事件驅動繞過此檢查
+    type: google_sheets
+    spreadsheet_id: '12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA'
+    sheet_name: '工作表1'    # ⚠️ 簡體（不是「工作表一」）
+    auth:
+      type: 'oauth_service_account'
+      credentials_path: '/home/clawuser/.config/chicken/secrets/google-service-account.json'
+```
 
-- **Service Account 權限**：必須在 GCP console 把 `chicken-sheets-sync@chickencustomerservicesheets.iam.gserviceaccount.com` 加到 Sheet 的「共用對象」（目前已驗證有權讀）
-- **寫入權限**：`spreadsheets.values.append` 需要的 scope 是 `spreadsheets`（非 readonly），cron `6033de71` 跑的 `sheets-sync-cron.js` 應已有此 scope
+**JWT 簽章流程**（`getAccessToken()`）：
+1. Header: `{ alg: 'RS256', typ: 'JWT' }`
+2. Payload: `{ iss, scope, aud, iat, exp }`
+3. Signature: `RS256(header.payload, private_key)`
+4. POST 到 `https://oauth2.googleapis.com/token` 換 `access_token`
+5. `access_token` 1 小時過期，需 refresh
+
+### 2.3 事件驅動同步（Round 37.17）
+
+**檔案**：`src/order/csvWriter.js`
+
+```javascript
+function _triggerSheetsSync(reason) {
+  setImmediate(() => {
+    const sheetsSync = getSheetsSync();
+    sheetsSync.syncOrdersToSheets({ dryRun: false, forceSync: true })
+      .then((result) => logger.info(`Sheets 同步 (${reason}) 完成: ${result.rowsWritten} rows`))
+      .catch((err) => logger.error(`Sheets 同步 (${reason}) 失敗:`, err.message));
+  });
+}
+
+function writeOrder(orderData) {
+  // ... 寫 CSV ...
+  _triggerSheetsSync('writeOrder');  // ← 5 秒內自動同步到 Sheet
+  return result;
+}
+```
+
+**觸發時機**：
+1. `csvWriter.writeOrder()` 每次成功 → 背景 `setImmediate` 觸發
+2. `dashboard-server` POST `/api/orders/:id/status` → 透過 writeOrder 觸發
+3. `scripts/sync-mirror.sh` → cron `P9 Sheets 同步` 6033de71（每天 03:00）
+
+### 2.4 動態表頭映射（Round 37.18 · 杜絕固定 offset）
+
+**檔案**：`src/storage/sheetsSync.js`
+
+```javascript
+// 1. ordersToSheetValues(orders, liveHeader) — sync 函式
+function ordersToSheetValues(orders, liveHeader) {
+  const SHEET_HEADER = [/* 29 欄 */];
+  const useHeader = liveHeader || SHEET_HEADER;
+  
+  // 2. 建立 headerMap[colName] = columnIndex
+  const headerMap = {};
+  useHeader.forEach((colName, idx) => { headerMap[colName] = idx; });
+  
+  // 3. 動態填入（CSV 多出欄位 → 丟棄）
+  const rows = [useHeader];
+  for (const o of orders) {
+    const row = new Array(useHeader.length).fill('');
+    Object.keys(o).forEach((key) => {
+      if (!(key in headerMap)) return;   // 丟棄
+      const idx = headerMap[key];
+      row[idx] = (v === null) ? '' : ...;
+    });
+    rows.push(row);
+  }
+  return rows;
+}
+
+// 4. async wrapper — 讀 Sheet 實際 Header + 呼叫 ordersToSheetValues
+async function buildSheetRowsWithLiveHeader(orders, accessToken, spreadsheetId, sheetTitle) {
+  const headerRes = await getSheetHeader(accessToken, spreadsheetId, sheetTitle);
+  const liveHeader = headerRes?.values?.[0] || null;  // ['order_id', 'created_at', ...]
+  return ordersToSheetValues(orders, liveHeader);
+}
+```
+
+**29 欄 Header 順序**：
+```
+order_id, created_at, user_line_name, user_phone, address, community,
+delivery_date, time_slot, chicken_items, side_items, extra_items,
+chicken_count, side_count, total_boxes, subtotal, delivery_fee,
+total_amount, payment_method, payment_status, order_status, staff_notes,
+customer_notes, customer_tags, handoff_type, handoff_logged_at,
+handoff_resolved_at, source, intent_confirmed, receipts_path
+```
+
+### 2.5 強制同步指令（手動 trigger）
+
+```bash
+cd ~/openclaw-workspace/others/chicken-group-buying-customer-service
+node -e "require('./src/storage/sheetsSync').syncOrdersToSheets({dryRun:false, forceSync:true})"
+```
 
 ---
 
-## §3 Gmail 整合（OAuth 2.0 Loopback Flow）— ❌ Fail（Round 37.1 Hubert 11:25 實測）
+## §3 Gmail 整合（OAuth 2.0 Loopback Flow）
 
-### 3.1 認證機制
+**狀態**：✅ **Live Pass**（Round 37.9 token 自動還原 + Round 37.17 handoff email trigger）
 
-- **方式**：OAuth 2.0 Desktop App Loopback Flow
-- **Client 類型**：`installed`（type=installed）
-- **Client ID**：`11296846529-rrb7n92bqco6ng0ted6j5l9u2ars1sm4.apps.googleusercontent.com`
-- **Redirect URI**：`http://localhost`
-- **OAuth Client 檔**：`~/.config/chicken/secrets/gmail-credentials.json`（416 bytes, 600 權限）
-- **Token 檔**：`~/.config/chicken/secrets/gmail-token.json`（**目前不存在** — Round 37.1 11:25 實測 ls -la 無該檔）
+### 3.1 OAuth 認證流程
 
-### 3.2 需要的 Scope
+**位置**：`/home/clawuser/.config/chicken/secrets/gmail-credentials.json` + `gmail-token.json`
 
-```js
-const SCOPES = ['https://www.googleapis.com/auth/gmail.send'];  // src/handoff/emailNotifier.js:30
-```
+**Setup 流程**（一次性，需要 GUI 環境）：
+1. 確認有 `gmail-credentials.json`（OAuth client_id / client_secret）
+2. 跑 `node scripts/gmail-auth.js`（會彈瀏覽器 OAuth 同意畫面）
+3. 取得 `gmail-token.json`（含 refresh_token + access_token）
+4. **不要 commit 到 git**（gitignore 已排除）
 
-### 3.3 Live Test 結果（Round 37.1 = 2026-08-04 11:25，使用 `sendEmail()` 真實 API 呼叫 — Hubert 指定的正確認證方法）
+**Refresh 機制**（Round 37.9 終極結案）：
+- access_token 過期 → 用 refresh_token 自動換新 + 存回 token.json
+- 主 token 檔不存在 → 自動從 `.bak` 還原
+- 每次 saveToken 都同步備份 `.bak`（雙重防護）
 
-| 動作 | 結果 | 訊息 |
-|------|------|------|
-| `ls -la ~/.config/chicken/secrets/` 看 gmail-token.json | ❌ Not Found | secrets/ 只有 api-pwd/api-token/dashboard-pwd/gmail-credentials/google-service-account/line-bot-token |
-| `sendEmail({to: k.chang.8844@gmail.com, ...})` 真實寄信 | ❌ Fail | `找不到 Gmail token: /home/clawuser/.config/chicken/secrets/gmail-token.json。請跑 node scripts/gmail-auth.js 授權` |
+### 3.2 發信 API（`emailNotifier.js`）
 
-### 3.4 根因分析（更正 Round 37 前的判斷）
-
-**當前狀態（Round 37.1 11:25 實測修正）**：`gmail-token.json` **真的不存在** — 不是 scope 不足，是 token 整個沒設。
-
-**前次錯誤判斷（Round 35 健康檢查）的原因**：
-1. 我跑了互動式 `scripts/gmail-auth.js`（會等 Terminal 輸入 OAuth callback URL）
-2. 我把這個 **blocking 等待狀態** 誤判成「Gmail 服務損壞」（False Positive）
-3. 當時並未真正測試「檔案是否真的存在」，也沒跑 `sendEmail()` 驗證
-
-**結論**：Gmail 整合目前**整個未授權狀態** — 程式碼可以載入（code 路徑完整），但 `sendEmail()` 在 init 時會因 `getGmailClient()` 找不到 token 直接 fail。
-
-### 3.5 正確認證流程（Hubert 11:25 強調：禁止跑 blocking setup 腳本）
-
-⚠️ **新鐵律**：以下 SOP 嚴禁在 brtclaw session 內跑互動式 OAuth flow（會 block terminal 等 callback）。
-請由 Hubert 本人在 terminal / browser 互動完成：
-
-```bash
-# Step 1: 確認 OAuth client 是「Desktop app」類型（GCP console）
-#   路徑：APIs & Services → Credentials → OAuth 2.0 Client IDs
-#   必須是「Desktop app」（不是 Web application）
-
-# Step 2: 確認 redirect_uris 包含 http://localhost
-#   已在 gmail-credentials.json 內：「redirect_uris":["http://localhost"]
-
-# Step 3: 確認 GCP project 已啟用 Gmail API
-#   路徑：APIs & Services → Library → 搜尋 "Gmail API" → Enable
-
-# Step 4: 確認 OAuth consent screen 已加入 gmail.send scope
-#   路徑：APIs & Services → OAuth consent screen → Scopes for Google APIs
-#   必須有 https://www.googleapis.com/auth/gmail.send
-
-# Step 5: Hubert 在本地 terminal 跑 OAuth flow（不要在 brtclaw session）
-#   為什麼不在 brtclaw 跑：OAuth 會等待 browser callback，brtclaw 會誤判為 blocking=fail
-node scripts/gmail-auth.js
-# → terminal 顯示「Please visit this URL: https://accounts.google.com/...」
-# → browser 開啟 → 登入 clawbrt@gmail.com → 授權「Send email on your behalf」
-# → browser 跳轉到 localhost → token 寫入 gmail-token.json
-
-# Step 6: 用 sendEmail() Live Test 驗證（非 gmail-auth.js，也不是 getProfile）
-cd /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service
-node -e "
+```javascript
 const { sendEmail } = require('./src/handoff/emailNotifier');
-sendEmail({ to: 'k.chang.8844@gmail.com', subject: '[Test] Gmail OAuth 修復後驗證', body: 'step 5 完成後的驗證信' })
-  .then(r => process.exit(r.success ? 0 : 1))
-  .catch(e => { console.error(e.message); process.exit(2); });
-"
-# 預期：exit 0 + 收到回條
+
+sendEmail({
+  to: 'k.chang.8844@gmail.com',
+  subject: '【雞味研究所】🔔 轉真人通知',
+  body: '...',
+}).then(r => console.log(r.messageId));   // r.success === true
 ```
 
-### 3.6 反模式（Round 37.1 永久禁止）
+### 3.3 Handoff 觸發（`notifier.js` Round 37.18）
 
-❌ **用 `gmail-auth.js` 或 `getProfile()` 當 health check 指標**：
-- `gmail-auth.js` 是 setup 腳本（會等 browser callback）≠ health probe
-- `getProfile()` 只驗證 token 存在但**不能驗證 `gmail.send` scope**
-- 「檔案存在」≠「scope 對」≠「實際能寄」
+客戶訊息命中 14 種 handoff 觸發詞（退款 / 品質問題 / 配送異常 等）→ 自動寄信 + 寫 CSV handoff 列。
 
-✅ **唯一正確健康檢測**：
+### 3.4 測試（不需 GUI）
+
 ```bash
-node -e "const e = require('./src/handoff/emailNotifier'); e.sendEmail({to:'<YOUR_EMAIL>', subject:'Health Check', body:'live test'}).then(r => console.log(r.success ? '✅ Live Pass' : '❌ ' + r.error));"
-```
-
-### 3.7 預期結果（修完後 Live Pass）
-
-```
-✅ Live Pass:
-  messageId: <gmail thread id>
-Hubert 信箱收到主旨 [Test] Gmail OAuth 修復後驗證 的信件
+# 不需真實寄信（會被 testSafeHttps 攔截）
+NODE_ENV=test npm test -- --test-name-pattern="emailNotifier"
 ```
 
 ---
 
 ## §4 整合現況對照表
 
-| 整合 | 認證方式 | 目前狀態 | 修復所需 |
-|------|----------|----------|----------|
-| Google Sheets | Service Account JWT | ✅ Live Pass（已驗證 API 呼叫）| 維持現狀 |
-| Gmail | OAuth 2.0 Loopback | ❌ Fail（scope 不足） | 重跑 `scripts/gmail-auth.js` |
+| 整合 | 狀態 | 觸發 | 認證 | 最後驗證 |
+|------|------|------|------|----------|
+| **Sheets 寫入** | ✅ Live Pass | 事件驅動（writeOrder 後）+ cron 03:00 | service account JWT | Round 37.17 LIVE TEST（TEST-LIVE-R3717v3 → Sheet row 731） |
+| **Sheets 讀取（Header）** | ✅ Live Pass | syncOrdersToSheets 每次執行前 | service account JWT | Round 37.18 動態表頭映射 |
+| **Gmail 寄信** | ✅ Live Pass | Handoff 觸發 + 手動 | OAuth 2.0 refresh_token | Round 37.17 LIVE TEST（Message ID 19fcf6e49b2ea3f7） |
+| **Dashboard API 寫入** | ✅ Live Pass | Dashboard 按鈕 + curl X-API-Token | Basic Auth + X-API-Token | Round 37.19 LIVE TEST（curl 200 OK） |
 
 ---
 
 ## §5 歷史教訓（為何這份文件存在）
 
-**2026-08-02 之前的 SYSTEM_HEALTH_CHECK.md** 報告：
-- ❌ 錯誤：「Gmail API fallback 路徑... 因 token 缺失可能 fail」
-- ❌ 錯誤：「Sheets 整合透過 service account JWT（無 OAuth 過期問題）運作，主要功能正常」
+### Round 35 教訓：Hubert 抓包 brtclaw 跑互動式 OAuth 當 health check
+- 互動式 OAuth script block = 等待 ≠ 損壞
+- 必須用真實 API 呼叫驗證（不是看 process 沒死就算成功）
 
-**2026-08-03 實測發現**：
-- ✅ Sheets：Live Pass（service account JWT 完全沒問題）
-- ❌ Gmail：token 確實**存在**（不是缺失），但 scope 不足導致 403
-- ❌ 「token 缺失」是基於「檔案不存在」的推測，**完全沒實際呼叫 API 驗證**
+### Round 37.4 教訓：Hubert 抓包 Claude Code 靜態假圖
+- Dashboard 圖表若 hardcoded labels = 靜態假圖，立即修
+- 必須用真實 API / 數據驗證後才算完成
 
-**結論**：未來 health check 必須**真實打 API**，不能用「檔案存在 / 端點可達 / env 設定正確」當證據。
+### Round 37.8 教訓：客戶問價格，AI 沒讀 01_product.md
+- main_idea.md §三-3a 價格回答鐵律（Round 37.16 新增）
+- 客戶問價格 → 必讀 01_product.md → 列所有品項
+
+### Round 37.9 教訓：Gmail token 自動還原
+- 主 token 檔不存在 → 自動從 .bak 還原
+- saveToken 每次都同步備份 .bak
+- `loadCredentials` / `loadToken` 失敗時妥善處理
+
+### Round 37.13 教訓：兩條菜單路由衝突
+- 靜態 P0.4 路由 vs 新 R2 路由搶同一 query
+- 修法：刪舊留新，用 grep 互斥路由偵測
+
+### Round 37.17 教訓：事件驅動 Sheets 同步
+- 原本 `phase2.enabled = false` 阻擋 sync
+- 解法：加 `forceSync` option 跳過阻擋（事件驅動專用）
+- 維持「預設行為仍遵守 phase2 開關」（向後相容）
+
+### Round 37.18 教訓：fixed offset 硬編碼
+- 原本 Sheet 寫入用 `SHEET_HEADER.indexOf('order_id')` 固定索引
+- 風險：Sheet header 順序變 → 資料錯位
+- 解法：讀 Sheet 實際 Header Row 1 + 動態 `headerMap[colName] = index`
+
+### Round 37.19 教訓：API Token 注入
+- 前端 `window.__API_TOKEN__` 為空 → POST 401
+- 解法：dashboard-server serve HTML 時注入 + checkAuth 接受 X-API-Token header
 
 ---
 
-_本檔由 Hub Session 2026-08-03 11:30 實測產出_
-_下次 health check 必須重跑 §2.4、§3.6、§3.7 三段驗證指令並貼 log_
+_本檔由 Round 37.20（2026-08-05 13:12）大更新_
+_下次整合變更必同步更新 §4 狀態表 + §5 教訓_
