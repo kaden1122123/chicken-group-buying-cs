@@ -121,7 +121,8 @@ function getApiToken() {
  */
 
 // Round 37.10 (Hubert 21:55)：預設查詢日期 = 今日，若無訂單降級最新有訂單的日期
-function getDefaultDate() {
+// Round 37.21 (Hubert 14:18) lint 修整：加底線前綴允許 unused（保留給未來 /admin UI 日期選擇器使用）
+function _getDefaultDate() {
   const today = new Date().toISOString().slice(0, 10);
   const tenantDir = path.join(__dirname, '..', 'data', 'orders', getTenantId());
   if (!fs.existsSync(tenantDir)) return today;
@@ -557,7 +558,7 @@ const server = http.createServer(async (req, res) => {
     }
     const injectedHtml = html.replace(
       '</head>',
-      '<script>window.__API_TOKEN__ = ' + JSON.stringify(apiToken) + ';</script></head>'
+      '<script>window.__API_TOKEN__ = ' + JSON.stringify(apiToken) + ';</script></head>',
     );
     sendHtml(res, 200, injectedHtml);
     return;

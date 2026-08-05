@@ -76,7 +76,15 @@
       <canvas id="statusChart"></canvas>
     </div>
     <div class="chart-box">
-      <h3>熱門品項（Top 10）</h3>
+      <h3>熱門品項（Top 10）
+        <span style="font-size:12px;font-weight:400;color:#666">
+          ｜
+          <label for="top-items-date-filter" style="cursor:pointer">日期：</label>
+          <input type="date" id="top-items-date-filter" style="font-size:12px;padding:2px 4px;border:1px solid #ccc;border-radius:4px" />
+          <button id="top-items-clear-btn" type="button" style="font-size:11px;padding:2px 8px;background:#eee;color:#333;border:1px solid #ccc;border-radius:4px;cursor:pointer">全時期</button>
+          <span id="top-items-fallback-indicator" style="display:none;font-size:11px;color:#c62828;margin-left:8px">⚠ 選定日 0 訂單 → 已降級全時期</span>
+        </span>
+      </h3>
       <canvas id="itemChart"></canvas>
     </div>
   </div>
@@ -149,6 +157,31 @@
       return { labels: sorted.map(function(e){ return e[0]; }), data: sorted.map(function(e){ return e[1]; }) };
     }
 
+    // ===== Round 37.21 (Hubert 14:18) Top 10 全時期降級 =====
+    // 模組層級 cache all-time orders（避免每次 filter 重新 fetch）
+    var _allTimeOrdersCache = [];
+    var _selectedTopItemsDate = null;  // null = 不篩選（全時期）
+
+    function getSelectedTopItemsOrders() {
+      if (!_selectedTopItemsDate) return _allTimeOrdersCache;
+      var prefix = _selectedTopItemsDate;  // YYYY-MM-DD
+      return _allTimeOrdersCache.filter(function(o) {
+        var d = (o.delivery_date || o.created_at || '').substring(0, 10);
+        return d === prefix;
+      });
+    }
+
+    function updateTopItemsFallbackIndicator(filteredCount, fellBack) {
+      var el = document.getElementById('top-items-fallback-indicator');
+      if (!el) return;
+      if (fellBack) {
+        el.style.display = 'inline';
+        el.textContent = '⚠ 選定日 ' + _selectedTopItemsDate + ' 0 訂單 → 已降級全時期（' + _allTimeOrdersCache.length + ' 筆歷史）';
+      } else {
+        el.style.display = 'none';
+      }
+    }
+
     function renderCharts(orders) {
       // 1. dateChart — 最近 7 天每日訂單數
       var daily = calcDailyCounts(orders);
@@ -175,53 +208,80 @@
         options: { plugins: { legend: { position: 'right' } } },
       });
 
-      // 3. itemChart — Top 10 品項
-      var top = calcTopItems(orders, 10);
-      if (itemChartInstance) itemChartInstance.destroy();
-      itemChartInstance = new Chart(document.getElementById('itemChart'), {
-        type: 'bar',
-        data: {
-          labels: top.labels.length > 0 ? top.labels : ['（無資料）'],
-          datasets: [{ label: '銷售總數量', data: top.data.length > 0 ? top.data : [0], backgroundColor: '#2196f3' }],
-        },
-        options: {
-          indexAxis: 'y',
-          plugins: { legend: { display: false } },
-          // ===== Round 37.19 (Hubert 12:50) Top 10 圖表軸修復 =====
-          scales: {
-            // Y 軸（類別軸）：顯示商品名稱
-            y: {
-              ticks: {
-                font: { size: 13 },
-                autoSkip: false,
-              },
-              grid: { display: false },
-            },
-            // X 軸（線性軸）：顯示銷量盒數（整數刻度，無小數點）
-            x: {
-              type: 'linear',
-              beginAtZero: true,
-              ticks: {
-                stepSize: 1,
-                precision: 0,
-                callback: function(value) { return Math.round(value); },
-              },
-              title: { display: true, text: '銷售總數量（盒）' },
-            },
-          },
-        },
-      });
+      // 3. itemChart — Top 10 品項（Round 37.21 拆出 renderTopItemsOnly，含日期篩選 + 0 訂單降級）
+      renderTopItemsOnly();
     }
 
     async function loadAllOrdersAndRenderCharts() {
       try {
         var r = await fetch('/api/recent-orders?limit=1000', { cache: 'no-store' });
         var data = await r.json();
-        renderCharts(data.orders || []);
+        _allTimeOrdersCache = data.orders || [];
+        renderCharts(_allTimeOrdersCache);
       } catch (err) {
         console.error('[Dashboard] 圖表載入失敗:', err);
       }
     }
+
+    // Top 10 圖表重渲染（套用日期篩選 + 0 訂單降級）
+    function renderTopItemsOnly() {
+      var orders;
+      var fellBack = false;
+      if (_selectedTopItemsDate) {
+        var filtered = getSelectedTopItemsOrders();
+        if (filtered.length === 0) {
+          // 0 訂單 → 降級全時期（all-time fallback）
+          orders = _allTimeOrdersCache;
+          fellBack = true;
+        } else {
+          orders = filtered;
+        }
+      } else {
+        orders = _allTimeOrdersCache;
+      }
+      var top = calcTopItems(orders, 10);
+      if (itemChartInstance) itemChartInstance.destroy();
+      itemChartInstance = new Chart(document.getElementById('itemChart'), {
+        type: 'bar',
+        data: {
+          labels: top.labels.length > 0 ? top.labels : ['（無資料）'],
+          datasets: [{ label: '銷售總數量', data: top.data.length > 0 ? top.data : [0], backgroundColor: fellBack ? '#9e9e9e' : '#2196f3' }],
+        },
+        options: {
+          indexAxis: 'y',
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { ticks: { font: { size: 13 }, autoSkip: false }, grid: { display: false } },
+            x: {
+              type: 'linear',
+              beginAtZero: true,
+              ticks: { stepSize: 1, precision: 0, callback: function(value) { return Math.round(value); } },
+              title: { display: true, text: '銷售總數量（盒）' },
+            },
+          },
+        },
+      });
+      updateTopItemsFallbackIndicator(orders.length, fellBack);
+    }
+
+    // 日期篩選器事件
+    document.addEventListener('DOMContentLoaded', function() {
+      var dateInput = document.getElementById('top-items-date-filter');
+      var clearBtn = document.getElementById('top-items-clear-btn');
+      if (dateInput) {
+        dateInput.addEventListener('change', function(e) {
+          _selectedTopItemsDate = e.target.value || null;
+          renderTopItemsOnly();
+        });
+      }
+      if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+          _selectedTopItemsDate = null;
+          if (dateInput) dateInput.value = '';
+          renderTopItemsOnly();
+        });
+      }
+    });
 
     // 初始化時立即載入圖表
     document.addEventListener('DOMContentLoaded', loadAllOrdersAndRenderCharts);

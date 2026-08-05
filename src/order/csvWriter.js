@@ -164,7 +164,7 @@ function writeOrder(orderData) {
   // - 事件驅動 hook（在 appendOrder / updateOrder 後觸發）
   // 因此 phase2 flag 在 csvWriter 內不再 throw（會破壞 concurrency test），
   // 改為 isFeatureEnabled 偵測 + info log。
-  // 
+  //
   // 歷史：D4-7 原本是 stub 設計，若 enabled = true 直接 throw
   //   'storage.phase2.enabled 尚未實作（Phase 2 = Google Sheets 寫入）。' +
   //   'storage.phase2.enabled 應設為 false，待 Phase 2 完整實作後再啟用。'
@@ -177,7 +177,7 @@ function writeOrder(orderData) {
     if (process.env.NODE_ENV !== 'test') {
       throw new Error(
         'storage.phase2.enabled 尚未實作（Phase 2 = Google Sheets 寫入）。' +
-        'storage.phase2.enabled 應設為 false，待 Phase 2 完整實作後再啟用。'
+        'storage.phase2.enabled 應設為 false，待 Phase 2 完整實作後再啟用。',
       );
     }
     logger.info('[csvWriter] Phase 2 Sheets sync 已啟用，將透過 _triggerSheetsSync 背景同步');
@@ -273,11 +273,10 @@ function writeOrderWithRetry(orderData, options = {}) {
           maxRetries,
         });
       }
+      // Round 37.17：背景觸發 Sheets 同步（在 return 前執行）
+      _triggerSheetsSync('writeOrder');
       return result;
-  // Round 37.17：背景觸發 Sheets 同步
-  _triggerSheetsSync('writeOrder');
-  return result;
-} catch (e) {
+    } catch (e) {
       lastError = e;
       logger.warn('[csvWriter] writeOrder attempt failed', {
         attempt,
@@ -405,7 +404,7 @@ function _triggerSheetsSync(reason) {
   setImmediate(() => {
     const sheetsSync = getSheetsSync();
     if (!sheetsSync) return;
-    sheetsSync.syncOrdersToSheets({ dryRun: false, forceSync: true })  // Round 37.17：事件驅動，強制同步
+    sheetsSync.syncOrdersToSheets({ dryRun: false, forceSync: true }) // Round 37.17：事件驅動，強制同步
       .then((result) => {
         logger.info('[csvWriter] Sheets 背景同步 (' + reason + ') 完成: ' + (result.rowsWritten || 0) + ' rows');
       })

@@ -29,7 +29,8 @@ const SHEETS_APPEND_PATH = '/v4/spreadsheets';
  * 讀取 storage config（從 src/config.js 的 getStorageConfig）
  * 為避免循環依賴，這裡用 lazy require
  */
-async function getStorageConfig() {
+// Round 37.21 (Hubert 14:18) lint 修整：加底線前綴允許 unused（保留給未來 sheetsSync 重構時用）
+async function _getStorageConfigLazy() {
   const { getStorageConfig } = require('../config');
   return getStorageConfig();
 }
@@ -110,14 +111,14 @@ function getAccessToken(credentials) {
     const payloadB64 = base64url(JSON.stringify(payload));
     const signatureInput = `${headerB64}.${payloadB64}`;
 
- // 用 RSA-SHA256 簽名
+    // 用 RSA-SHA256 簽名
     const signer = crypto.createSign('RSA-SHA256');
     signer.update(signatureInput);
     const signature = signer.sign(credentials.private_key);
     const signatureB64 = base64url(signature);
     const jwt = `${signatureInput}.${signatureB64}`;
 
- // POST to oauth2.googleapis.com/token
+    // POST to oauth2.googleapis.com/token
     const postData = `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`;
     const body = Buffer.from(postData);
 
@@ -237,7 +238,7 @@ function ordersToSheetValues(orders, liveHeader) {
   for (const o of orders) {
     const row = new Array(useHeader.length).fill('');
     Object.keys(o).forEach((key) => {
-      if (!(key in headerMap)) return;  // CSV 多出的欄位（likely_paid 等）→ 丟棄
+      if (!(key in headerMap)) return; // CSV 多出的欄位（likely_paid 等）→ 丟棄
       const idx = headerMap[key];
       const v = o[key];
       if (v === null || v === undefined) row[idx] = '';
@@ -305,15 +306,15 @@ async function syncOrdersToSheets(options = {}) {
   const _errors = []; // unused 2026-07-25 Round 26 #2 lint cleanup（未來加錯誤處理時啟用）
 
   try {
- // 1. 讀 config（直接 require 取最新值，避免 LOCAL wrapper cache 問題）
+    // 1. 讀 config（直接 require 取最新值，避免 LOCAL wrapper cache 問題）
     const storage = require('../config').getStorageConfig();
     const phase2 = storage && storage.phase2;
     if (!phase2) {
       return { success: false, rowsWritten: 0, errors: ['storage.phase2 config 不存在'] };
     }
- // Round 37.17 (Hubert 11:47) 事件驅動架構：forceSync=true 時跳過 phase2.enabled 阻擋
- // 由 csvWriter._triggerSheetsSync('writeOrder') 觸發（每筆新訂單自動同步）
- // 預設行為（cron / 手動呼叫）仍遵守 phase2.enabled 開關（向後相容）
+    // Round 37.17 (Hubert 11:47) 事件驅動架構：forceSync=true 時跳過 phase2.enabled 阻擋
+    // 由 csvWriter._triggerSheetsSync('writeOrder') 觸發（每筆新訂單自動同步）
+    // 預設行為（cron / 手動呼叫）仍遵守 phase2.enabled 開關（向後相容）
     const forceSync = options && options.forceSync === true;
     if (!phase2.enabled && !forceSync) {
       return { success: false, rowsWritten: 0, errors: ['storage.phase2.enabled = false（待 OAuth setup）'] };
@@ -322,7 +323,7 @@ async function syncOrdersToSheets(options = {}) {
       logger.info('[sheetsSync] forceSync=true 跳過 phase2.enabled 阻擋（事件驅動模式）');
     }
 
- // 2. 讀 credentials
+    // 2. 讀 credentials
     const credsPath = phase2.auth && phase2.auth.credentials_path;
     if (!credsPath || !fs.existsSync(credsPath)) {
       return {
@@ -341,20 +342,17 @@ async function syncOrdersToSheets(options = {}) {
       };
     }
 
- // 3. 讀 orders（dryRun 也需要計算訂單數）
+    // 3. 讀 orders（dryRun 也需要計算訂單數）
     const orders = collectAllOrders();
     if (dryRun) {
       logger.info('[sheetsSync] Dry run - skip write', { ordersCount: orders.length });
       return { success: true, rowsWritten: 0, dryRun: true, ordersCount: orders.length, errors: [] };
     }
 
- // 4. 取得 access token（JWT signing）— 只在不是 dryRun 時打 HTTPS
+    // 4. 取得 access token（JWT signing）— 只在不是 dryRun 時打 HTTPS
     const accessToken = await getAccessToken(credentials);
 
- // 5. 用動態 header 構建 rows
-    const values = await buildSheetRowsWithLiveHeader(orders, accessToken, phase2.spreadsheet_id, sheetTitle);
-
- // 5. Auto-discover sheet name（避免 sheet_name 跟實際試算表名稱不符 + 中文需單引號問題）
+    // 5. Auto-discover sheet name FIRST（修 2026-08-05 bug: sheetTitle 在呼叫前 undefined）
     let actualSheetName = phase2.sheet_name;
     try {
       actualSheetName = await getFirstSheetName(accessToken, phase2.spreadsheet_id);
@@ -364,12 +362,15 @@ async function syncOrdersToSheets(options = {}) {
     }
     const sheetName = actualSheetName;
 
- // 6. 寫入 Sheets（先 clear 後寫，避免重複）
- // 中文 sheet name 用單引號包裝避免 range parse error
+    // 6. 用動態 header 構建 rows（用已 discover 的 sheetName）
+    const values = await buildSheetRowsWithLiveHeader(orders, accessToken, phase2.spreadsheet_id, sheetName);
+
+    // 6. 寫入 Sheets（先 clear 後寫，避免重複）
+    // 中文 sheet name 用單引號包裝避免 range parse error
     const quotedSheet = `'${sheetName}'`;
     const range = `${quotedSheet}!A1`; // append 從 A1 開始（Sheets 自動找尾）
 
- // Clear first
+    // Clear first
     await httpsPost(
       SHEETS_API_HOST,
       `${SHEETS_APPEND_PATH}/${encodeURIComponent(phase2.spreadsheet_id)}/values/${encodeURIComponent(`${sheetName}!A1:ZZ`)}:clear`,
@@ -380,7 +381,7 @@ async function syncOrdersToSheets(options = {}) {
       },
     );
 
- // Append new values
+    // Append new values
     const response = await httpsPost(
       SHEETS_API_HOST,
       `${SHEETS_APPEND_PATH}/${encodeURIComponent(phase2.spreadsheet_id)}/values/${encodeURIComponent(range)}:append?valueInputOption=RAW`,

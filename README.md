@@ -190,14 +190,14 @@ bash scripts/check-quality.sh
 | POST | `/api/orders/:orderId/approve` | Basic Auth | 核准訂單（P2 方案 B）|
 | POST | `/api/orders/:orderId/receipts` | Basic Auth | 上傳付款截圖（P4 街口支付）|
 
-詳細 curl 範例見 [`docs/API_CURL.md`](./docs/API_CURL.md)。
+詳細 curl 範例見 [`docs/NEW_SESSION_HANDBOOK.md`](./docs/NEW_SESSION_HANDBOOK.md) §5 Dashboard API 區段。
 
 ---
 
 ## 🏗 架構
 
-- 📖 [`docs/ENGINEERING_HANDBOOK.md`](./docs/ENGINEERING_HANDBOOK.md) — 工程慣例 + §6.6 三層位置架構
-- 🗺 [`docs/PROJECT_INVENTORY.md`](./docs/PROJECT_INVENTORY.md) — 完整系統目錄與檔案清單
+- 📖 [`docs/NEW_SESSION_HANDBOOK.md`](./docs/NEW_SESSION_HANDBOOK.md) — 接手手冊 + 三層位置架構 (§2)
+- 🗺 [`docs/OWNER_MANUAL.md`](./docs/OWNER_MANUAL.md) — 完整系統目錄與檔案清單 (§5)
 - 🔍 **`docs/.archive/SYSTEM_AUDIT_2026-07-19.md`**（已歸檔，內容已併入 NEW_SESSION_README.md） — 完整 audit 報告（2026-07-19 已歸檔）
 - 📚 [`docs/INDEX.md`](./docs/INDEX.md) — 文檔總索引
 - 🏛 [`docs/adr/`](./docs/adr/) — 5 個 Architecture Decision Records
@@ -250,10 +250,10 @@ OpenClaw Agent (external-user)
 新 session 接手時必讀：
 
 1. 📘 [`NEW_SESSION_README.md`](./NEW_SESSION_README.md) — 系統狀態摘要（Round 34 整合，取代舊 HANDOFF.md / SESSION_NEXT_PROMPT.md）
-2. 🗺 [`docs/PROJECT_INVENTORY.md`](./docs/PROJECT_INVENTORY.md) — 完整系統目錄
+2. 🗺 [`docs/OWNER_MANUAL.md`](./docs/OWNER_MANUAL.md) — 完整系統目錄 (§5)
 3. 🎯 [`NEW_SESSION_README.md`](./NEW_SESSION_README.md) — 下個 session 開局 prompt（Round 34 整合）
 4. 🔍 **`docs/.archive/SYSTEM_AUDIT_2026-07-19.md`**（已歸檔，內容已併入 NEW_SESSION_README.md） — audit 報告（已歸檔）
-5. 🏛 [`docs/ENGINEERING_HANDBOOK.md`](./docs/ENGINEERING_HANDBOOK.md) — 工程慣例
+5. 🏛 [`docs/NEW_SESSION_HANDBOOK.md`](./docs/NEW_SESSION_HANDBOOK.md) — 接手手冊 + 三層位置架構
 
 開始 session 第一件事：
 ```bash
