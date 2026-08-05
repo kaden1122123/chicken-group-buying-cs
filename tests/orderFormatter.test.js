@@ -201,20 +201,25 @@ test('formatOrderSummary 完整訂單（morning + 轉帳 + 免運）', () => {
     extra_items: {},
     payment_method: 'transfer',
   });
-  // Round 32 Bug 1 (Hubert 01:08 09:45)：移除 📋 訂單確認 標頭 / ═══════════════════ 裝飾線
-  // 只保留實際訂單資料
-  assert.ok(!s.includes('📋 訂單確認'), '不應有裝飾標頭');
+  // Round 37.26 (Hubert 20:02)：LINE Emoji 純文字卡片 — 無 Markdown 表格
+  // - 必有標題「📋 訂單內容確認」
+  // - 欄位順序：👤 姓名 / 📞 電話 / 📍 地址 / 🐔 品項 / 💰 總計 / 🚚 送達 / 💳 付款
+  // - 地址附 (配送範圍內)、金額含未滿 $1000 提示、日期 M/D (週X)
+  // - 嚴禁任何「| 項目 | 內容 |」表格字串
+  assert.ok(!s.includes('| 項目 |'), '嚴禁 Markdown 表格');
   assert.ok(!s.includes('═══'), '不應有 ═══ 裝飾線');
+  assert.ok(s.includes('📋 訂單內容確認'), '應有標題');
   assert.ok(s.includes('王小明'));
   assert.ok(s.includes('0912345678'));
   assert.ok(s.includes('三峽北大特區學成路100號'));
-  assert.ok(s.includes('2026-06-19'));
-  assert.ok(s.includes('🌞 上午'));
-  assert.ok(s.includes('轉帳') || s.includes('transfer'));
-  assert.ok(s.includes('✔️ 免運') || s.includes('免運'));
+  assert.ok(s.includes('配送範圍內'), '地址應註記配送範圍');
+  assert.ok(s.includes('6/19'), '日期應為 M/D 格式');
+  assert.ok(s.includes('週'), '日期應含週X');
+  assert.ok(s.includes('上午'), '應含上午');
+  assert.ok(s.includes('轉帳'));
 });
 
-test('formatOrderSummary afternoon 時段', () => {
+test('formatOrderSummary afternoon 時段（下午 16:00-18:00 格式）', () => {
   const s = orderFormatter.formatOrderSummary({
     user_line_name: '陳小姐',
     user_phone: '0987654321',
@@ -227,7 +232,8 @@ test('formatOrderSummary afternoon 時段', () => {
     extra_items: {},
     payment_method: 'linepay',
   });
-  assert.ok(s.includes('🌛 下午'));
+  assert.ok(s.includes('下午'), 'afternoon 應含下午');
+  assert.ok(s.includes('16:00-18:00'), '應含 16:00-18:00 時段');
 });
 
 test('formatOrderSummary 缺欄位顯示「（未填寫）」', () => {
@@ -241,11 +247,11 @@ test('formatOrderSummary 缺欄位顯示「（未填寫）」', () => {
   assert.ok(s.includes('（未選擇）'));
 });
 
-test('formatOrderSummary 有社區時顯示', () => {
+test('formatOrderSummary 有社區時顯示在地址後', () => {
   const s = orderFormatter.formatOrderSummary({
     user_line_name: 'A',
     user_phone: '0911111111',
-    address: 'X',
+    address: '新北市三峽區學成路100號',
     community: '三峽大埔社區',
     delivery_date: '2026-06-19',
     time_slot: 'morning',
@@ -254,10 +260,28 @@ test('formatOrderSummary 有社區時顯示', () => {
     extra_items: {},
     payment_method: 'cash',
   });
-  assert.ok(s.includes('🏢社區：三峽大埔社區'));
+  // Round 37.26：社區併入地址顯示
+  assert.ok(s.includes('新北市三峽區學成路100號'));
+  assert.ok(s.includes('三峽大埔社區'));
 });
 
-test('formatOrderSummary 包含「請回覆確認」CTA', () => {
+test('formatOrderSummary 現金未滿 $1000 顯示「新客戶現金付款 OK」', () => {
+  const s = orderFormatter.formatOrderSummary({
+    user_line_name: 'A',
+    user_phone: '0911111111',
+    address: '三峽老街48號',
+    delivery_date: '2026-06-19',
+    time_slot: 'morning',
+    chicken_items: { 鹽水雞: 1 },
+    side_items: {},
+    extra_items: {},
+    payment_method: 'cash',
+  });
+  // 380 < 1000，cash → 應提示「未滿 $1000 新客戶現金付款 OK」
+  assert.ok(s.includes('未滿 $1000 新客戶現金付款 OK'), '現金未滿 $1000 應有提示');
+});
+
+test('formatOrderSummary CTA「回覆「確認」後，我就幫您正式成立訂單」', () => {
   const s = orderFormatter.formatOrderSummary({
     time_slot: 'morning',
     chicken_items: { 鹽水雞: 1 },
@@ -265,7 +289,7 @@ test('formatOrderSummary 包含「請回覆確認」CTA', () => {
     extra_items: {},
     payment_method: 'cash',
   });
-  assert.ok(s.includes('請回覆「確認」完成訂購'));
+  assert.ok(s.includes('回覆「確認」後，我就幫您正式成立訂單'), '應有新 CTA');
 });
 
 test('formatOrderDetail 完整 detail 格式', () => {

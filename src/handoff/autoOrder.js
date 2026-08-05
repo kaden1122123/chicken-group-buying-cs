@@ -119,6 +119,9 @@ async function triggerAutoOrder(options) {
   const orderPayload = {
     order_data: {
       user_line_name: orderData.user_line_name || 'LINE 用戶',
+      // Round 37.26 (Hubert 20:02)：綁定 user_line_id（避免「假成立」訂單）
+      // userId 是 LINE 用戶 ID，會傳入 order_data 寫入 CSV（即使目前 schema 沒欄位，未來 schema 擴充可保留追溯）
+      user_line_id: userId,
       user_phone: orderData.user_phone || '',
       address: orderData.address,
       community: orderData.community || '',

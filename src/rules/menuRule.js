@@ -179,13 +179,25 @@ function validateMenu(menuText) {
 
   if (items.length === 0) {
     // Round 32 Bug 2c：如果 parseItems 沒匹配到，但有模糊關鍵字對應多個品項 → 詢問
+    // Round 37.26 (Hubert 20:02)：金額硬性自動帶入（Zero Price Guessing）
+    //   - 候選列必須含 100% 自動查 01_product.md 的金額（NT$ X/單位）
+    //   - 嚴禁讓客戶輸入金額或回答「金額是 NT$ ____ 嗎？」
     const candidates = findAmbiguousCandidates(menuText);
     if (candidates.length >= 2) {
+      const prices = getPrices();
+      const menu = getMenu();
+      const items = menu && menu.items ? menu.items : [];
+      const lines = candidates.map((c, i) => {
+        const price = prices[c] || 0;
+        const item = items.find((it) => it.name === c);
+        const unit = item && item.unit ? item.unit : '';
+        return `${i + 1}. ${c} (NT$ ${price}/${unit})`;
+      });
       return {
         valid: false,
         ambiguous: true,
         candidates,
-        errorMessage: `不好意思，「${menuText}」可能指多個品項，請問您要的是哪一個？\n\n${candidates.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\n請直接回覆完整品項名稱。`,
+        errorMessage: `不好意思，「${menuText}」可能指多個品項，請問您要的是哪一個？\n\n${lines.join('\n')}\n\n請直接回覆完整品項名稱（或編號 1/2），金額系統會自動帶入！`,
         parsedItems: [],
       };
     }

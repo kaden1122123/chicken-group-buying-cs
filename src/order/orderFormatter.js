@@ -171,34 +171,79 @@ function formatOrderSummary(orderData) {
     extra_items: orderData.extra_items || {},
   });
 
-  const timeSlotLabel = orderData.time_slot === 'morning' ? '🌞 上午（10:00~12:00）' : '🌛 下午（16:00~18:00）';
+  const timeSlotLabel = orderData.time_slot === 'morning' ? '上午 🌞 10:00~12:00' : '下午 🌛 16:00-18:00';
 
-  // Round 32 Bug 1 (Hubert 01:08 09:45)：移除裝飾標頭（📋 訂單確認 / ═══════════════════），
-  // 只輸出實際需求資訊。LLM 也已同步（main_idea.md §訂單確認）。
+  // Round 37.26 (Hubert 20:02) LINE Emoji 純文字卡片
+  // - 嚴禁使用 Markdown 表格（LINE 不支援 `| 項目 | 內容 |`）
+  // - 統一採用 Emoji 開頭 + 易讀排版
+  // - 地址附 (配送範圍內) 註記（addressRule 判定）
+  // - 金額含未滿 $1000 新客戶現金付款 OK 提示
+  // - 日期用 M/D (週X) 格式、時段用「下午 16:00-18:00」
+  // - CTA：「回覆「確認」後，我就幫您正式成立訂單囉 😊」
+
+  const itemsDisplay = formatItemsDisplay({
+    chicken_items: orderData.chicken_items || {},
+    side_items: orderData.side_items || {},
+    extra_items: orderData.extra_items || {},
+  });
+
+  const addressWithRange = orderData.address
+    ? `${orderData.address}${orderData.community ? `（${orderData.community}）` : ''}${isAddressInRange(orderData.address) ? ' (配送範圍內)' : ' (配送範圍需確認)'}`
+    : '（未填寫）';
+
+  const dateDisplay = orderData.delivery_date
+    ? formatDeliveryDateForCard(orderData.delivery_date)
+    : '（未填寫）';
+
+  const totalStr = `NT$ ${Math.round(priceCalc.total_amount).toLocaleString('zh-TW')}`;
+  const newCustomerCashHint =
+    priceCalc.total_amount < 1000 && orderData.payment_method === 'cash'
+      ? ' (未滿 $1000 新客戶現金付款 OK)'
+      : '';
+
+  const paymentLabels = { cash: '現金', transfer: '轉帳', jko: '街口支付', linepay: 'LINE Pay' };
+  const paymentMethod = orderData.payment_method || '（未選擇）';
+  const paymentDisplay = `${paymentLabels[paymentMethod] || paymentMethod}${paymentMethod === 'cash' ? ' (取貨付款)' : ''}`;
+
   const lines = [
-    `📦 品項：`,
-    formatItemsDisplay({
-      chicken_items: orderData.chicken_items || {},
-      side_items: orderData.side_items || {},
-      extra_items: orderData.extra_items || {},
-    }),
+    '📋 訂單內容確認',
     '',
-    `📍 送達日期：${orderData.delivery_date || '（未填寫）'}`,
-    `⏰ 送達時段：${timeSlotLabel}`,
-    `👤 收件人：${orderData.user_line_name || '（未填寫）'}`,
+    `👤 姓名：${orderData.user_line_name || '（未填寫）'}`,
     `📞 電話：${orderData.user_phone || '（未填寫）'}`,
-    `🏠 地址：${orderData.address || '（未填寫）'}`,
-    orderData.community ? `🏢社區：${orderData.community}` : '',
+    `📍 地址：${addressWithRange}`,
+    `🐔 品項：${itemsDisplay.replace(/\n/g, '、')}`,
+    `💰 總計：${totalStr}${newCustomerCashHint}`,
+    `🚚 送達：${dateDisplay} ${timeSlotLabel}`,
+    `💳 付款：${paymentDisplay}`,
     '',
-    `💰總金額：NT$ ${priceCalc.total_amount}`,
-    priceCalc.delivery_fee === 0 ? '✔️ 免運' : `運費：NT$ ${priceCalc.delivery_fee}`,
-    '',
-    `💳 付款方式：${orderData.payment_method || '（未選擇）'}`,
-    '',
-    '請回覆「確認」完成訂購。',
-  ].filter((l) => l !== '');
+    '回覆「確認」後，我就幫您正式成立訂單囉 😊',
+  ];
 
   return lines.join('\n');
+}
+
+// Round 37.26 (Hubert 20:02) 配送範圍簡明判定（三峽區 / 鶯歌區 / loader 關鍵字）
+function isAddressInRange(address) {
+  if (!address) return false;
+  if (address.includes('三峽區') || address.includes('鶯歌區')) return true;
+  try {
+    const { loadDeliveryAreas } = require('../knowledge/loader');
+    const { allowed } = loadDeliveryAreas();
+    return allowed.some((kw) => address.includes(kw));
+  } catch (e) {
+    return false;
+  }
+}
+
+// Round 37.26 (Hubert 20:02) 日期 M/D (週X) 格式
+function formatDeliveryDateForCard(dateStr) {
+  if (!dateStr) return '';
+  const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return dateStr;
+  const dateObj = new Date(dateStr);
+  const weekdays = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+  const wd = isNaN(dateObj.getTime()) ? '' : weekdays[dateObj.getDay()];
+  return `${parseInt(m[2], 10)}/${parseInt(m[3], 10)} (${wd})`;
 }
 
 /**
