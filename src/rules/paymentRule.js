@@ -70,8 +70,31 @@ function validatePayment(paymentMethod, totalAmount, isReturningCustomer = false
   return { valid: true, errorMessage: null };
 }
 
+
+
+/**
+ * Round 37.16 (Hubert 11:17) 付款方式標準化白名單防呆
+ * @param {string} input - 客戶輸入的付款方式（任意字串）
+ * @returns {string} 標準化名稱（轉帳/現金/街口支付/LINE Pay）
+ *                   無法識別時自動降級為「轉帳」（最常用、安全）
+ */
+function normalizePayment(input) {
+  if (!input || typeof input !== 'string') return '轉帳';
+  const normalized = input.trim().replace(/\s+/g, '').toLowerCase();
+  const methodKey = PAYMENT_METHODS[normalized]
+    || PAYMENT_METHODS[input.trim()]
+    || normalized;
+  // 命中 PAYMENT_LABELS 任一 key → 回對應 label
+  if (Object.prototype.hasOwnProperty.call(PAYMENT_LABELS, methodKey)) {
+    return PAYMENT_LABELS[methodKey];
+  }
+  // 無法識別 → 防呆降級寫入「轉帳」
+  return '轉帳';
+}
+
 module.exports = {
   validatePayment,
+  normalizePayment,
   PAYMENT_METHODS,
   PAYMENT_LABELS,
 };

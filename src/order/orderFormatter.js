@@ -107,6 +107,59 @@ function formatItemsDisplay(itemsData) {
 }
 
 /**
+ * Round 37.16 (Hubert 11:17) 多品項 CSV 標準化格式
+ * @param {object} itemsData - { chicken_items: {}, side_items: {}, extra_items: {} }
+ * @returns {string} 「品項名稱 x 數量 | 品項名稱 x 數量」格式
+ *                    例：「鹽水雞 x2 | 玉米雞 x1」(chicken)
+ *                    例：「小菜 x3 | 加購 x1」(side+extra)
+ */
+function formatItemsForCsv(itemsData) {
+  const parts = [];
+  const chicken = itemsData.chicken_items || {};
+  for (const [name, qty] of Object.entries(chicken)) {
+    if (qty > 0) parts.push(`${name} x${qty}`);
+  }
+  const sides = itemsData.side_items || {};
+  for (const [name, qty] of Object.entries(sides)) {
+    if (qty > 0) parts.push(`${name} x${qty}`);
+  }
+  const extras = itemsData.extra_items || {};
+  for (const [name, qty] of Object.entries(extras)) {
+    if (qty > 0) parts.push(`${name} x${qty}`);
+  }
+  return parts.join(' | ');
+}
+
+/**
+ * 雞肉品項 CSV 專用（只 chicken_items）
+ */
+function formatChickenForCsv(itemsData) {
+  const chicken = itemsData.chicken_items || {};
+  const parts = [];
+  for (const [name, qty] of Object.entries(chicken)) {
+    if (qty > 0) parts.push(`${name} x${qty}`);
+  }
+  return parts.join(' | ');
+}
+
+/**
+ * 小菜 + 加購 CSV 專用
+ */
+function formatSidesForCsv(itemsData) {
+  const parts = [];
+  const sides = itemsData.side_items || {};
+  for (const [name, qty] of Object.entries(sides)) {
+    if (qty > 0) parts.push(`${name} x${qty}`);
+  }
+  const extras = itemsData.extra_items || {};
+  for (const [name, qty] of Object.entries(extras)) {
+    if (qty > 0) parts.push(`${name} x${qty}`);
+  }
+  return parts.join(' | ');
+}
+
+
+/**
  * 格式化訂單確認摘要（給客戶看）
  * @param {object} orderData
  * @returns {string}
@@ -185,11 +238,10 @@ function formatOrderDetail(orderData) {
 
 module.exports = {
   calculatePrice,
-  formatItemsDisplay,
-  // P1 B16 修法 + Bug fix:formatCustomerReply 是 src/index.js + src/states/confirming.js
-  // 預期匯入的 function,以前的 module exports 只有 formatOrderSummary → production crash。
-  // 加 alias 維持向後相容(兩個 function 都給)。
   formatOrderSummary,
-  formatCustomerReply: formatOrderSummary,
-  formatOrderDetail,
+  formatItemsDisplay,
+  formatItemsForCsv,
+  formatChickenForCsv,
+  formatSidesForCsv,
 };
+

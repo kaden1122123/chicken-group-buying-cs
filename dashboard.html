@@ -22,34 +22,23 @@
 </head>
 <body>
   <h1>🐔 chicken 儀表板</h1>
-  <p class="meta">最後更新：2026/7/16 下午10:55:13</p>
+    <p class="meta" id="last-updated">最後更新：載入中…</p>
 
   <div class="cards">
-    <div class="card">
-      <h3>總訂單數</h3>
-      <div class="value">636</div>
+    <div class="card" style="background:#fff8e1">
+      <h3>💰 總銷售額</h3>
+      <div class="value" id="card-total-amount">NT$ 0</div>
+      <div class="unit">（所有訂單加總）</div>
     </div>
-    <div class="card">
-      <h3>總營收</h3>
-      <div class="value">NT$20900</div>
+    <div class="card" style="background:#e3f2fd">
+      <h3>📦 總訂單數</h3>
+      <div class="value" id="card-total-orders">0</div>
+      <div class="unit">（含所有狀態）</div>
     </div>
-    <div class="card">
-      <h3>平均客單價</h3>
-      <div class="value">NT$33</div>
-    </div>
-    <div class="card">
-      <h3>唯一客戶數</h3>
-      <div class="value">1</div>
-    </div>
-    <div class="card">
-      <h3>新客</h3>
-      <div class="value">0</div>
-      <div class="unit">（訂單數 = 1）</div>
-    </div>
-    <div class="card">
-      <h3>老客</h3>
-      <div class="value">1</div>
-      <div class="unit">（訂單數 > 1）</div>
+    <div class="card" style="background:#ffebee">
+      <h3>⏳ 待對帳訂單數</h3>
+      <div class="value" id="card-pending-orders">0</div>
+      <div class="unit" id="card-pending-detail">（payment_status = pending）</div>
     </div>
   </div>
 
@@ -382,7 +371,38 @@
       tbody.innerHTML = rows.join('\n');
     }
 
-    function updateMeta(orders) {
+    function updateLastUpdated() {
+      const el = document.getElementById('last-updated');
+      if (!el) return;
+      const d = new Date();
+      const pad = (n) => n.toString().padStart(2, '0');
+      const hour = d.getHours();
+      const ampm = hour >= 12 ? '下午' : '上午';
+      const hour12 = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+      const formatted = '最後更新：' + d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate()) + ' ' + ampm + ' ' + pad(hour12) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+      el.textContent = formatted;
+    }
+
+    function updateCards(orders) {
+      // 總銷售額 = sum(total_amount)
+      let totalAmount = 0;
+      let pendingCount = 0;
+      orders.forEach((o) => {
+        const amt = parseFloat(o.total_amount) || 0;
+        totalAmount += amt;
+        if (o.payment_status === 'pending' || o.payment_status === 'pending_verify') {
+          pendingCount++;
+        }
+      });
+      const totalAmtEl = document.getElementById('card-total-amount');
+      if (totalAmtEl) totalAmtEl.textContent = 'NT$ ' + totalAmount.toLocaleString();
+      const totalOrdEl = document.getElementById('card-total-orders');
+      if (totalOrdEl) totalOrdEl.textContent = orders.length.toLocaleString();
+      const pendingEl = document.getElementById('card-pending-orders');
+      if (pendingEl) pendingEl.textContent = pendingCount.toLocaleString();
+    }
+
+        function updateMeta(orders) {
       const meta = document.getElementById('orders-meta');
       if (!meta) return;
       const today = todayStr();
@@ -410,7 +430,9 @@
         const data = await r.json();
         const orders = data.orders || [];
         renderOrders(orders);
+        updateCards(orders);
         updateMeta(orders);
+        updateLastUpdated();
         secondsToNextRefresh = POLLING_INTERVAL;
         if (manual) console.log('[Dashboard] 手動刷新完成，共 ' + orders.length + ' 筆');
       } catch (err) {
