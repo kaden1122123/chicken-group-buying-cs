@@ -100,7 +100,24 @@ function parseAuth(req) {
 }
 
 /**
- * 檢查 Basic Auth
+ * 讀 api-token（用於 X-API-Token header 認證）
+ * Round 37.19 (Hubert 12:50)：前端 dashboard 按钮需用 X-API-Token 而非 Basic Auth
+ */
+let _apiTokenCache = null;
+function getApiToken() {
+  if (_apiTokenCache !== null) return _apiTokenCache;
+  try {
+    _apiTokenCache = fs.readFileSync('/home/clawuser/.config/chicken/secrets/api-token', 'utf-8').trim();
+  } catch (e) {
+    logger.warn('[dashboard] 讀 api-token 失敗：', e.message);
+    _apiTokenCache = '';
+  }
+  return _apiTokenCache;
+}
+
+/**
+ * 檢查認證（Basic Auth 或 X-API-Token 二選一）
+ * Round 37.19：加 X-API-Token 支援（前端 dashboard 按鈕 POST /api/orders/:id/status 用）
  */
 
 // Round 37.10 (Hubert 21:55)：預設查詢日期 = 今日，若無訂單降級最新有訂單的日期
@@ -124,6 +141,13 @@ function checkAuth(req, res) {
     // 未設定密碼 → 允許全部（不安全，但方便測試）
     return true;
   }
+
+  // ===== Round 37.19：X-API-Token header 認證（前端 dashboard 按鈕用） =====
+  const apiTokenHeader = req.headers['x-api-token'];
+  if (apiTokenHeader && apiTokenHeader === getApiToken()) {
+    return true;
+  }
+
   const auth = parseAuth(req);
   if (auth && auth.user === USERNAME && auth.pass === PASSWORD) {
     return true;
@@ -132,7 +156,7 @@ function checkAuth(req, res) {
     'WWW-Authenticate': 'Basic realm="Chicken Dashboard"',
     'Content-Type': 'text/plain; charset=utf-8',
   });
-  res.end('401 Unauthorized - 請提供正確的帳號密碼');
+  res.end('401 Unauthorized - 請提供正確的帳號密碼或 X-API-Token');
   return false;
 }
 
