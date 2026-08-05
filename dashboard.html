@@ -15,6 +15,30 @@
     .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 16px; margin: 20px 0; }
     .chart-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     table { width: 100%; border-collapse: collapse; background: white; margin-top: 16px; }
+
+    /* ===== Round 37.18 Toast 提示框（右上角飄出） ===== */
+    #toast-container {
+      position: fixed; top: 20px; right: 20px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      padding: 12px 18px; border-radius: 6px; color: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      font-size: 14px; min-width: 280px; max-width: 400px;
+      animation: toastSlideIn 0.3s ease-out, toastFadeOut 0.3s ease-in 2.7s forwards;
+      pointer-events: auto;
+    }
+    .toast-success { background: linear-gradient(135deg, #4caf50, #2e7d32); }
+    .toast-error   { background: linear-gradient(135deg, #f44336, #c62828); }
+    .toast-info    { background: linear-gradient(135deg, #2196f3, #1565c0); }
+    @keyframes toastSlideIn {
+      from { opacity: 0; transform: translateX(40px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes toastFadeOut {
+      to { opacity: 0; transform: translateX(40px); }
+    }
     th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; }
     th { background: #f9f9f9; font-weight: 600; }
     .meta { color: #999; font-size: 12px; }
@@ -160,7 +184,20 @@
           labels: top.labels.length > 0 ? top.labels : ['（無資料）'],
           datasets: [{ label: '銷售總數量', data: top.data.length > 0 ? top.data : [0], backgroundColor: '#2196f3' }],
         },
-        options: { indexAxis: 'y', plugins: { legend: { display: false } } },
+        options: {
+          indexAxis: 'y',
+          plugins: { legend: { display: false } },
+          // ===== Round 37.18 (Hubert 12:19)：消除 X 軸小數點刻度 (0.5, 1.5) =====
+          scales: {
+            x: {
+              ticks: {
+                stepSize: 1,
+                precision: 0,
+                callback: function(value) { return Math.round(value); },
+              },
+            },
+          },
+        },
       });
     }
 
@@ -176,6 +213,24 @@
 
     // 初始化時立即載入圖表
     document.addEventListener('DOMContentLoaded', loadAllOrdersAndRenderCharts);
+
+    // ===== Round 37.18 Toast 提示函式 =====
+    function showToast(message, type) {
+      type = type || 'info';
+      var container = document.getElementById('toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+      }
+      var toast = document.createElement('div');
+      toast.className = 'toast toast-' + type;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(function() {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 3000);
+    }
   </script>
 
   <!-- P2：Hubert 手動核准訂單 — 點擊「✓ 核准」按鈕呼叫 POST /api/orders/:id/approve -->
@@ -270,14 +325,19 @@
         return;
       }
 
-      // P5 標記已收款按鈕
-      // ===== Round 37.17 統一 handler：PAID/SHIPPED/CANCEL 都 POST /api/orders/:id/status =====
+      // ===== Round 37.18 統一 handler：updateOrderStatus() — X-API-Token + Toast =====
       if (e.target.classList.contains('mark-paid-btn') ||
           e.target.classList.contains('shipped-btn') ||
           e.target.classList.contains('cancel-btn')) {
         var action = e.target.classList.contains('mark-paid-btn') ? 'PAID' :
                      e.target.classList.contains('shipped-btn') ? 'CONFIRMED' : 'CANCELLED';
         var actionLabel = action === 'PAID' ? '已收款' : (action === 'CONFIRMED' ? '已出貨' : '取消');
+        var btnDate = e.target.dataset.date || '';
+        // 若 data-date 為空（測試訂單沒有 delivery_date），自動從訂單 row 抓
+        if (!btnDate) {
+          var row = e.target.closest('tr');
+          if (row && row.dataset.deliveryDate) btnDate = row.dataset.deliveryDate;
+        }
         if (!confirm('確認將訂單 ' + orderId + ' 標記為 ' + actionLabel + '？')) return;
         e.target.disabled = true;
         var origText = e.target.textContent;
@@ -285,22 +345,28 @@
         try {
           var r2 = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/status', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ date: e.target.dataset.date || '', status: action }),
+            headers: {
+              'Content-Type': 'application/json',
+              'X-API-Token': window.__API_TOKEN__ || '',
+            },
+            body: JSON.stringify({ date: btnDate, status: action }),
           });
           var data2 = await r2.json();
           if (data2.success) {
-            alert('✅ 已標記 ' + actionLabel + ': ' + orderId);
+            showToast('✅ 訂單 ' + orderId + ' 狀態已更新為 ' + action + '！', 'success');
+            // 自動刷新表格 + 圖表 + 背景觸發 Sheets 同步
             loadRecentOrders(true);
+            loadAllOrdersAndRenderCharts();
+            // 後端 /status handler 已內建 trigger Sheets sync（dashboard-server v 9a139ea 之後）
           } else {
             e.target.disabled = false;
             e.target.textContent = origText;
-            alert('標記失敗：' + (data2.error || '未知錯誤'));
+            showToast('❌ 標記失敗：' + (data2.error || '未知錯誤'), 'error');
           }
         } catch (err2) {
           e.target.disabled = false;
           e.target.textContent = origText;
-          alert('網路錯誤：' + err2.message);
+          showToast('❌ 網路錯誤：' + err2.message, 'error');
         }
       }
     });

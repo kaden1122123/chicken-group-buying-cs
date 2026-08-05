@@ -40,7 +40,7 @@
 | **src/** | 本倉庫 `src/` | 把 prompt 邏輯拆成可測試的 JS 模組 |
 | **tests/** | 本倉庫 `tests/` | 驗證 src/ 邏輯正確 |
 
-詳細說明見 [SPEC.md](../SPEC.md)「v1.0 → v1.1 變更」段。
+詳細說明見 SPEC.md（已歸檔於 docs/reports/）「v1.0 → v1.1 變更」段。
 
 ### 為什麼這樣設計
 
@@ -107,7 +107,7 @@
 
 **同步**：`scripts/sync-mirror.sh from-legacy`（原 → 主）
 
-詳細：見 [NEW_SESSION_README.md](../NEW_SESSION_README.md)
+詳細：見 NEW_SESSION_README.md（已併入 docs/NEW_SESSION_HANDBOOK.md）
 
 ---
 
@@ -406,15 +406,15 @@ tests/csv-writer-concurrency.test.js   ← Session D D2: CSV race condition
 ### 接手者必讀（30 分鐘）
 
 1. **本檔（ENGINEERING_HANDBOOK.md）** — 30 分鐘 overview
-2. [SPEC.md](../SPEC.md) — Phase 1 完整規格
-3. [NEW_SESSION_README.md](../NEW_SESSION_README.md) — 雙位置架構說明
+2. SPEC.md（已歸檔於 docs/reports/） — Phase 1 完整規格
+3. NEW_SESSION_README.md（已併入 docs/NEW_SESSION_HANDBOOK.md） — 雙位置架構說明
 
 ### 開發者必讀
 
 4. **SOP.md**（已歸檔，內容已併入 NEW_SESSION_README.md） — 標準作業流程（已歸檔）
-5. [REVIEW_GUIDE.md](../REVIEW_GUIDE.md) — 19 套測試審查指南
+5. REVIEW_GUIDE.md（已併入 docs/reports/） — 19 套測試審查指南
 6. [MULTI_TENANT_DESIGN.md](./MULTI_TENANT_DESIGN.md) — 多租戶規模化設計
-7. [docs/adr/](./adr/) — 5 個關鍵架構決策
+7. docs/adr/（真實存在，docs/adr/） — 5 個關鍵架構決策
 
 ### 維運者必讀
 
@@ -441,7 +441,7 @@ tests/csv-writer-concurrency.test.js   ← Session D D2: CSV race condition
 - [ ] 讀完本 Handbook（30 分鐘）
 - [ ] 跑 `npm test` 確認 19 套全綠
 - [ ] 跑 `bash scripts/check-quality.sh` 看結果
-- [ ] 看 [docs/adr/](./adr/) 5 個架構決策
+- [ ] 看 docs/adr/（真實存在，docs/adr/） 5 個架構決策
 - [ ] 看 **CLEANUP_PHASE_2_PLAN.md**（已歸檔，內容已併入 NEW_SESSION_README.md） 了解待修整項目
 - [ ] 確認 `.env`（主位置）有真實 LINE Bot Token
 - [ ] 確認 `data/orders/chicken/` 有 2026-06-13.csv 與 2026-06-16.csv 真實訂單

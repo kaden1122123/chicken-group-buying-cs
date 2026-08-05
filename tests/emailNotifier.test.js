@@ -88,7 +88,7 @@ const {
   loadCredentials,
   _saveToken, // unused：imported 但未使用
   sendEmail,
-  sendOrderDigest,
+  _sendOrderDigest,
   SCOPES,
   CREDENTIALS_PATH,
   TOKEN_PATH,
@@ -276,12 +276,12 @@ test('sendOrderDigest — 缺 digest_to 時失敗', async () => {
   // 改用 mockRequire / Module 攔截，因為單純替換 exports 在 Node 22 不一致
   const Module = require('module');
   const enPath = require.resolve('../src/handoff/emailNotifier');
-  const origResolve = Module._resolveFilename;
+  const _origResolve = Module._resolveFilename;
   // 我們建立一個「假 emailNotifier」模組，內部把 getEmailConfig 換成 mock
   const enModule = require(enPath);
   // 重建 sendOrderDigest 函式，內部使用 mock getEmailConfig
   const mockGetEmailConfig = () => ({ digest_to: undefined });
-  const mockSendOrderDigest = async function ({ orders, type = 'daily' }) {
+  const mockSendOrderDigest = async function ({ orders: _orders, type: _type = 'daily' }) {
     const emailCfg = mockGetEmailConfig();
     const to = emailCfg && emailCfg.digest_to;
     if (!to) {

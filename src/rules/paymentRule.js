@@ -71,7 +71,6 @@ function validatePayment(paymentMethod, totalAmount, isReturningCustomer = false
 }
 
 
-
 /**
  * Round 37.16 (Hubert 11:17) 付款方式標準化白名單防呆
  * @param {string} input - 客戶輸入的付款方式（任意字串）
