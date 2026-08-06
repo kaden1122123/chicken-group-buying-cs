@@ -179,7 +179,7 @@ test('semanticMatch — 模糊「太貴」觸發 L2 discount_request', async () 
   // 注意：訊息純為 discount fuzzy pattern「太貴」，避開「這個」會被真
   // cancel patterns 因 full-width parens bug 誤觸（見 src/handoff/transferRules.js
   // regex （整筆|這個|全部） — JS 把 | 視為 alternation 跨 parens，需要修 src）
-  const r = await semanticMatch('discount');  // Round 37.32 修：'太貴' 不再誤觸（會誤觸價格詢問）
+  const r = await semanticMatch('discount'); // Round 37.32 修：'太貴' 不再誤觸（會誤觸價格詢問）
   // 純英文 discount 走 fuzzy 路徑（quickMatch 不命中）
   assert.strictEqual(r.matched, true);
   assert.strictEqual(r.type, 'discount_request');
@@ -193,14 +193,14 @@ test('semanticMatch — 模糊「太貴」觸發 L2 discount_request', async () 
 // /我要取消（整筆|這個|全部）訂單/i 中 | 的 alternation 跨 parens（符合）。
 // 修後 quickMatch 不再命中，semanticMatch 走 fuzzy discount_request。
 test('semanticMatch — 「這個會不會太貴」不再誤觸 cancel（🅱1 regression）', async () => {
-  const r = await semanticMatch('給我discount');  // Round 37.32 修：純英文 discount 走 fuzzy 路徑
+  const r = await semanticMatch('給我discount'); // Round 37.32 修：純英文 discount 走 fuzzy 路徑
   assert.strictEqual(r.matched, true);
   assert.strictEqual(r.type, 'discount_request',
     '🅱1 regression: quickMatch 修後不應誤觸 cancel_request');
   assert.strictEqual(r.level, 'L2');
 });
 test('semanticMatch — 模糊「算了」觸發 cancel', async () => {
-  const r = await semanticMatch('算了不訂了');  // Round 37.32 修：'算了' 移除（會誤觸日常用語）
+  const r = await semanticMatch('算了不訂了'); // Round 37.32 修：'算了' 移除（會誤觸日常用語）
   assert.strictEqual(r.matched, true);
   assert.strictEqual(r.type, 'cancel_request');
 });

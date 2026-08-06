@@ -23,7 +23,7 @@
 
 | 檔案 | 用途 | 最後更新 |
 |------|------|----------|
-| **`docs/NEW_SESSION_HANDBOOK.md`** | 接手變更 SOP（架構 + 驗證 + 操作 + 陷阱 + 求助順序） | **Round 37.32**（20:12）|
+| **`docs/NEW_SESSION_HANDBOOK.md`** | 接手變更 SOP（架構 + 驗證 + 操作 + 陷阱 + 求助順序） | **Round 39**（21:35）|
 | **`docs/OWNER_MANUAL.md`** | Hubert 日常操作 SOP（菜單、後台審核、sync-mirror、緊急聯絡） | **Round 37.32**（20:15）|
 | **`docs/GMAIL_SHEETS_WORKFLOW.md`** | Gmail OAuth + Google Sheets 事件驅動同步架構 | Round 37.20（13:12） |
 | **`docs/INDEX.md`**（本檔） | 單一文件入口 + Round 歷史 + 快速連結 | **Round 37.32**（20:15） |
@@ -64,6 +64,22 @@
 | `docs/reports/MULTI_TENANT_DESIGN.md` | 多租戶架構設計 |
 | `docs/reports/NAMED_TUNNEL_MIGRATION.md` | Cloudflare Tunnel 遷移紀錄 |
 | `docs/reports/TEST_MAP.md` | 測試套件與覆蓋率地圖 |
+
+## 📜 Round 歷史紀錄（最近重大變更 · Round 37.23-39）
+
+### Round 39（2026-08-06 21:35+）— pre-existing 失敗 + lint + Cron 報告
+- `triggers.js:135` hardcode `'三峽'/'鶯歌'` → 改為 `getDeliveryRules().areas.allowed` 動態讀取
+- `npm run lint:fix` 自動修 7 個 no-multi-spaces + 2 個 no-useless-escape warning
+- Cron 報告 25 個 OpenClaw job 完整分類，寄至 `k.chang.8844@gmail.com`（messageId 19fd74eea1b5fb1a）
+- check-quality: 12 通過 / 2 警告 / 0 失敗
+- B & C 拆解（待 Hubert 審視）：menu 搜尋 + 老闆通知 / CSV-Sheet-Dashboard 對帳
+
+### Round 38（2026-08-06 20:51-21:11+）— sync 腳本整合(5→3)
+- `sync-runtime.sh` 新增（6218 bytes）— 合併 sync-canonical.sh + sync-kb.sh
+- `sync-canonical.sh` / `sync-kb.sh` → deprecated wrapper（向後相容 cron）
+- `check-quality.sh` Check 11/12 寫死 `2026-07-03` 修正（latest/ 自動偵測）
+- bin/check-drift: 0 Missing · npm test: 64/64 pass
+- Commit: `080c58a`
 
 ## 📜 Round 歷史紀錄（最近重大變更 · Round 37.23-37.32）
 

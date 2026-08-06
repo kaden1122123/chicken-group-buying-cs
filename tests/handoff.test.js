@@ -160,10 +160,10 @@ test('TRIGGER_PATTERNS — 14 種 trigger 完整定義', () => {
 
 test('semanticMatch — 模糊訊息語意判斷', async () => {
   const cases = [
-    { message: '雞肉壞掉了', expectedMatched: true, expectedType: 'complaint' },  // Round 37.32 修：'爛透了' 改為 '雞肉壞掉了' 觸發
-    { message: '算便宜一點', expectedMatched: true, expectedType: 'discount_request' },  // Round 37.32 修
-    { message: '改到明天', expectedMatched: true, expectedType: 'reschedule_request' },  // Round 37.32 修
-    { message: '算了不訂了', expectedMatched: true, expectedType: 'cancel_request' },  // Round 37.32 修
+    { message: '雞肉壞掉了', expectedMatched: true, expectedType: 'complaint' }, // Round 37.32 修：'爛透了' 改為 '雞肉壞掉了' 觸發
+    { message: '算便宜一點', expectedMatched: true, expectedType: 'discount_request' }, // Round 37.32 修
+    { message: '改到明天', expectedMatched: true, expectedType: 'reschedule_request' }, // Round 37.32 修
+    { message: '算了不訂了', expectedMatched: true, expectedType: 'cancel_request' }, // Round 37.32 修
     { message: '完全不知道', expectedMatched: false },
   ];
   for (const { message, expectedMatched, expectedType } of cases) {

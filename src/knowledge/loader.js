@@ -306,7 +306,7 @@ function loadFAQ() {
     // Round 37.3 fix：accept list format `- Q1 xxx？→ yyy`
     // - Q1 xxx → 盡量配合但無法保證 (Q 與 A 在同一行, 用 → 分隔)
     // 同時 fallback 舊格式 `### Q1: xxx`
-    const qaMatch = line.match(/^[\s-]*Q\d+\s+(.+?)\s*[？\?]\s*[→\->:]?\s*(.*)$/);
+    const qaMatch = line.match(/^[\s-]*Q\d+\s+(.+?)\s*[？？]\s*[→\->:]?\s*(.*)$/);
     if (qaMatch) {
       if (currentQ && currentA) {
         faqs.push({ q: currentQ, a: currentA.trim() });

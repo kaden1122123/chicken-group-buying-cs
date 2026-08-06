@@ -729,7 +729,7 @@ const server = http.createServer(async (req, res) => {
 
 
   // Round 37.10 (Hubert 21:55)：POST /api/orders/:orderId/status — 變更訂單狀態
-  const statusMatch = url.match(/^\/api\/orders\/([^\/]+)\/status$/);
+  const statusMatch = url.match(/^\/api\/orders\/([^/]+)\/status$/);
   if (statusMatch && method === 'POST') {
     try {
       const orderId = decodeURIComponent(statusMatch[1]);

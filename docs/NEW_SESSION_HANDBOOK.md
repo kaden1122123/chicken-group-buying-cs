@@ -514,3 +514,85 @@ PP_BASENAME=$(basename "$PP_LOC")
 
 _本檔由 Round 38（2026-08-06 21:11+）新增 §16_
 _下次 sync / check-quality 變更必同步更新 §16_
+
+---
+
+## §17 Round 39（2026-08-06 21:35+）— pre-existing 失敗 + lint + Cron 報告
+
+**Hubert 21:35 指示**：
+- 我的文件沒提到 cron jobs → brtclaw 自行瀏覽 + 加背景知識
+- 輸出 cron 用處報告寄到 `k.chang.8844@gmail.com`
+- A（2 個 pre-existing 失敗）可直接修
+- B & C（menu 搜尋 + 老闆通知 / CSV-Sheet-Dashboard 對帳）需拆解後審視
+- D（付款方式）延後
+- 重要 docs 同步更新
+
+### 17.1 A 路線：2 個 pre-existing check-quality 失敗修整
+
+**修法 1（hardcode）** — `src/knowledge/triggers.js:135`：
+```javascript
+// 修前（hardcode）
+lower.includes('三峽') || lower.includes('鶯歌')
+
+// 修後（從 config 動態讀）
+const { getDeliveryRules } = require('../config');
+const deliveryRules = getDeliveryRules();
+const deliveryAreaKeywords = (deliveryRules.areas && deliveryRules.areas.allowed) || [];
+deliveryAreaKeywords.some((kw) => lower.includes(kw))
+```
+- config `delivery.areas.allowed` 已有：`['三鶯生活圈', '三峽', '鶯歌']`
+- 修後行為等價（涵蓋同樣關鍵字），但未來改 config 不必改 code
+
+**修法 2（lint no-multi-spaces）** — `npm run lint:fix`：
+- 7 個 error 自動修：`tests/handoff.test.js:163-166` + `tests/transferRules.test.js:182,196,203`
+- 2 個 warning 手修：`loader.js:309` `\?` → `??`、`dashboard-server.js:732` `\/` → `/`
+- 1 個 arrow-parens warning 手修：`triggers.js:138` 加 `()` around `kw`
+
+**驗證**：
+- `check-quality`: **12 通過 / 2 警告 / 0 失敗**（修前 11/1/2）
+- `npm test`: 64/64 pass
+- `bin/check-drift`: 0 Missing
+
+### 17.2 Cron Jobs 完整背景（25 個 OpenClaw cron）
+
+**已寄出**：messageId `19fd74eea1b5fb1a` 到 k.chang.8844@gmail.com，報告 `/tmp/cron-report.md`（6185 bytes）。
+
+**6 大類**：
+
+| 類別 | 數量 | 關鍵 job |
+|------|------|---------|
+| **雞味客服專案維運** | 8 | main enforce readonly (3bade756) / cloudflared cleanup (955d61c6) / daily backup (bd933551) / P9 Sheets sync (6033de71) / daily+weekly report (796afb16+dc5afd05) / GCP key age (356045d8) / L2 .bak cleanup (15998630) |
+| **Memory / Session** | 4 | Session Context Monitor (351fb7a9) / Memory Archive (deeb8c51) / 每日操作總結 (e15d4164) / Subagent Cleanup (10f04b40) |
+| **Threads 自動發文** | 5 | GitHub Trending (e2a069c0) / AM (b01a812b) / PM (61612670) / Weekend 空軍 (a3b785c6) / Weekend 海軍 (70ef6470) |
+| **i-En 財經** | 2 | 每 4h (27d05048) / 每週一健康檢查 (dabbab38) |
+| **Pain Diary** | 4 | 每日監控 (44897139) / 早安提醒 (bc4357d5) / 晚間提醒 (59b35e4f) / 每週整合 (a92e4f9f) |
+| **OpenClaw 系統** | 2 | Release Tracker (85a00b06) / Config Backup (7581765f) |
+
+**已知 stale**（建議清理）：
+- `15998630` L2 .bak cleanup — 一次性 cron，下次觸發 2027-07-26 → disable
+- `796afb16` / `dc5afd05` 日報 / 週報 — 事件驅動已上線（Round 37.17），這兩個標「測試中」應 disable
+
+### 17.3 B & C 拆解狀態（待 Hubert 審視）
+
+**B 路線：menu 搜尋 + 老闆通知**
+- 目前已實作：`triggers.js` `product_query` intent → 載入 `01_product.md`（Round 37.27 全 11 檔 KB 動態加載）；`handoff.js` 14 種觸發條件 → 寄信 + LINE 通知
+- 待 Hubert 確認：「menu 搜尋」具體場景？「老闆通知」還需哪些觸發？
+
+**C 路線：CSV ↔ Sheet ↔ Dashboard 對帳**
+- 目前已實作：CSV 29 欄、Sheet 29 欄動態映射（Round 37.18）、Dashboard 3 張圖表 + 3 個操作按鈕（Round 37.17）+ 30s 自動刷新（Round 37.15）
+- 待 Hubert 確認：優先級順序？mapping / Figures / button / real-time 哪個先？
+
+**D 路線**：延後（Hubert 未提供足夠資訊）
+
+### 17.4 新發現的 1 個架構鐵律
+
+#### 17.4.1 arrow-parens 與 ESLint config 緊密相關
+- 預設 ESLint `arrow-parens: "always"` 要求 arrow function 參數加 `()`
+- 但 prettier 預設 `"as-needed"` 會去掉單參數的 `()`
+- 專案統一用 `arrow-parens: "always"`，未來寫 arrow function 注意 `()` 不可省
+- 教訓：lint:fix 後要驗證改動是否符合預期
+
+---
+
+_本檔由 Round 39（2026-08-06 21:35+）新增 §17_
+_下次 pre-existing 失敗或 cron 變更必同步更新 §17_

@@ -7,6 +7,7 @@
 
 const fs = require('fs');
 const { readKBFile, KB_PATH } = require('./loader');
+const { getDeliveryRules } = require('../config');
 
 // Session C C2 變更：KB 讀取統一透過 loader.readKBFile()，
 // 移除本地 KNOWLEDGE_BASE_PATH 常數與重複的 loadKBFile() 函式，
@@ -128,11 +129,13 @@ function guessIntent(message) {
     return 'date_check';
   }
 
-  // 配送 / 地址（涵蓋三峽、鶯歌、免運、門檻）
+  // 配送 / 地址（涵蓋免運、門檻 + delivery.areas.allowed 動態區域名，Round 39 修：從 hardcode 改為讀 config）
+  const deliveryRules = getDeliveryRules();
+  const deliveryAreaKeywords = (deliveryRules.areas && deliveryRules.areas.allowed) || [];
   if (
     lower.includes('地址') || lower.includes('配送') ||
     lower.includes('免運') || lower.includes('運費') || lower.includes('門檻') ||
-    lower.includes('三峽') || lower.includes('鶯歌')
+    deliveryAreaKeywords.some((kw) => lower.includes(kw))
   ) {
     return 'delivery_check';
   }
