@@ -336,5 +336,110 @@ git push origin main   # 推送
 
 ---
 
-_本檔由 Round 37.20（2026-08-05 13:12）大更新_
-_下次接手變更必同步更新 §12_
+## §15 Round 37.30-37.32（2026-08-06 4 大生產 bug 與 sync-kb.sh）
+
+> **最後更新**：2026-08-06 20:12（Hubert 真實對話測試抓出 4 大 bug 後連修 3 個 round）
+
+### 4 大生產 bug（Hubert 14:40 / 16:04 / 16:15 真實 LINE 對話抓出）
+
+| Bug | 圖片 | 修法 | Round |
+|-----|------|------|-------|
+| 開團日期沒讀 config（bot 回「我沒辦法直接給您確切的日期哦😅」） | 12.jpg | `scripts/sync-kb.sh`（Round 37.31）rsync L1 → L3 + `main_idea.md` §三 修 | 37.31 |
+| 轉真人太頻繁（bot 對「多少錢」/「現在還能訂嗎」立即觸發） | 12.jpg | `transferRules.js` semanticMatch fuzzyTriggers 縮窄 | 37.32 |
+| 「AI 客服轉報通知」誤傳客戶（資訊外洩） | 13.jpg | `SOUL.md` §六 + `main_idea.md` §三 加註 | 37.30 |
+| Dashboard URL 改正式域名 | 13.jpg | `notifier.js:106` + `emailNotifier.js:340` 改為 `dashboard.brt1122.com/` | 37.30 |
+
+### Round 37.30 — LLM prompt 雙重修整
+
+- **`SOUL.md` §六 加註**：「🔔 【客服轉報通知】」格式**只用在後台管理員（Hubert）的 LINE Push / Email 通知**，**絕對不出現在客戶的 LINE 訊息中**。客戶轉真人回覆走 `config.handoff.customer_reply`（固定話術），**不是由 LLM 生成**。
+- **`main_idea.md` §三 修**：
+  - 開團日期、地址確認、配送時段、價格 — **都應由 AI 自行從 `chicken.yaml` / 01_product.md / 04_delivery.md 讀取並回覆**，**不再是轉真人理由**
+  - 轉真人只保留給真正需要人工處理的（退款/客訴/爭議/明確要真人）
+- **`src/handoff/notifier.js:106`** + **`src/handoff/emailNotifier.js:340`**：`'https://100.114.197.9:3000/admin'` → `'https://dashboard.brt1122.com/'`
+- **`src/handoff/emailNotifier.js`** 復活 `path` import + `oauth2Client.on('tokens')` 補 .bak 同步 + `logTokenWrite` trace log
+- **`tests/buildEmailContent.test.js:428`** + **`tests/emailNotifier.test.js`**：硬編碼 URL 同步改
+
+### Round 37.31 — `scripts/sync-kb.sh` 新增（修「菜單資料讀不到」）
+
+**根因**：`sync-canonical.sh` 只同步 canonical files（AGENTS/SOUL/main_idea），**完全沒同步 `knowledge/tenants/chicken/` 內的 11 個 KB 檔案**。所以 L3（`/home/clawuser/.openclaw/agents/external-user/`）LLM 執行時讀不到 01_product.md → 說「菜單資料讀不到」。
+
+**修法**：新增 `scripts/sync-kb.sh`，用 `rsync -a --delete` mirror L1 KB 到 L3（12 個 .md 檔案：01_product / 02_order_flow / 03_payment / 04_delivery / 05_promotion / 06_faq / 07_transfer_rules / 08_owner_info / 10_customer_tags / 11_lead_followup / 12_reply_examples / INDEX）。
+
+> **經驗教訓**：新增任何 sync 腳本前先 `grep -rn "knowledge/tenants" scripts/` 看誰覆蓋什麼。Round 37.32 Hubert 提醒「不該把做過的部分再重做一次」才發現 sync-producer-config.sh 只同步 chicken.yaml。
+
+**待修（Hubert 14:04 要求）**：
+- `sync-producer-config.sh` 應該整合 `sync-kb.sh`，讓 cron 每分鐘同時同步 config + knowledge
+- 暫解：`chmod +x scripts/sync-kb.sh && echo '* * * * * scripts/sync-kb.sh' >> crontab`
+
+### Round 37.32 — `transferRules.js` semanticMatch fuzzyTriggers 縮窄
+
+**根因**：`semanticMatch` 的 fuzzyTriggers 關鍵字太寬
+- 「貴」/「太貴」→ discount_request（但「多少錢」價格詢問也會誤觸）
+- 「下次」→ reschedule_request（但「下次開團」日期查詢也會誤觸）
+- 「算了」→ cancel_request（但日常用語也會誤觸）
+
+**修法**：把 fuzzyTriggers 範圍縮窄為完整詞組
+
+```javascript
+// 修後
+const fuzzyTriggers = [
+  { type: 'complaint', patterns: ['爛掉了', '很糟糕', '非常失望', '品質差', '雞肉壞掉', '服務差', '投訴客服'] },
+  { type: 'discount_request', patterns: ['算便宜一點', '打折', '可以折價', '減價', '優惠一些', 'discount', '算便宜'] },
+  { type: 'reschedule_request', patterns: ['改到明天', '改到後天', '改日期', '改時間', '延後一天', '換到下週'] },
+  { type: 'cancel_request', patterns: ['算了不訂', '先不訂', '取消整筆', '拔單', '撤單', '不訂了', '這筆不要了'] },
+];
+```
+
+**測試配套**：
+- `tests/handoff.test.js` 新增 `Round 37.32 regression` test，驗證「我要煙燻雞跟珍珠丸 各一份 這樣多少錢」「最近有哪天開團」「現在還能訂嗎」「怎麼付款」都不再觸發 handoff
+- `tests/transferRules.test.js`：'太貴' 改為 'discount'、'這個會不會太貴' 改為 '給我discount'、'算了，不要了' 改為 '算了不訂了'
+
+### 新發現的 3 大架構鐵律
+
+#### 15.1 LLM prompt 的「轉報格式」不可外洩
+- SOUL.md / main_idea.md 定義的轉報格式（🔔【客服轉報通知】）是給後台 manager 用的
+- LLM 看到格式就會**自動複製到客戶回覆**（因為它「學到」這個格式是 handoff 的回應方式）
+- **修法**：在 prompt 裡明確標註「此格式只給 X 用，客戶回覆走 config.handoff.customer_reply」
+
+#### 15.2 fuzzyTriggers 永遠要加詞組長度限制
+- 單字關鍵字（`貴` / `下次` / `算了`）幾乎一定會誤觸日常對話
+- **修法**：使用完整詞組（`算便宜一點` / `改到明天` / `算了不訂`）避免子字串匹配
+- 經驗：`includes('貴')` 會匹配「價格」「多貴」；`includes('算便宜一點')` 只匹配真正要求折扣的話
+
+#### 15.3 三層架構的 sync 死角
+- `sync-canonical.sh` 只同步 canonical files
+- `sync-mirror.sh` 只同步 dev repo → main mirror
+- `sync-producer-config.sh` 只同步 `config.yaml`（每分鐘 cron）
+- **沒人同步 `knowledge/` 內的 KB .md 檔案到 L3** → L3 LLM 讀不到菜單
+- **修法**：新增 `scripts/sync-kb.sh` 補這個洞
+- **經驗**：新增任何 sync 腳本前先 grep `scripts/sync_*.sh` 看誰覆蓋什麼
+
+### 4 大新 bug patterns（給未來 session）
+
+1. **prompt leak**：LLM 看到「🔔【客服轉報通知】」格式就會複製到客戶回覆。修法：明確標註「只給 manager 用，客戶走固定話術」
+2. **fuzzyTriggers 過寬**：「貴」「下次」「算了」單字關鍵字會誤觸日常對話。修法：用完整詞組（`算便宜一點` / `改到明天` / `算了不訂`）
+3. **三層 sync 漏 KB**：`sync-canonical.sh` 只同步 canonical，沒人同步 `knowledge/tenants/` 內的 KB .md 到 L3。修法：新增 `scripts/sync-kb.sh` 補洞
+4. **Dashboard URL 內網 vs 正式域名**：dev 用 `100.114.197.9:3000/admin`，prod 用 `https://dashboard.brt1122.com/`。修法：所有 dashboard URL 都應用 `process.env.DASHBOARD_URL || 'https://dashboard.brt1122.com/'`
+
+### 本日 4 大 commits（從 402d741 → 811d011）
+
+| Commit | Round | 主題 |
+|--------|-------|------|
+| `0b3ef59` | 37.30 | 修 LLM 把「客服轉報通知」誤傳客戶 + 動態 open_dates + 改 dashboard URL |
+| `cc183ae` | 37.31 | **新增 scripts/sync-kb.sh** 補 L3 缺漏的 knowledge/ 檔案 |
+| `811d011` | 37.32 | 修 fuzzyTriggers 太寬誤觸發 handoff + 加 regression test |
+
+### 已知未修（Hubert 14:04 / 16:04 明確要求）
+
+1. **Gmail 為何生產沒收到**（dev 測試有收到，token 從 .bak 還原過）
+   - 建議下輪用 `deep-research` skill 查 OpenClaw 平台層 secret management 邏輯
+   - 已有 `logs/gmail-token-audit.log`（Round 37.30 自動建立）可查 token 寫入歷史
+2. **`sync-producer-config.sh` 整合 `sync-kb.sh`**
+   - 目前只同步 `chicken.yaml`，未同步 `knowledge/`
+   - 應整合讓 cron 每分鐘同步 config + knowledge
+3. **對話演練驗證** LLM prompt 修正實際生效
+
+---
+
+_本檔由 Round 37.32（2026-08-06 20:12）大更新_
+_下次接手變更必同步更新 §15_
