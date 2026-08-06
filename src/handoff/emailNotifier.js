@@ -337,7 +337,7 @@ function formatOrderDigest(orders, type = 'daily') {
     '',
     '═'.repeat(40),
     '👉 Dashboard',
-    '   https://100.114.197.9:3000/admin',
+    '   https://dashboard.brt1122.com/',
   );
   return lines.join('\n');
 }

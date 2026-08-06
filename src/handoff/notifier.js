@@ -103,7 +103,7 @@ async function notifyHubertViaLine(message) {
  */
 function buildEmailContent(message, options = {}) {
   const ts = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Taipei', hour12: false }).replace(' ', ' ');
-  const dashboardBase = process.env.DASHBOARD_URL || 'https://100.114.197.9:3000/admin';
+  const dashboardBase = process.env.DASHBOARD_URL || 'https://dashboard.brt1122.com/';
   const dashboardUrl = options.metadata && options.metadata.order_id
     ? `${dashboardBase}?order=${encodeURIComponent(options.metadata.order_id)}`
     : dashboardBase;

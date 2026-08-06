@@ -425,7 +425,7 @@ test('dashboard URL — 無 order_id → 只有 base', () => {
     type: 'handoff', // system type 不含 dashboard URL，用 handoff
     metadata: { trigger_label: 't' },
   });
-  assert.ok(result.body.includes('https://100.114.197.9:3000/admin'));
+  assert.ok(result.body.includes('https://dashboard.brt1122.com/'));
   assert.ok(!result.body.includes('?order='));
 });
 

@@ -225,7 +225,7 @@ test('formatOrderDigest — v3 今日彙總（3 筆訂單，含統計 + 分組�
   assert.match(out, /王小明/);
   // Dashboard CTA
   assert.match(out, /Dashboard/);
-  assert.match(out, /100\.114\.197\.9:3000/);
+  assert.match(out, /dashboard\.brt1122\.com/);
 });
 
 test('formatOrderDigest — v3 空清單', () => {
