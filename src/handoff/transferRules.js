@@ -201,12 +201,20 @@ async function semanticMatch(message) {
 
   const msg = message.toLowerCase();
 
-  // 模糊案例：語意相近但關鍵字不明顯
+  // Round 37.32 (Hubert 16:15 修整) 修：fuzzy triggers 太寬導致誤觸發 handoff
+  // 之前「多少錢」「現在還能訂嗎」這類簡單問法被當成 discount_request / out_of_range → 觸發轉真人
+  // 修法：把模糊匹配範圍縮窄——只有真正包含抱怨/要求折扣/取消/改期的關鍵字才觸發
+  // 移除「貴」「太貴」（會誤觸發「多少錢」之類的價格詢問）
+  // 移除「下次」（會誤觸發「下次開團」之類的日期詢問）
   const fuzzyTriggers = [
-    { type: 'complaint', patterns: ['爛', '糟糕', '失望', '不滿意', '不及格', '很差', '不 ok'] },
-    { type: 'discount_request', patterns: ['貴', '太貴', '好貴', '能不能', '可以便宜', '給我優惠'] },
-    { type: 'reschedule_request', patterns: ['明天', '後天', '改天', '改天吧', '下次', '下次再'] },
-    { type: 'cancel_request', patterns: ['算了', '不要了', '先不訂', '等等再說', '我再想想'] },
+    // complaint：必須包含明確抱怨詞
+    { type: 'complaint', patterns: ['爛掉了', '很糟糕', '非常失望', '極度不滿', '品質差', '雞肉壞掉', '服務差', '投訴客服'] },
+    // discount_request：必須包含明確要求降價詞（不能只是問價）
+    { type: 'discount_request', patterns: ['算便宜一點', '打折', '可以折價', '減價', '優惠一些', 'discount', '給我discount', '算便宜'] },
+    // reschedule_request：必須包含明確改期詞
+    { type: 'reschedule_request', patterns: ['改到明天', '改到後天', '改日期', '改時間', '延後一天', '換到下週', '下週再'] },
+    // cancel_request：必須包含明確取消詞
+    { type: 'cancel_request', patterns: ['算了不訂', '先不訂', '取消整筆', '拔單', '撤單', '不訂了', '這筆不要了'] },
   ];
 
   for (const fuzzy of fuzzyTriggers) {

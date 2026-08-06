@@ -160,10 +160,10 @@ test('TRIGGER_PATTERNS — 14 種 trigger 完整定義', () => {
 
 test('semanticMatch — 模糊訊息語意判斷', async () => {
   const cases = [
-    { message: '爛透了', expectedMatched: true, expectedType: 'complaint' },
-    { message: '好貴喔', expectedMatched: true, expectedType: 'discount_request' },
-    { message: '明天吧', expectedMatched: true, expectedType: 'reschedule_request' },
-    { message: '不要了啦', expectedMatched: true, expectedType: 'cancel_request' },
+    { message: '雞肉壞掉了', expectedMatched: true, expectedType: 'complaint' },  // Round 37.32 修：'爛透了' 改為 '雞肉壞掉了' 觸發
+    { message: '算便宜一點', expectedMatched: true, expectedType: 'discount_request' },  // Round 37.32 修
+    { message: '改到明天', expectedMatched: true, expectedType: 'reschedule_request' },  // Round 37.32 修
+    { message: '算了不訂了', expectedMatched: true, expectedType: 'cancel_request' },  // Round 37.32 修
     { message: '完全不知道', expectedMatched: false },
   ];
   for (const { message, expectedMatched, expectedType } of cases) {
@@ -224,5 +224,19 @@ test('shouldTransfer 金額 > NT$3000 優先 (HIGH_VALUE_ORDER 覆蓋)', async (
   for (const { msg, amount, expectedType } of cases) {
     const result = await shouldTransfer(msg, { totalAmount: amount });
     assert.strictEqual(result.type, expectedType, `「${msg}」amount=${amount} 應為 ${expectedType}`);
+  }
+});
+
+
+test('Round 37.32 regression — 價格/日期/時間查詢不應觸發 handoff（Hubert 16:15 修整）', async () => {
+  const cases = [
+    { message: '我要煙燻雞跟珍珠丸 各一份 這樣多少錢', expectedMatched: false, reason: '價格詢問 AI 自行讀 01_product.md' },
+    { message: '最近有哪天開團', expectedMatched: false, reason: '日期查詢 AI 自行讀 chicken.yaml' },
+    { message: '現在還能訂嗎', expectedMatched: false, reason: '時間查詢 AI 自行判斷' },
+    { message: '怎麼付款', expectedMatched: false, reason: '付款查詢 AI 自行讀 03_payment.md' },
+  ];
+  for (const { message, expectedMatched, reason } of cases) {
+    const result = await shouldTransfer(message);
+    assert.strictEqual(result.shouldTransfer, expectedMatched, `「${message}」shouldTransfer=${expectedMatched} (${reason})`);
   }
 });
