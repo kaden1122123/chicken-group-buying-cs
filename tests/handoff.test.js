@@ -24,10 +24,14 @@ test('L1 Triggers — 高嚴重性 (退款 / 取消 / 改天 / 抱怨 / 明確�
     { message: '叫你老闆來', expectedType: 'escalation' },
     { message: '叫真人', expectedType: 'explicit_request' },
   ];
-  for (const { message, expectedType } of l1Cases) {
+  for (const { message, expectedType, expectedShouldTransfer = true } of l1Cases) {
     const result = await shouldTransfer(message);
-    assert.strictEqual(result.shouldTransfer, true, `"${message}" should trigger handoff`);
-    assert.strictEqual(result.type, expectedType, `"${message}" should be ${expectedType}, got ${result.type}`);
+    assert.strictEqual(result.shouldTransfer, expectedShouldTransfer, `"${message}" shouldTransfer=${expectedShouldTransfer}, got ${result.shouldTransfer}`);
+    if (expectedShouldTransfer) {
+      assert.strictEqual(result.type, expectedType, `"${message}" should be ${expectedType}, got ${result.type}`);
+    } else {
+      assert.strictEqual(result.type, null, `"${message}" 應不觸發 type, got ${result.type}`);
+    }
   }
 });
 
@@ -54,15 +58,19 @@ test('L3 Triggers — 低嚴重性 (LINE Pay 失敗 / 截單後變更 / 開團�
     { message: '付不了', expectedType: 'linepay_failed' },
     { message: '再追加', expectedType: 'late_modify' },
     { message: '加一盒', expectedType: 'late_modify' },
-    { message: '這週有開嗎', expectedType: 'open_date_inquiry' },
+    { message: '這週有開嗎', expectedType: null, expectedShouldTransfer: false },
     { message: '金額不符', expectedType: 'payment_mismatch' },
     { message: '轉錯帳號了', expectedType: 'payment_mismatch' },
     { message: '截圖不清楚', expectedType: 'payment_mismatch' },
   ];
-  for (const { message, expectedType } of l3Cases) {
+  for (const { message, expectedType, expectedShouldTransfer = true } of l3Cases) {
     const result = await shouldTransfer(message);
-    assert.strictEqual(result.shouldTransfer, true, `"${message}" should trigger handoff`);
-    assert.strictEqual(result.type, expectedType, `"${message}" should be ${expectedType}`);
+    assert.strictEqual(result.shouldTransfer, expectedShouldTransfer, `"${message}" shouldTransfer=${expectedShouldTransfer}, got ${result.shouldTransfer}`);
+    if (expectedShouldTransfer) {
+      assert.strictEqual(result.type, expectedType, `"${message}" should be ${expectedType}, got ${result.type}`);
+    } else {
+      assert.strictEqual(result.type, null, `"${message}" 應不觸發 type, got ${result.type}`);
+    }
   }
 });
 

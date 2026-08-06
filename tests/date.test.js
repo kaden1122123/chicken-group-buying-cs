@@ -48,11 +48,14 @@ function restoreTime() {
 // ═════════════════════════════════════════════════════════════════
 
 test('getNextOpenDate 邊界正確', () => {
-  // Round 35 C4：open_dates 只剩 2026-08-04 / 08-07（清掉 past dates 後）
+  // Round 37.29 (Hubert 13:04)：Hubert 加了 8/11、8/14 兩個新開團日
+  // open_dates: [2026-08-04, 2026-08-07, 2026-08-11, 2026-08-14]
   assert.strictEqual(getNextOpenDate('2026-07-31'), '2026-08-04', '2026-07-31 應該推薦 2026-08-04');
   assert.strictEqual(getNextOpenDate('2026-08-04'), '2026-08-04', '2026-08-04 當天應回傳自己');
   assert.strictEqual(getNextOpenDate('2026-08-05'), '2026-08-07', '2026-08-05 應推薦 2026-08-07');
-  assert.strictEqual(getNextOpenDate('2026-08-08'), null, '2026-08-08 應回 null（已過最後開團日）');
+  assert.strictEqual(getNextOpenDate('2026-08-08'), '2026-08-11', '8/8 後下一個開團日應為 8/11（Hubert 12:58 加的）');
+  assert.strictEqual(getNextOpenDate('2026-08-12'), '2026-08-14', '8/12 後下一個開團日應為 8/14');
+  assert.strictEqual(getNextOpenDate('2026-08-15'), null, '8/15 後已過 8/14 最後開團日');
   assert.strictEqual(getNextOpenDate('2026-08-01'), '2026-08-04', '2026-08-01 應推薦 2026-08-04');
   assert.strictEqual(getNextOpenDate('2099-12-31'), null, '2099 之後無開團日');
 });

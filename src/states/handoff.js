@@ -116,15 +116,38 @@ async function handleHandoff(userId, userMessage, orderData = {}, userProfile = 
     logger.warn(`[handoff] Push debounced for ${userId} (same message within 1 min)`);
   } else {
     const notification = formatLINENotification(handoffOrderData, userMessage);
-    notifyHubert(notification, { type: 'handoff', channels: ['email'] }).catch((e) => {
-      logger.error('Email notification failed', { err: e.message });
-      handoffOrderData.staff_notes = 'Email通知失敗，請人工確認';
-      try {
-        writeOrderWithRetry(handoffOrderData); // 更新 staff_notes
-      } catch (e2) {
-      // ignore
-      }
-    });
+    // Round 37.29 (Hubert 13:04) 修：channels 改為 ['line', 'email']（LINE push 為主 + Email 備援）
+    // 之前只送 email，結果老闆在 LINE 端根本收不到「老闆通知」訊息 — 被誤判為「被吃」
+    // 同時移除 silent catch — 改用 await 拿到結果，失敗時明確 log + 更新 staff_notes（可讓 Hubert 在 dashboard 看到狀態）
+    notifyHubert(notification, { type: 'handoff', channels: ['line', 'email'] })
+      .then((results) => {
+        const lineOk = results.line && results.line.success;
+        const emailOk = results.email && results.email.success;
+        if (!lineOk && !emailOk) {
+          logger.error('[handoff] LINE + Email 都失敗', {
+            userId,
+            line: results.line && results.line.error,
+            email: results.email && results.email.error,
+          });
+          handoffOrderData.staff_notes = '⚠️ 老闆通知失敗：LINE=' + (results.line && results.line.error || 'unknown') + ', Email=' + (results.email && results.email.error || 'unknown');
+        } else if (!lineOk) {
+          logger.warn('[handoff] LINE 推送失敗（Email 已寄出）', { line: results.line && results.line.error });
+        } else if (!emailOk) {
+          logger.warn('[handoff] Email 通知失敗（LINE 已推）', { email: results.email && results.email.error });
+        }
+        try {
+          writeOrderWithRetry(handoffOrderData); // 同步更新 staff_notes 狀態
+        } catch (e2) {
+          // ignore
+        }
+      })
+      .catch((e) => {
+        logger.error('[handoff] notifyHubert 完全失敗', { err: e.message, userId });
+        handoffOrderData.staff_notes = '⚠️ 老闆通知完全失敗：' + e.message;
+        try {
+          writeOrderWithRetry(handoffOrderData);
+        } catch (e2) { /* ignore */ }
+      });
   }
 
   return {

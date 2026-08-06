@@ -18,7 +18,7 @@
  */
 
 const fs = require('fs');
-// const path = require('path'); // unused 2026-07-25 Round 26 #2 lint cleanup
+const path = require('path'); // Round 37.29 (Hubert 13:04)：uncomment — logTokenWrite 寫到 logs/ 需要 path.join
 const logger = require('../utils/logger');
 // Round 37.4：改用 namespace import 讓測試能 mock isFeatureEnabled
 // (withConfig 透過 configModule.isFeatureEnabled = ... 注入 mock，destructure 會 freeze 原始參考)
@@ -127,6 +127,30 @@ function saveToken(token) {
   } catch (e) {
     // .bak 寫入失敗不影響主流程
   }
+  // Round 37.29：token 寫入 trace log
+  logTokenWrite('saveToken', token);
+}
+
+// Round 37.29 (Hubert 13:04)：token 寫入/還原 trace log（查「被吃」事件用）
+const TOKEN_AUDIT_LOG = path.join(__dirname, '..', '..', 'logs', 'gmail-token-audit.log');
+function logTokenWrite(event, token) {
+  try {
+    const dir = path.dirname(TOKEN_AUDIT_LOG);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const entry = {
+      ts: new Date().toISOString(),
+      event,
+      token_path_mtime: fs.existsSync(TOKEN_PATH) ? fs.statSync(TOKEN_PATH).mtime.toISOString() : null,
+      token_path_size: fs.existsSync(TOKEN_PATH) ? fs.statSync(TOKEN_PATH).size : null,
+      bak_path_mtime: fs.existsSync(TOKEN_PATH + '.bak') ? fs.statSync(TOKEN_PATH + '.bak').mtime.toISOString() : null,
+      has_access_token: !!(token && token.access_token),
+      has_refresh_token: !!(token && token.refresh_token),
+      expiry_date: token && token.expiry_date ? new Date(token.expiry_date).toISOString() : null,
+    };
+    fs.appendFileSync(TOKEN_AUDIT_LOG, JSON.stringify(entry) + '\n');
+  } catch (e) {
+    // log 寫入失敗不影響主流程
+  }
 }
 
 /**
@@ -155,6 +179,15 @@ async function getGmailClient() {
         fs.writeFileSync(TOKEN_PATH, JSON.stringify(merged, null, 2));
         fs.chmodSync(TOKEN_PATH, 0o600);
         logger.info('[emailNotifier] refresh_token 已更新');
+        // Round 37.29 (Hubert 13:04) 修：refresh 也同步 .bak（避免 main 更新但 .bak 留舊導致 auto-restore 還原到過期 token）
+        try {
+          fs.writeFileSync(TOKEN_PATH + '.bak', JSON.stringify(merged, null, 2));
+          fs.chmodSync(TOKEN_PATH + '.bak', 0o600);
+        } catch (bakErr) {
+          logger.warn('[emailNotifier] 同步 .bak 失敗', { err: bakErr.message });
+        }
+        // Round 37.29：token 寫入 trace log（查「被吃」事件用）
+        logTokenWrite('oauth2Client.on(tokens) refresh_token', merged);
       } catch (e) {
         logger.warn('[emailNotifier] 寫入新 refresh_token 失敗', { err: e.message });
       }

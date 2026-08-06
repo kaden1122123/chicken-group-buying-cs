@@ -31,11 +31,14 @@ const LEGACY_CONFIG_PATH = path.join(__dirname, '..', 'config.yaml'); // 向後�
 // config.js 這邊只保留 config 路徑與讀取邏輯。知識庫路徑請改用 src/knowledge/loader.js。
 
 function resolveConfigPath() {
+  // Round 37.29 (Hubert 13:04)：chicken.yaml 為主，config.yaml 為 legacy fallback
+  // 為什麼保留 fallback：子 process 測試（如 csv-writer-concurrency）跑的是 config.yaml 環境
+  // 預計 Round 38 之後再把 config.yaml fallback 完全移除（屆時所有子 process 測試也跟進修改）
   if (fs.existsSync(TENANT_CONFIG_PATH)) {
     return TENANT_CONFIG_PATH;
   }
   if (fs.existsSync(LEGACY_CONFIG_PATH)) {
-    return LEGACY_CONFIG_PATH;
+    return LEGACY_CONFIG_PATH; // legacy fallback（deprecated）
   }
   throw new Error(`[config] No config found for tenant '${DEFAULT_TENANT}' (tried ${TENANT_CONFIG_PATH} and ${LEGACY_CONFIG_PATH})`);
 }

@@ -69,13 +69,14 @@ const TRIGGER_PATTERNS = [
       /叫真人來/i, /我要跟人說/i, /跟真人說/i,
     ],
   },
-  // L1: 態度激動/爭議（放在 explicit_request 之後）
+  // L1: 態度激動/爭議（Round 37.29 修：保留「叫老闆來」這類明確要真人 pattern，
+  // 但移除「老闆」獨立關鍵字避免「最近什麼時候開團」誤觸發）
   {
     type: 'escalation',
     level: 'L1',
-    keywords: ['叫老闆', '不要AI', '叫人來', '態度惡劣', '老闆'],
+    keywords: ['不要AI', '態度惡劣', '態度很差', '很爛', '投訴客服'],
     patterns: [
-      /叫老闆/i, /不要ai/i, /叫人來/i, /你很糟/i,
+      /不要ai/i, /叫.{0,3}老闆/i, /你很糟/i, /態度很差/i, /投訴.*客服/i,
     ],
   },
   // L2: 特殊折扣
@@ -132,15 +133,15 @@ const TRIGGER_PATTERNS = [
       /無法.*付款/i, /付款.*失敗/i,
     ],
   },
-  // L3: 開團日期不確定
+  // L3: 開團日期不確定（Round 37.29 修：移除此 trigger，AI 應自行從 dateRule.getUpcomingOpenDates 讀取）
+  // 理由：Hubert 13:04 反應「開團日期」應該由 AI 查 open_dates 自動回應，不是轉真人
+  // 保留型別定義（向後相容），但 quickMatch 不再觸發
   {
     type: 'open_date_inquiry',
-    level: 'L3',
-    keywords: ['這週有開嗎', '什麼時候開', '開團日期', '有開嗎', '開團嗎', '可以訂嗎', '幾號開'],
-    patterns: [
-      /這週.*開/i, /什麼時候.*開/i, /有開嗎/i,
-      /開團.*日期/i, /開團嗎/i, /可以訂.*嗎/i,
-    ],
+    level: 'L3_DISABLED',
+    enabled: false, // Round 37.29 (Hubert 13:04)：不再觸發
+    keywords: [],
+    patterns: [],
   },
   // L3: 截單後變更（需在 reschedule_request 之後，避免「改」被搶先匹配）
   {

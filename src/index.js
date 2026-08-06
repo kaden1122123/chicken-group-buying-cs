@@ -276,6 +276,18 @@ async function handleWebhookEvent(event) {
     return null;
   }
 
+  // Round 37.29 (Hubert 13:04)：OpenClaw handoff 鎖定 — 客戶在 HUMAN_HANDOFF 狀態時不再自動回覆
+  // 避免 OpenClaw 在老闆處理客戶時插入 AI 回覆，確保人工對話純淨
+  try {
+    const currentState = getState(userId);
+    if (currentState && currentState.state === STATES.HUMAN_HANDOFF) {
+      logger.info(`[index] 客戶 ${userId.slice(0, 8)}... 在 HUMAN_HANDOFF 狀態，跳過 AI 回覆（讓老闆處理）`);
+      return null;
+    }
+  } catch (e) {
+    // state 查詢失敗不擋流程
+  }
+
   // Round 37.25 (Hubert 19:06)：3 秒內連續訊息鎖定（防止快速連發丟回覆）
   if (!acquireMessageLock(userId)) {
     logger.info(`[index] 3 秒鎖定跳過 ${userId.slice(0, 8)}... 的快速連發訊息（避免打斷上一條回覆連線）`);

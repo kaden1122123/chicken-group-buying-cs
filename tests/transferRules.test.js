@@ -91,11 +91,11 @@ test('quickMatch — LINE Pay 付款失敗（L3 linepay_failed）', () => {
   assert.strictEqual(r.level, 'L3');
 });
 
-test('quickMatch — 開團日期詢問（L3 open_date_inquiry）', () => {
+test('quickMatch — 開團日期詢問（Round 37.29 修：L3 open_date_inquiry 已 disabled，AI 自行讀 chicken.yaml）', () => {
   const r = quickMatch('這週有開嗎');
-  assert.strictEqual(r.matched, true);
-  assert.strictEqual(r.type, 'open_date_inquiry');
-  assert.strictEqual(r.level, 'L3');
+  // 修整後：open_date_inquiry 不再觸發 handoff（keywords 與 patterns 都清空，enabled: false）
+  assert.strictEqual(r.matched, false, 'Round 37.29：開團日期 AI 應自行查 chicken.yaml，不轉真人');
+  assert.strictEqual(r.type, null);
 });
 
 test('quickMatch — 截單後變更（L3 late_modify）', () => {
