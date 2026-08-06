@@ -52,7 +52,7 @@ bash bin/check-drift 2>&1 | tail -10
 │    - Dashboard 重啟後讀這裡的程式碼                          │
 │    - 修改後必須重啟才生效                                    │
 └────────────────────┬────────────────────────────────────────┘
-                     │ sync-canonical.sh
+                     │ sync-runtime.sh (canonical + KB, Round 38 合併)
                      ↓
 ┌─────────────────────────────────────────────────────────────┐
 │ 3. L3 runtime（external-user agent 讀的 canonical 檔）      │
@@ -69,7 +69,7 @@ bash bin/check-drift 2>&1 | tail -10
 
 **改 prompt 流程**：
 1. 改 `docs/production-prompt/2026-08-04/{AGENTS,SOUL,main_idea}.md`
-2. `bash scripts/sync-canonical.sh` → 推到 L3 runtime
+2. `bash scripts/sync-runtime.sh` → 推到 L3 runtime (canonical + KB, Round 38 合併)
 
 ---
 
@@ -152,7 +152,7 @@ sleep 3
 curl -s http://localhost:3000/healthz   # 確認 up
 
 # Prompt 改完
-bash scripts/sync-canonical.sh           # dev → L3 runtime
+bash scripts/sync-runtime.sh             # dev → L3 runtime (canonical + KB, Round 38 合併)
 bash bin/check-drift 2>&1 | tail -5     # 0 Missing
 
 # Sheets 事件驅動同步（每次 csvWriter.writeOrder 自動觸發）
@@ -443,3 +443,74 @@ const fuzzyTriggers = [
 
 _本檔由 Round 37.32（2026-08-06 20:12）大更新_
 _下次接手變更必同步更新 §15_
+
+---
+
+## §16 Round 38（2026-08-06 21:11+）— sync 腳本整合 + check-quality 寫死修正
+
+**Hubert 21:11 決策**：整合 5 個 sync 腳本為 3 個，從源頭降低 drift 風險。
+
+### 16.1 新架構（從 5 個變 3 個）
+
+| 舊 | 新 | 範圍 |
+|----|----|------|
+| `sync-mirror.sh` | `sync-mirror.sh`（保留）| L1 ↔ L2 rsync |
+| `sync-producer-config.sh` | `sync-producer-config.sh`（保留）| L1 → L2 chicken.yaml（cron 每分鐘）|
+| `sync-canonical.sh` + `sync-kb.sh` | **`sync-runtime.sh`（合併）**| L1 → L3 prompt + KB |
+| `sync-config.sh` | `sync-config.sh`（保留）| L1 → L1 config.yaml legacy fallback |
+
+### 16.2 `scripts/sync-runtime.sh`（新 · 6218 bytes）
+
+合併 `sync-canonical.sh` + `sync-kb.sh`：
+- **Phase 1**：同步 canonical files（AGENTS/SOUL/main_idea.md）→ L3，含 CANONICAL 標頭備份
+- **Phase 2**：同步 KB（knowledge/tenants/*.md，12 檔）→ L3 via rsync
+- **參數**：`--canonical` / `--kb` / `--help`
+- **加 cron**（讓 prompt + KB 每分鐘自動同步）：
+  ```bash
+  * * * * * /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service/scripts/sync-runtime.sh >> /home/clawuser/.openclaw/logs/chicken/sync-runtime.log 2>&1
+  ```
+
+### 16.3 `sync-canonical.sh` / `sync-kb.sh` → Deprecated wrappers
+
+保留為 3-line shim（向後相容 cron / 舊文件）：
+```bash
+echo "⚠️  sync-canonical.sh 已 deprecated (Round 38 整合)"
+echo "    請改用: bash scripts/sync-runtime.sh"
+exec "$(dirname "$0")/sync-runtime.sh" --canonical "$@"
+```
+
+### 16.4 `check-quality.sh` Check 11/12 hardcode 修正
+
+**根因**：Check 11/12 hardcode `docs/production-prompt/2026-07-03/`，但 canonical 在 Round 37.20 已搬到 `2026-08-04/`，導致每次跑都誤報 canonical drift。
+
+**修法**：
+```bash
+# Round 38：自動偵測 latest/ → 2026-08-04 → 2026-07-03
+PP_LOC="$PROJECT_ROOT/docs/production-prompt/latest"
+if [ ! -e "$PP_LOC" ]; then
+  PP_LOC="$PROJECT_ROOT/docs/production-prompt/2026-08-04"
+fi
+if [ ! -e "$PP_LOC" ]; then
+  PP_LOC="$PROJECT_ROOT/docs/production-prompt/2026-07-03"
+fi
+PP_BASENAME=$(basename "$PP_LOC")
+```
+
+3 處 edits：`PP_LOC` 變數 + 2 個 warning 訊息改用 `$PP_BASENAME`。
+
+### 16.5 external-user exec 權限重賦（Hubert 21:11 操作）
+
+`openclaw.json` 的 `agents.external-user.tools.sandbox.tools.allow` 已加入 `"exec"`。Brought back the ability to run shell commands inside external-user sandbox（如 menu 搜尋 / 老闆通知場景）。`openclaw gateway restart` 已執行。
+
+### 16.6 新發現的 1 大架構鐵律
+
+#### 16.6.1 同步腳本數量 = drift 風險係數
+- 5 個 sync 腳本各自有 cron / docs / 維護點 → drift 風險高
+- Round 37.31 加 `sync-kb.sh` 就是「drift 後再補」的後遺症（沒人記得每個 sync 覆蓋什麼）
+- **修法**：同方向 + 同頻率的 sync 應該合併（這次合 `sync-canonical.sh` + `sync-kb.sh` → `sync-runtime.sh`）
+- **經驗**：新增 sync 腳本前先 `grep -rn "sync" scripts/` 看現有覆蓋
+
+---
+
+_本檔由 Round 38（2026-08-06 21:11+）新增 §16_
+_下次 sync / check-quality 變更必同步更新 §16_

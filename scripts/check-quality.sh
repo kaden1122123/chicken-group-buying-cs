@@ -414,12 +414,24 @@ fi
 # 詳見：docs/SYSTEM_AUDIT_2026-07-19.md §3.2 + docs/adr/0005-session-based-changes.md
 # ────────────────────────────────────────────────
 PROD_LOC="/home/clawuser/.openclaw/agents/external-user"
-PP_LOC="$PROJECT_ROOT/docs/production-prompt/2026-07-03"
+
+# Round 38 修整:不再 hardcode 2026-07-03,改用 latest/ symlink 自動偵測
+# 背景:canonical 在 Round 37.20 從 2026-07-03 搬到 2026-08-04,但此 check 一直 hardcode 舊路徑
+#      → 每次跑都誤報 canonical drift (SOUL.md / main_idea.md)
+# 修法:優先 latest/ symlink,fallback 到 2026-08-04(現行),最後 2026-07-03(舊)
+PP_LOC="$PROJECT_ROOT/docs/production-prompt/latest"
+if [ ! -e "$PP_LOC" ]; then
+  PP_LOC="$PROJECT_ROOT/docs/production-prompt/2026-08-04"
+fi
+if [ ! -e "$PP_LOC" ]; then
+  PP_LOC="$PROJECT_ROOT/docs/production-prompt/2026-07-03"
+fi
+PP_BASENAME=$(basename "$PP_LOC")
 
 if [ ! -d "$PROD_LOC" ]; then
   warn "production runtime (~/.openclaw/agents/external-user) 不存在（跳過 canonical drift 檢查）"
 elif [ ! -d "$PP_LOC" ]; then
-  warn "docs/production-prompt/2026-07-03 不存在（跳過 canonical drift 檢查）"
+  warn "docs/production-prompt/$PP_BASENAME 不存在(跳過 canonical drift 檢查)"
 else
   CANON_DRIFT=()
 
@@ -460,7 +472,7 @@ else
   done
 
   if [ ${#CANON_DRIFT[@]} -gt 0 ]; then
-    warn "production runtime canonical vs docs/production-prompt/2026-07-03 drift："
+    warn "production runtime canonical vs docs/production-prompt/$PP_BASENAME drift:"
     for f in "${CANON_DRIFT[@]}"; do
       echo "    $f"
     done
