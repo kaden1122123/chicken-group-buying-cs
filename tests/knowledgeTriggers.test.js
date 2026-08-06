@@ -54,9 +54,11 @@ test('getKBFilesForState — AWAITING_PAYMENT 回傳付款規則', () => {
   assert.ok(files.includes('03_payment.md'));
 });
 
-test('getKBFilesForState — IDLE / COMPLETED → []（無 KB）', () => {
-  assert.deepStrictEqual(triggers.getKBFilesForState('IDLE'), []);
-  assert.deepStrictEqual(triggers.getKBFilesForState('COMPLETED'), []);
+test('getKBFilesForState — IDLE / COMPLETED → INDEX.md（Round 37.27 防「連不上資料庫」幻覺）', () => {
+  for (const state of ['IDLE', 'COMPLETED']) {
+    const files = triggers.getKBFilesForState(state);
+    assert.ok(files.includes('INDEX.md'), `${state} 應含 INDEX.md 總索引`);
+  }
 });
 
 test('getKBFilesForState — HUMAN_HANDOFF 回傳 transfer rules', () => {
@@ -95,19 +97,20 @@ test('guessIntent — 「付款」/「轉帳」/「現金」→ payment_info', (
   assert.strictEqual(triggers.guessIntent('現金付款'), 'payment_info');
 });
 
-test('guessIntent — 空字串 / 無法識別 → null', () => {
-  assert.strictEqual(triggers.guessIntent(''), null);
-  assert.strictEqual(triggers.guessIntent(null), null);
-  assert.strictEqual(triggers.guessIntent(undefined), null);
-  assert.strictEqual(triggers.guessIntent('你好'), null);
+test('guessIntent — 空字串 / 無法識別 → fallback（Round 37.27 永不返回 null）', () => {
+  const { FALLBACK_INTENT } = require('../src/knowledge/triggers');
+  assert.strictEqual(triggers.guessIntent(''), FALLBACK_INTENT);
+  assert.strictEqual(triggers.guessIntent(null), FALLBACK_INTENT);
+  assert.strictEqual(triggers.guessIntent(undefined), FALLBACK_INTENT);
+  assert.strictEqual(triggers.guessIntent('你好'), FALLBACK_INTENT);
 });
 
-test('guessIntent — 空白 / 純英文 / 純符號 → null（不誤判）', () => {
-  // 修正觀念：source 只認中文關鍵字（菜單/商品/訂購等），toLowerCase 對中文無影響
-  assert.strictEqual(triggers.guessIntent('   '), null, '純空白不應誤判');
-  assert.strictEqual(triggers.guessIntent('hello'), null, '純英文不應誤判');
-  assert.strictEqual(triggers.guessIntent('???'), null, '純符號不應誤判');
-  assert.strictEqual(triggers.guessIntent('PRODUCT'), null, '英文人名不應誤判');
+test('guessIntent — 空白 / 純英文 / 純符號 → fallback（不誤判）', () => {
+  const { FALLBACK_INTENT } = require('../src/knowledge/triggers');
+  assert.strictEqual(triggers.guessIntent('   '), FALLBACK_INTENT, '純空白應 fallback');
+  assert.strictEqual(triggers.guessIntent('hello'), FALLBACK_INTENT, '純英文應 fallback');
+  assert.strictEqual(triggers.guessIntent('???'), FALLBACK_INTENT, '純符號應 fallback');
+  assert.strictEqual(triggers.guessIntent('PRODUCT'), FALLBACK_INTENT, '英文人名應 fallback');
   assert.strictEqual(triggers.guessIntent('菜單'), 'product_query', '中文關鍵字仍正確');
 });
 
@@ -138,9 +141,11 @@ test('loadKnowledgeForIntent — 已知 intent 回傳合併內容（非空字串
   assert.ok(content.includes('---'), '合併內容應含 --- 分隔');
 });
 
-test('loadKnowledgeForIntent — 未知 intent → 空字串', () => {
+test('loadKnowledgeForIntent — 未知 intent → fallback 讀 INDEX.md（Round 37.27 防「連不上資料庫」幻覺）', () => {
   triggers.clearKnowledgeCache();
-  assert.strictEqual(triggers.loadKnowledgeForIntent('nonexistent-intent-99999'), '');
+  const content = triggers.loadKnowledgeForIntent('nonexistent-intent-99999');
+  assert.ok(content.length > 0, '未知 intent 應 fallback 讀 INDEX.md 不返回空');
+  assert.ok(content.includes('INDEX') || content.includes('知識庫') || content.includes('11'), 'INDEX.md 應含總索引結構');
 });
 
 // === Group 6：loadKnowledgeForState（2 tests）===
@@ -152,9 +157,10 @@ test('loadKnowledgeForState — 已知 state 回傳合併內容', () => {
   assert.ok(content.length > 100, 'AWAITING_INFO 應有實質內容（4 個 KB 合併）');
 });
 
-test('loadKnowledgeForState — 未知 state → 空字串', () => {
+test('loadKnowledgeForState — 未知 state → fallback 讀 INDEX.md（Round 37.27 防空字串）', () => {
   triggers.clearKnowledgeCache();
-  assert.strictEqual(triggers.loadKnowledgeForState('NONEXISTENT_STATE'), '');
+  const content = triggers.loadKnowledgeForState('NONEXISTENT_STATE');
+  assert.ok(content.length > 0, '未知 state 應 fallback 不返回空');
 });
 
 // === Group 7：clearKnowledgeCache（2 tests）===

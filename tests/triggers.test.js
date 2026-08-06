@@ -36,16 +36,18 @@ test('guessIntent: 各 intent 觸發', () => {
   }
 });
 
-test('guessIntent: 無匹配 → null', () => {
+test('guessIntent: 無匹配 → fallback（Round 37.27 永不返回 null，保證知識庫 fallback）', () => {
+  const { FALLBACK_INTENT } = require('../src/knowledge/triggers');
   for (const msg of ['hello world', 'random text', '完全不對']) {
-    assert.strictEqual(guessIntent(msg), null, `「${msg}」應 null`);
+    assert.strictEqual(guessIntent(msg), FALLBACK_INTENT, `「${msg}」應 ${FALLBACK_INTENT}`);
   }
 });
 
-test('guessIntent: 邊界 — 不 crash', () => {
+test('guessIntent: 邊界 — 不 crash（null / undefined / 空字串都給 fallback）', () => {
+  const { FALLBACK_INTENT } = require('../src/knowledge/triggers');
   for (const msg of ['', null, undefined]) {
     const intent = guessIntent(msg);
-    assert.ok(intent === null || typeof intent === 'string', `「${msg}」應 null or string`);
+    assert.strictEqual(intent, FALLBACK_INTENT, `「${msg}」應 ${FALLBACK_INTENT}`);
   }
 });
 
@@ -94,7 +96,7 @@ test('loadKnowledgeForState — 真實讀取 KB 內容', () => {
 
 test('loadKnowledgeForIntent: 未知 intent 內容為空字串', () => {
   const content = loadKnowledgeForIntent('unknown_intent');
-  assert.strictEqual(content, '');
+  assert.ok(content.length > 0, 'Round 37.27：未知 intent 應 fallback 讀 INDEX.md 不返回空');
 });
 
 test('listKnowledgeFiles', () => {
