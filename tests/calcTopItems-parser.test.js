@@ -31,7 +31,7 @@ function parseItemsField(field) {
   }
   const result = {};
   const parts = s.split('|');
-  parts.forEach(function(part) {
+  parts.forEach(function (part) {
     const m = part.match(/^(.+?)\s*[xX×]\s*(\d+)/);
     if (m) {
       const name = m[1].trim();
@@ -45,21 +45,21 @@ function parseItemsField(field) {
 function calcTopItems(orders, topN) {
   topN = topN || 10;
   const counts = {};
-  orders.forEach(function(o) {
-    ['chicken_items', 'side_items', 'extra_items'].forEach(function(k) {
+  orders.forEach(function (o) {
+    ['chicken_items', 'side_items', 'extra_items'].forEach(function (k) {
       const parsed = parseItemsField(o[k]);
-      Object.keys(parsed).forEach(function(name) {
+      Object.keys(parsed).forEach(function (name) {
         counts[name] = (counts[name] || 0) + (parseInt(parsed[name]) || 0);
       });
     });
   });
   const sorted = Object.keys(counts)
-    .map(function(k) { return [k, counts[k]]; })
-    .sort(function(a, b) { return b[1] - a[1]; })
+    .map(function (k) { return [k, counts[k]]; })
+    .sort(function (a, b) { return b[1] - a[1]; })
     .slice(0, topN);
   return {
-    labels: sorted.map(function(e) { return e[0]; }),
-    data: sorted.map(function(e) { return e[1]; }),
+    labels: sorted.map(function (e) { return e[0]; }),
+    data: sorted.map(function (e) { return e[1]; }),
   };
 }
 
@@ -74,27 +74,27 @@ test('parseItemsField — empty / null / undefined', () => {
 });
 
 test('parseItemsField — JSON object 直接返回', () => {
-  assert.deepStrictEqual(parseItemsField({ '鹽水雞': 1 }), { '鹽水雞': 1 });
+  assert.deepStrictEqual(parseItemsField({ 鹽水雞: 1 }), { 鹽水雞: 1 });
 });
 
 test('parseItemsField — JSON 字串解析', () => {
-  assert.deepStrictEqual(parseItemsField('{"鹽水雞":1}'), { '鹽水雞': 1 });
-  assert.deepStrictEqual(parseItemsField('{"甘蔗煙燻雞":2,"毛豆":1}'), { '甘蔗煙燻雞': 2, '毛豆': 1 });
+  assert.deepStrictEqual(parseItemsField('{"鹽水雞":1}'), { 鹽水雞: 1 });
+  assert.deepStrictEqual(parseItemsField('{"甘蔗煙燻雞":2,"毛豆":1}'), { 甘蔗煙燻雞: 2, 毛豆: 1 });
 });
 
 test('parseItemsField — "品項x數量" 單項', () => {
-  assert.deepStrictEqual(parseItemsField('鹽水雞x1'), { '鹽水雞': 1 });
-  assert.deepStrictEqual(parseItemsField('鹽水雞x3'), { '鹽水雞': 3 });
+  assert.deepStrictEqual(parseItemsField('鹽水雞x1'), { 鹽水雞: 1 });
+  assert.deepStrictEqual(parseItemsField('鹽水雞x3'), { 鹽水雞: 3 });
 });
 
 test('parseItemsField — "品項x數量|品項x數量" 多品項', () => {
   const result = parseItemsField('鹽水雞x1|毛豆x2');
-  assert.deepStrictEqual(result, { '鹽水雞': 1, '毛豆': 2 });
+  assert.deepStrictEqual(result, { 鹽水雞: 1, 毛豆: 2 });
 });
 
 test('parseItemsField — "品項 x 數量" 帶空格', () => {
   const result = parseItemsField('鹽水雞 x 2 | 甘蔗煙燻雞 x 1');
-  assert.deepStrictEqual(result, { '鹽水雞': 2, '甘蔗煙燻雞': 1 });
+  assert.deepStrictEqual(result, { 鹽水雞: 2, 甘蔗煙燻雞: 1 });
 });
 
 test('parseItemsField — "品項(半隻) x 數量" 帶括號說明', () => {
@@ -105,13 +105,13 @@ test('parseItemsField — "品項(半隻) x 數量" 帶括號說明', () => {
 test('parseItemsField — 大寫 X 與 × 都支援', () => {
   const a = parseItemsField('鹽水雞X3');
   const b = parseItemsField('鹽水雞×3');
-  assert.deepStrictEqual(a, { '鹽水雞': 3 });
-  assert.deepStrictEqual(b, { '鹽水雞': 3 });
+  assert.deepStrictEqual(a, { 鹽水雞: 3 });
+  assert.deepStrictEqual(b, { 鹽水雞: 3 });
 });
 
 test('parseItemsField — 同品項多筆加總', () => {
   const result = parseItemsField('鹽水雞x1|鹽水雞x2');
-  assert.deepStrictEqual(result, { '鹽水雞': 3 });
+  assert.deepStrictEqual(result, { 鹽水雞: 3 });
 });
 
 test('calcTopItems — 空訂單回傳空', () => {
@@ -143,5 +143,5 @@ test('calcTopItems — Top 10 限制', () => {
   const result = calcTopItems(orders, 10);
   assert.strictEqual(result.labels.length, 10);
   assert.strictEqual(result.data.length, 10);
-  assert.strictEqual(result.data[0], 20);  // 品項_19 最大
+  assert.strictEqual(result.data[0], 20); // 品項_19 最大
 });

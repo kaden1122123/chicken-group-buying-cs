@@ -24,7 +24,7 @@ function parseItemsField(field) {
   }
   const result = {};
   const parts = s.split('|');
-  parts.forEach(function(part) {
+  parts.forEach(function (part) {
     const m = part.match(/^(.+?)\s*[xX×]\s*(\d+)/);
     if (m) {
       const name = m[1].trim();
@@ -45,7 +45,7 @@ function formatItemsForDisplay(ch, sd, ex) {
 
 function buildDriverRow(order) {
   const timeSlot = (order.time_slot || '').toLowerCase() === 'morning' ? '上午 🌞' :
-                   ((order.time_slot || '').toLowerCase() === 'afternoon' ? '下午 🌛' : (order.time_slot || '—'));
+    ((order.time_slot || '').toLowerCase() === 'afternoon' ? '下午 🌛' : (order.time_slot || '—'));
   const amount = parseFloat(order.total_amount) || 0;
   const ps = (order.payment_status || '').toLowerCase();
   const amountStr = ps === 'paid' ?
@@ -55,7 +55,7 @@ function buildDriverRow(order) {
   const itemsStr = formatItemsForDisplay(
     parseItemsField(order.chicken_items),
     parseItemsField(order.side_items),
-    parseItemsField(order.extra_items)
+    parseItemsField(order.extra_items),
   ).replace(/<br>/g, '、').replace(/<[^>]+>/g, '');
   return [
     timeSlot,
@@ -70,10 +70,10 @@ function buildDriverRow(order) {
 function buildDriverCSV(orders) {
   const headers = ['到貨時段', '客戶姓名', '電話', '配送地址(含社區)', '配送品項', '應收金額'];
   const rows = [headers];
-  orders.forEach(function(o) { rows.push(buildDriverRow(o)); });
-  return '\ufeff' + rows.map(function(r) {
-    return r.map(function(cell) {
-      var s = String(cell);
+  orders.forEach(function (o) { rows.push(buildDriverRow(o)); });
+  return '\ufeff' + rows.map(function (r) {
+    return r.map(function (cell) {
+      const s = String(cell);
       if (s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0) {
         return '"' + s.replace(/"/g, '""') + '"';
       }
@@ -86,7 +86,7 @@ function parseCSV(csv) {
   // 跳過 BOM
   const s = csv.startsWith('\ufeff') ? csv.slice(1) : csv;
   const lines = s.split('\n');
-  return lines.map(function(line) {
+  return lines.map(function (line) {
     const result = [];
     let cur = '';
     let inQ = false;
@@ -124,7 +124,7 @@ test('buildDriverRow — 訂單各欄位正確', () => {
   assert.strictEqual(row[2], '0912345678');
   assert.strictEqual(row[3], '新北市三峽區學成路100號 (三峽大埔社區)');
   assert.ok(row[4].includes('🐔 鹽水雞x1') && row[4].includes('🥒 毛豆x1'));
-  assert.strictEqual(row[5], 'NT$ 490');  // 未付款無「已付」
+  assert.strictEqual(row[5], 'NT$ 490'); // 未付款無「已付」
 });
 
 test('buildDriverRow — 已付款顯示「已付」', () => {
@@ -158,7 +158,7 @@ test('buildDriverRow — 金額千分位', () => {
     payment_status: 'paid',
   };
   const row = buildDriverRow(order);
-  assert.strictEqual(row[5], '已付 NT$ 1,020');  // 千分位
+  assert.strictEqual(row[5], '已付 NT$ 1,020'); // 千分位
 });
 
 test('buildDriverRow — 缺社區不顯示括號', () => {
@@ -175,7 +175,7 @@ test('buildDriverRow — 缺社區不顯示括號', () => {
     payment_status: 'paid',
   };
   const row = buildDriverRow(order);
-  assert.strictEqual(row[3], 'X');  // 沒有 (community)
+  assert.strictEqual(row[3], 'X'); // 沒有 (community)
 });
 
 test('buildDriverRow — 上午/下午 emoji 正確', () => {
@@ -192,7 +192,7 @@ test('buildDriverCSV — 6 欄 header + 1 BOM', () => {
   const csv = buildDriverCSV(orders);
   assert.ok(csv.startsWith('\ufeff'), '必須有 BOM（Excel 中文不亂碼）');
   const parsed = parseCSV(csv);
-  assert.strictEqual(parsed.length, 2);  // header + 1 row
+  assert.strictEqual(parsed.length, 2); // header + 1 row
   assert.deepStrictEqual(parsed[0], ['到貨時段', '客戶姓名', '電話', '配送地址(含社區)', '配送品項', '應收金額']);
   assert.strictEqual(parsed[1].length, 6);
 });
@@ -204,7 +204,7 @@ test('buildDriverCSV — 多筆訂單排序（delivery_date + time_slot 優先�
   ];
   // 司機單按 date + time_slot 優先級排序：A 上午 → B 下午
   const slotPriority = { morning: 1, afternoon: 2, evening: 3 };
-  orders.sort(function(a, b) {
+  orders.sort(function (a, b) {
     const da = (a.delivery_date || '').substring(0, 10);
     const db = (b.delivery_date || '').substring(0, 10);
     if (da !== db) return da.localeCompare(db);

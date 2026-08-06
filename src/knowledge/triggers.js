@@ -45,8 +45,8 @@ const INTENT_KB_MAP = {
   owner_info: ['08_owner_info.md'],
   lead_followup: ['11_lead_followup.md'],
   customer_tag: ['10_customer_tags.md'],
-  // 訂單確認含回覆範例 + 付款 + 訂單流程
-  order_confirm: ['12_reply_examples.md', '03_payment.md', '02_order_flow.md'],
+  // 訂單確認含回覆範例 + 付款 + 訂單流程（Round 37.28 加 01_product.md 讓客戶確認時可查真實價格）
+  order_confirm: ['01_product.md', '12_reply_examples.md', '03_payment.md', '02_order_flow.md'],
   reply_example: ['12_reply_examples.md'],
   // fallback：意圖不明確 → 加載總索引
   fallback: ['INDEX.md'],
@@ -55,13 +55,19 @@ const INTENT_KB_MAP = {
 // state → 知識庫檔案對照（依對話階段加載必要 KB）
 // state → 知識庫檔案對照（依對話階段加載必要 KB）
 // Round 37.27 (Hubert 07:51)：IDLE / COMPLETED 預設載入 INDEX.md 總索引（防「連不上資料庫」幻覺 + 讓 AI 有全局視角）
+// Round 37.28 (Hubert 09:50) Hubert 09:50：ORDERING + CONFIRMING 強制含 01_product.md
+//   - ORDERING 是下單過程中（點品項 / 問價格 / 確認品項的階段），必須讀 01_product.md 才能正確回答價格
+//   - CONFIRMING 加上 01_product.md（客戶確認階段如問「幾盒」或「多少錢」要能查真實價格）
+//   - 嚴禁回答「稍後幫您核對」或「讀不到菜單」
 const STATE_KB_MAP = {
   IDLE: ['INDEX.md'],
   AWAITING_INFO: ['01_product.md', '02_order_flow.md', '03_payment.md', '04_delivery.md', '12_reply_examples.md'],
-  CONFIRMING: ['12_reply_examples.md', '03_payment.md', '02_order_flow.md'],
-  AWAITING_PAYMENT: ['03_payment.md'],
+  ORDERING: ['01_product.md', '02_order_flow.md', '03_payment.md', '04_delivery.md', 'INDEX.md'],
+  CONFIRMING: ['01_product.md', '12_reply_examples.md', '03_payment.md', '02_order_flow.md'],
+  AWAITING_PAYMENT: ['03_payment.md', '01_product.md'],
   HUMAN_HANDOFF: ['07_transfer_rules.md'],
   COMPLETED: ['INDEX.md'],
+  REASK_INFO: ['01_product.md', '12_reply_examples.md'],
 };
 
 /**

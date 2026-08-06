@@ -3,7 +3,7 @@
 const { STATES } = require('./stateMachine');
 const { textReply, quickReply } = require('../utils/lineReply');
 const { getOrdersByLineDisplayName } = require('../order/csvReader');
-const { formatCustomerReply } = require('../order/orderFormatter');
+const { formatCustomerReply: _formatCustomerReply } = require('../order/orderFormatter');
 
 /**
  * IDLE 狀態處理
