@@ -1,12 +1,12 @@
-# 雞味客服 文件 INDEX（Round 37.20 大更新）
+# 雞味客服 文件 INDEX（Round 37.32 大更新）
 
-> **最後更新**：2026-08-05 13:12（Round 37.20 docs 大更新）
+> **最後更新**：2026-08-06 20:15（Round 37.32 4 大 bug 修整後）
 > **本檔為手動編輯**：docs/ 結構由 `scripts/sync-canonical.sh` 維護
-> **對應 Round**：37.15 結構重整 + 37.20 內容更新
+> **對應 Round**：37.15 結構重整 + 37.20 內容更新 + 37.32 4 大生產 bug 修整
 
 ---
 
-## 📊 Round 37.20 更新後結構
+## 📊 Round 37.32 更新後結構
 
 | 目錄 | 檔案數 | 用途 |
 |------|-------|------|
@@ -15,8 +15,7 @@
 | `docs/adr/` | 5 | Architecture Decision Records |
 | `docs/handoff/` | — | Session handoff 紀錄 |
 | `docs/production-prompt/` | — | L3 runtime canonical 檔（AGENTS.md / SOUL.md / main_idea.md） |
-
----
+| `memory/` | 1+ | 每日 session summary（2026-08-06 已有 Round 37.23-37.32 紀錄） |
 
 ## 🔥 必讀（4 個永久常駐手冊 · `docs/` 根目錄）
 
@@ -24,10 +23,12 @@
 
 | 檔案 | 用途 | 最後更新 |
 |------|------|----------|
-| **`docs/NEW_SESSION_HANDBOOK.md`** | 接手變更 SOP（架構 + 驗證 + 操作 + 陷阱 + 求助順序） | Round 37.20（13:12） |
-| **`docs/OWNER_MANUAL.md`** | Hubert 日常操作 SOP（菜單、後台審核、sync-mirror、緊急聯絡） | Round 37.20（13:12） |
+| **`docs/NEW_SESSION_HANDBOOK.md`** | 接手變更 SOP（架構 + 驗證 + 操作 + 陷阱 + 求助順序） | **Round 37.32**（20:12）|
+| **`docs/OWNER_MANUAL.md`** | Hubert 日常操作 SOP（菜單、後台審核、sync-mirror、緊急聯絡） | **Round 37.32**（20:15）|
 | **`docs/GMAIL_SHEETS_WORKFLOW.md`** | Gmail OAuth + Google Sheets 事件驅動同步架構 | Round 37.20（13:12） |
-| **`docs/INDEX.md`**（本檔） | 單一文件入口 + Round 歷史 + 快速連結 | Round 37.20（13:12） |
+| **`docs/INDEX.md`**（本檔） | 單一文件入口 + Round 歷史 + 快速連結 | **Round 37.32**（20:15） |
+
+> **Round 37.32 新發現**：3 個永久手冊都已同步本 session 變更（sync-kb.sh、fuzzyTriggers 縮窄、prompt leak 防護、dashboard URL 改正式域名）
 
 ---
 
@@ -64,9 +65,67 @@
 | `docs/reports/NAMED_TUNNEL_MIGRATION.md` | Cloudflare Tunnel 遷移紀錄 |
 | `docs/reports/TEST_MAP.md` | 測試套件與覆蓋率地圖 |
 
----
+## 📜 Round 歷史紀錄（最近重大變更 · Round 37.23-37.32）
 
-## 📜 Round 歷史紀錄（最近重大變更 · Round 37.11-37.19）
+### Round 37.32（2026-08-06 20:12）— fuzzyTriggers 縮窄 + 4 大 bug 修整
+- `transferRules.js` semanticMatch fuzzyTriggers 改用完整詞組（`算便宜一點` / `改到明天` / `算了不訂`），避免「貴」「下次」「算了」單字關鍵字誤觸日常對話
+- 新增 Round 37.32 regression test（`tests/handoff.test.js`）：驗證「多少錢」「最近有哪天開團」「現在還能訂嗎」「怎麼付款」都不再觸發 handoff
+- **關鍵發現**：LLM 看到 SOUL.md 的轉報格式就會複製到客戶回覆，必須在 prompt 明確標註「此格式只給 manager 用」
+
+### Round 37.31（2026-08-06 16:05）— `scripts/sync-kb.sh` 新增
+- L3 runtime 缺 `knowledge/tenants/chicken/01_product.md` → LLM 說「菜單資料讀不到」
+- 修法：rsync L1 → L3，12 個 KB .md 檔案同步
+- **經驗教訓**：新增任何 sync 腳本前先 grep `scripts/sync_*.sh` 看誰覆蓋什麼
+
+### Round 37.30（2026-08-06 14:40）— 4 大生產 bug 修整
+- LLM「客服轉報通知」誤傳客戶 → `SOUL.md` + `main_idea.md` 加註「此格式只給 manager 用，客戶走 config.handoff.customer_reply」
+- 開團日期沒讀 config → `main_idea.md` §三 修「開團日期/地址/配送/價格 AI 自讀 config/KB」
+- Dashboard URL 改 `https://dashboard.brt1122.com/`（原本是內網 `100.114.197.9:3000/admin`）
+- `emailNotifier.js` 復活 `path` import + `oauth2Client.on('tokens')` 補 .bak 同步 + `logTokenWrite` trace log
+
+### Round 37.29（2026-08-06 13:21）— 6 大商業漏洞 + 4 深度修整
+- `handoff.js` 改 `channels: ['line', 'email']`（之前只 email，Hubert LINE 端收不到）
+- `index.js` HUMAN_HANDOFF webhook 鎖定 guard（OpenClaw 不在 handoff 狀態自動回覆）
+- `emailNotifier.js` 路徑 import + .bak 同步 + trace log
+- `transferRules.js` open_date_inquiry disabled（AI 自行讀 chicken.yaml）
+- `config.js` 保留 config.yaml fallback + deprecation 註解
+
+### Round 37.28（2026-08-06 12:31）— triggers.js 補 01_product.md + CSV 清 160 廢單
+- `triggers.js` STATE_KB_MAP 新增 ORDERING state
+- CONFIRMING / AWAITING_PAYMENT / order_confirm 全部加 01_product.md
+- CSV 清 160 筆無品項廢單（PROTECTED 6/13 + 6/16 保留）
+
+### Round 37.27（2026-08-06 11:50）— 全 11 檔 KB 意圖動態加載
+- `triggers.js` INTENT_KB_MAP 涵蓋所有 11 個 KB .md
+- `guessIntent` 永不返回 null（fallback → 載 INDEX.md）
+- `loadKnowledgeForIntent/State` 安全網 fallback 讀 INDEX.md
+- 解決「連不上資料庫」幻覺
+
+### Round 37.26（2026-08-06 11:31）— 消除假動作/假轉真人/填空題問價/Emoji 卡片
+- `menuRule.js` validateMenu ambiguous 自動帶入 01_product.md 價格（不再讓客戶自填金額）
+- `orderFormatter.js` formatOrderSummary 重寫為 Emoji 純文字卡片
+- 移掉 📋 標頭裝飾線（不混 LINE 不支援的 Markdown 表格）
+- `handoff.js` 修 silent catch → 改 `.then()` 可見錯誤
+
+### Round 37.25（2026-08-06 10:35）— 6 大對話漏洞外科手術
+- 3 秒 session 鎖定（防止快速連發丟 LINE 回覆）
+- `addressRule.js` 三峽區/鶯歌區直接 `valid: true`
+- `main_idea.md` 加「轉真人應急措施」守則
+- 客戶 LINE Push 5 秒 throttle 防 spam
+
+### Round 37.24（2026-08-05 19:11）— 無品項廢單大清掃 + LINE 我的訂單
+- 8/04 8/05 8/06 刪除 160 筆 PENDING-/TEST- + 空 chicken_items/side_items 廢單
+- `idle.js` 加 MY_ORDER_QUERY_PATTERNS（『我的訂單』客戶自查）
+- `dashboard.html` 加 🚚 匯出司機出貨單按鈕
+
+### Round 37.23（2026-08-05 16:07）— Dashboard 企業級大暴修
+- 分頁（每頁 20/50/100/500 筆）
+- 搜尋（姓名/電話/訂單號）
+- 狀態篩選（全部/待對帳/已對帳/已出貨/已取消）
+- Top 10 圖表 Y 軸商品 13px + X 軸整數刻度
+- 金額千分位（zh-TW locale）
+
+---
 
 ### Round 37.19（2026-08-05 12:50）— Dashboard API Token 注入 + checkAuth X-API-Token
 - `scripts/dashboard-server.js` serve dashboard.html 時注入 `window.__API_TOKEN__`

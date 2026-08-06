@@ -1,7 +1,7 @@
 # 雞味研究所 Owner 操作手冊
 
 > **對象**：Hubert（雞味研究所老闆）
-> **最後更新**：2026-08-05 13:12（Round 37.20 docs 大更新）
+> **最後更新**：2026-08-06 20:15（Round 37.32 4 大 bug 修整後）
 > **本檔定位**：日常操作 SOP（不講程式碼，講操作）
 
 ---
@@ -36,6 +36,10 @@ storage:
 
 **或**：在 Dashboard 後台「訂單審核」頁面 → 「開團日期」區塊直接編輯。
 
+> **Round 37.30 修整**：客戶問「最近有哪天開團」時，AI 會自動從這邊讀取並回應，**不再**誤觸「轉真人」。
+
+> **Round 37.30 修整**：客戶問「多少錢」也由 AI 自行讀 `knowledge/tenants/chicken/01_product.md` 回應，**不再**誤觸「轉真人」。但若改完 01_product.md，**記得跑 sync-kb.sh**（§1.5）讓 L3 同步。
+
 ### 1.3 修改免運門檻 / 配送範圍
 
 **位置**：`config/tenants/chicken.yaml`
@@ -48,11 +52,25 @@ delivery:
     pm: 16:00~18:00
 ```
 
-### 1.4 修改付款方式（已含白名單）
+### 1.5 確認 KB 同步到 L3（Round 37.31 新增）
 
-**位置**：`src/rules/paymentRule.js`（已 Round 37.16 內建白名單）
+**修法背景**：如果 L3 LLM 說「菜單資料讀不到」或讀不到 01_product.md，可能是 KB 沒同步到 L3。
 
-官方標準名稱僅限：`轉帳 / 現金 / 街口支付 / LINE Pay`。客戶輸入任何其他字，AI 會自動降級為「轉帳」（防呆機制）。
+**修法**：
+```bash
+# 一次性手動同步
+bash scripts/sync-kb.sh
+
+# 加到 cron（讓 KB 每分鐘自動同步）
+chmod +x scripts/sync-kb.sh
+echo '* * * * * /home/clawuser/openclaw-workspace/others/chicken-group-buying-customer-service/scripts/sync-kb.sh >> /home/clawuser/.openclaw/logs/chicken/sync-kb.log 2>&1' | crontab -
+```
+
+**驗證**：
+```bash
+ls -la /home/clawuser/.openclaw/agents/external-user/knowledge/tenants/chicken/
+# 應看到 12 個 KB .md 檔（01_product 到 12_reply_examples + INDEX）
+```
 
 ---
 
@@ -83,6 +101,8 @@ delivery:
 5. 表格自動重新載入（30 秒內也會自動刷新）
 
 **匯率**：無匯率（都是 NT$）
+
+> **Round 37.29 修整**：操作按鈕成功觸發後，後台 `staff_notes` 欄位會記錄「⚠️ 老闆通知失敗：LINE=...」等狀態，**Dashboard 顯示給你**（如果 LINE + Email 都失敗）。
 
 ### 2.3 對帳流程
 
