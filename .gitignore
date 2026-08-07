@@ -28,3 +28,6 @@ config.yaml.bak.*
 
 # B 方案：X-API-Token（絕對禁止 commit，OpenClaw exec 也會 redact）
 **/api-token*
+data/db/
+data/db/*.db
+data/db/*.db-*
