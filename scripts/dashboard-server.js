@@ -760,7 +760,7 @@ const server = http.createServer(async (req, res) => {
     try {
       const orderId = decodeURIComponent(statusMatch[1]);
       const body = await parseBody(req);
-      const validStatuses = ['PENDING', 'PROCESSING', 'CONFIRMED', 'SHIPPED', 'CANCELLED'];
+      const validStatuses = ['PENDING', 'PAID', 'PROCESSING', 'CONFIRMED', 'SHIPPED', 'CANCELLED'];
       if (!validStatuses.includes(body.status)) {
         sendJson(res, 400, { success: false, error: 'status 必須是 ' + validStatuses.join('/') });
         return;
