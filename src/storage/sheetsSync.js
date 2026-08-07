@@ -196,8 +196,28 @@ function collectAllOrders() {
   const { getOrdersByDate } = require('../order/csvReader');
   const fs = require('fs');
   const tenant = getTenantId();
-  const ordersDir = path.join(process.cwd(), 'data', 'orders', tenant);
 
+  // ===== Round 40 (Hubert 14:40) Step 2：DB 為主,CSV 為 fallback =====
+  // 優先讀 DB(prompt §2「DB 為 source of truth」)
+  // - DB 有資料 → 從 DB 讀,順便做欄位映射(DB column → Sheet column)
+  // - DB 無資料 → fallback 到 CSV(向後相容舊 CSV-only 訂單)
+  // - DB module 未載入(MODULE_NOT_FOUND)→ fallback 到 CSV
+  try {
+    const db = require('../storage/db');
+    const dbOrders = db.listOrders({ limit: 100000 });
+    if (dbOrders && dbOrders.length > 0) {
+      logger.info('[sheetsSync] 從 DB 讀取訂單', { count: dbOrders.length });
+      return dbOrders.map(mapDbOrderToSheetFormat);
+    }
+    logger.info('[sheetsSync] DB 無資料,fallback 到 CSV');
+  } catch (dbErr) {
+    if (dbErr && dbErr.code !== 'MODULE_NOT_FOUND') {
+      logger.warn('[sheetsSync] DB 讀取失敗,fallback 到 CSV', { err: dbErr.message });
+    }
+  }
+
+  // CSV fallback(原有邏輯,保留 migration 期使用)
+  const ordersDir = path.join(process.cwd(), 'data', 'orders', tenant);
   if (!fs.existsSync(ordersDir)) return [];
 
   const files = fs.readdirSync(ordersDir).filter((f) => f.endsWith('.csv'));
@@ -210,6 +230,24 @@ function collectAllOrders() {
     }
   }
   return orders;
+}
+
+/**
+ * Round 40 Step 2：DB 欄位映射到 Sheet 欄位(對齊 Sheet 29 欄位 header)
+ * DB schema(prompt §3)：line_user_id, customer_name, user_phone...
+ * Sheet header(現有)：user_line_name, user_phone...
+ * 映射規則：
+ *   - customer_name → user_line_name( Sheet 期望「LINE 名稱」)
+ *   - line_user_id → 不寫入 Sheet(Sheet 沒有此欄位,留空)
+ *   - 其他欄位名一致,直接通過
+ */
+function mapDbOrderToSheetFormat(dbOrder) {
+  return {
+    ...dbOrder,
+    user_line_name: dbOrder.customer_name || dbOrder.user_line_name || '',
+    // 保留 DB 原欄位供未來 Sheet 擴充用
+    line_user_id: dbOrder.line_user_id || '',
+  };
 }
 
 /**

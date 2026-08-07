@@ -189,6 +189,28 @@ function writeOrder(orderData) {
   const csvPath = path.join(DATA_DIR, filename);
   const isNewFile = !fs.existsSync(csvPath);
 
+  // ===== Round 40 (Hubert 14:40) Step 2：DB 雙寫(DB 為主,CSV 備份)=====
+  // 策略：DB 寫入為主資料源,CSV 為備份。失敗處理：
+  //   - DB module 未載入(MODULE_NOT_FOUND)→ log warn,走 CSV-only(向後相容舊部署)
+  //   - DB 寫入失敗(其他原因,如 UNIQUE 衝突)→ throw,不寫 CSV(避免 orphan)
+  //   - DB 寫入成功 + CSV 寫入失敗 → log warn(不 throw,DB 已有資料)
+  // 設計動機：DB 是 source of truth(prompt §2),CSV 是財務備份 + Sheets 對帳源頭
+  try {
+    const db = require('../storage/db');
+    db.createOrder(orderData);
+    logger.info('[csvWriter] DB 寫入成功', { order_id: orderData.order_id });
+  } catch (dbErr) {
+    if (dbErr && dbErr.code === 'MODULE_NOT_FOUND') {
+      logger.warn('[csvWriter] DB module 未載入(向後相容模式),僅寫 CSV', { err: dbErr.message });
+    } else {
+      logger.error('[csvWriter] DB 寫入失敗,中斷 CSV 寫入', {
+        order_id: orderData.order_id,
+        err: dbErr && dbErr.message,
+      });
+      throw new Error(`[csvWriter] DB 寫入失敗:${dbErr && dbErr.message}`);
+    }
+  }
+
   // 序列化寫入：用 proper-lockfile 鎖 DATA_DIR（跨 process 也有效）
   let locked = false;
   try {

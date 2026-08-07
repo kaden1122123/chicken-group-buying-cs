@@ -75,6 +75,23 @@ CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_order_status ON orders(order_status);
 `;
 
+/**
+ * 確保 production DB 已初始化(lazy init — 只在 production DB 首次寫入時建表)
+ * - 測試傳入的 :memory: db 不會被 auto-init(測試自行管理)
+ * - initDb(db) 明確呼叫會重設 flag(供重置 schema 用)
+ */
+let _initialized = false;
+function ensureInitialized() {
+  if (_initialized) return;
+  initDb();
+  _initialized = true;
+}
+
+/** 重置 initialized flag(供測試重置 schema 用) */
+function _resetInitFlag() {
+  _initialized = false;
+}
+
 const ALL_COLUMNS = [
   'order_id', 'created_at', 'updated_at',
   'line_user_id', 'customer_name', 'payment_method', 'payment_info',
@@ -124,6 +141,7 @@ function initDb(db) {
   const target = db || openDb();
   try {
     target.exec(SCHEMA_SQL);
+    if (!db) _initialized = true; // 只對 production DB 設 flag
     return true;
   } finally {
     if (!db) target.close();
@@ -140,11 +158,16 @@ function createOrder(orderData, db) {
   if (!orderData || !orderData.order_id) {
     throw new Error('createOrder: orderData.order_id is required');
   }
+  if (!db) ensureInitialized(); // production DB lazy init(測試傳 db 時跳過)
   const target = db || openDb();
   const now = new Date().toISOString();
 
   // 動態建構 INSERT:跳過 null/undefined 欄位,讓 SQLite 用 DEFAULT 值
   // (避免顯式 NULL 違反 NOT NULL 約束)
+  // 型別轉換:better-sqlite3 只接受 number/string/bigint/buffer/null
+  //   - boolean → 0/1(SQLite 無原生 boolean,用 INTEGER)
+  //   - Date → ISO string
+  //   - object (excluded) → 跳過
   const cols = [];
   const placeholders = [];
   const params = {};
@@ -154,10 +177,19 @@ function createOrder(orderData, db) {
       value = orderData[col] || now;
     } else if (col === 'updated_at') {
       value = now;
-    } else if (orderData[col] != null) {
-      value = orderData[col];
-    } else {
+    } else if (orderData[col] === undefined || orderData[col] === null) {
       continue; // 跳過此欄位,使用 SQLite DEFAULT
+    } else {
+      value = orderData[col];
+    }
+    // 型別轉換(SQLite 約束)
+    if (typeof value === 'boolean') {
+      value = value ? 1 : 0;
+    } else if (value instanceof Date) {
+      value = value.toISOString();
+    } else if (typeof value === 'object') {
+      // 避免 object/array 進 DB(進階用法應由 caller 自行 JSON.stringify)
+      value = JSON.stringify(value);
     }
     cols.push(col);
     placeholders.push(`@${col}`);
@@ -180,6 +212,7 @@ function createOrder(orderData, db) {
  * @returns {Object|null}
  */
 function getOrderById(orderId, db) {
+  if (!db) ensureInitialized();
   const target = db || openDb();
   try {
     const row = target.prepare('SELECT * FROM orders WHERE order_id = ?').get(orderId);
@@ -203,6 +236,7 @@ function updateOrderStatus(orderId, updates, db) {
   if (!updates || typeof updates !== 'object') {
     throw new Error('updateOrderStatus: updates object is required');
   }
+  if (!db) ensureInitialized();
   const target = db || openDb();
   const sets = [];
   const values = { order_id: orderId };
@@ -239,6 +273,7 @@ function updateOrderStatus(orderId, updates, db) {
  */
 function listOrders(opts = {}, db) {
   const { limit = 100, offset = 0, payment_status, order_status, line_user_id } = opts;
+  if (!db) ensureInitialized();
   const target = db || openDb();
   let sql = 'SELECT * FROM orders WHERE 1=1';
   const params = { limit, offset };
@@ -268,6 +303,7 @@ module.exports = {
   initDb,
   openDb,
   ensureDbDir,
+  ensureInitialized,
   // CRUD
   createOrder,
   getOrderById,
