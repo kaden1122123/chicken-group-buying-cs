@@ -681,39 +681,68 @@
         return;
       }
 
-      // ===== Round 37.18 統一 handler：updateOrderStatus() — X-API-Token + Toast =====
+      // ===== Round 40 (Hubert 14:40) Step 3：4 個按鈕 handler — X-API-Token + Toast =====
+      // 4 個動作對應 4 個 endpoint(prompt §3)：
+      //   PAID → /api/orders/:id/status (status=PAID)
+      //   PAYMENT_FAILED → /api/orders/:id/payment-failed (新)
+      //   SHIPPED → /api/orders/:id/shipped (新,需 tracking_number)
+      //   CANCEL → /api/orders/:id/status (status=CANCELLED)
       if (e.target.classList.contains('mark-paid-btn') ||
           e.target.classList.contains('shipped-btn') ||
-          e.target.classList.contains('cancel-btn')) {
-        var action = e.target.classList.contains('mark-paid-btn') ? 'PAID' :
-                     e.target.classList.contains('shipped-btn') ? 'CONFIRMED' : 'CANCELLED';
-        var actionLabel = action === 'PAID' ? '已收款' : (action === 'CONFIRMED' ? '已出貨' : '取消');
+          e.target.classList.contains('cancel-btn') ||
+          e.target.classList.contains('mark-payment-failed-btn')) {
+        var endpoint = '';
+        var body2 = {};
+        var actionLabel = '';
+        if (e.target.classList.contains('mark-paid-btn')) {
+          endpoint = '/status';
+          body2 = { status: 'PAID' };
+          actionLabel = '已收款';
+        } else if (e.target.classList.contains('mark-payment-failed-btn')) {
+          endpoint = '/payment-failed';
+          body2 = {};
+          actionLabel = '核帳失敗';
+        } else if (e.target.classList.contains('shipped-btn')) {
+          // SHIPPED 需先跳輸入框收 tracking_number
+          var trackingInput = prompt('請輸入物流單號：');
+          if (!trackingInput || !trackingInput.trim()) {
+            showToast('⚠️ 已取消：未輸入物流單號', 'warn');
+            return;
+          }
+          endpoint = '/shipped';
+          body2 = { tracking_number: trackingInput.trim() };
+          actionLabel = '已出貨';
+        } else if (e.target.classList.contains('cancel-btn')) {
+          endpoint = '/status';
+          body2 = { status: 'CANCELLED' };
+          actionLabel = '取消';
+        }
         var btnDate = e.target.dataset.date || '';
-        // 若 data-date 為空（測試訂單沒有 delivery_date），自動從訂單 row 抓
         if (!btnDate) {
           var row = e.target.closest('tr');
           if (row && row.dataset.deliveryDate) btnDate = row.dataset.deliveryDate;
         }
+        body2.date = btnDate; // 舊 API 相容用
         if (!confirm('確認將訂單 ' + orderId + ' 標記為 ' + actionLabel + '？')) return;
         e.target.disabled = true;
         var origText = e.target.textContent;
         e.target.textContent = '處理中...';
         try {
-          var r2 = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/status', {
+          var r2 = await fetch('/api/orders/' + encodeURIComponent(orderId) + endpoint, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'X-API-Token': window.__API_TOKEN__ || '',
             },
-            body: JSON.stringify({ date: btnDate, status: action }),
+            body: JSON.stringify(body2),
           });
           var data2 = await r2.json();
           if (data2.success) {
-            showToast('✅ 訂單 ' + orderId + ' 狀態已更新為 ' + action + '！', 'success');
-            // 自動刷新表格 + 圖表 + 背景觸發 Sheets 同步
+            var toastMsg = '✅ 訂單 ' + orderId + ' 狀態已更新為 ' + actionLabel;
+            if (data2.tracking_number) toastMsg += '（單號 ' + data2.tracking_number + '）';
+            showToast(toastMsg + '！', 'success');
             loadRecentOrders(true);
             loadAllOrdersAndRenderCharts();
-            // 後端 /status handler 已內建 trigger Sheets sync（dashboard-server v 9a139ea 之後）
           } else {
             e.target.disabled = false;
             e.target.textContent = origText;
@@ -860,7 +889,7 @@
           '<td><span style="color:' + statusColor(orderStatus) + ';font-weight:600">' + orderStatus + '</span></td>' +
           '<td><span style="color:' + statusColor(paymentMethod) + ';font-weight:600">' + paymentMethod + '</span></td>' +
           '<td><span style="color:' + statusColor(paymentStatus) + ';font-weight:600">' + paymentStatus + '</span></td>' +
-          '<td style="white-space:nowrap"><button class="mark-paid-btn" data-order-id="' + orderId + '" data-date="' + (o.delivery_date || '').substring(0, 10) + '" style="background:#4caf50;color:white;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;margin:1px">✓ PAID</button><button class="shipped-btn" data-order-id="' + orderId + '" data-date="' + (o.delivery_date || '').substring(0, 10) + '" style="background:#2196f3;color:white;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;margin:1px">🚚 SHIPPED</button><button class="cancel-btn" data-order-id="' + orderId + '" data-date="' + (o.delivery_date || '').substring(0, 10) + '" style="background:#f44336;color:white;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;margin:1px">✕ CANCEL</button></td>' +
+          '<td style="white-space:nowrap"><button class="mark-paid-btn" data-order-id="' + orderId + '" data-date="' + (o.delivery_date || '').substring(0, 10) + '" style="background:#4caf50;color:white;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;margin:1px">✓ PAID</button><button class="mark-payment-failed-btn" data-order-id="' + orderId + '" data-date="' + (o.delivery_date || '').substring(0, 10) + '" style="background:#ff9800;color:white;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;margin:1px">✕ FAILED</button><button class="shipped-btn" data-order-id="' + orderId + '" data-date="' + (o.delivery_date || '').substring(0, 10) + '" style="background:#2196f3;color:white;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;margin:1px">🚚 SHIPPED</button><button class="cancel-btn" data-order-id="' + orderId + '" data-date="' + (o.delivery_date || '').substring(0, 10) + '" style="background:#f44336;color:white;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;margin:1px">✕ CANCEL</button></td>' +
         '</tr>';
       });
       tbody.innerHTML = rows.join('\n');

@@ -600,12 +600,32 @@ const server = http.createServer(async (req, res) => {
   }
 
   // GET /api/recent-orders - Session X3-A：最近 N 筆訂單（limit 預設 20）
+  // Round 40 (Hubert 14:40) Step 3：改讀 DB(主)，CSV 為 fallback(向後相容舊 CSV-only 訂單)
   if (url.startsWith('/api/recent-orders') && method === 'GET') {
     const urlObj = new URL(req.url, `http://${req.headers.host}`);
     const limit = parseInt(urlObj.searchParams.get('limit') || '20', 10);
-    const safeLimit = Math.min(Math.max(limit, 1), 1000); // Round 37.23 (Hubert 16:07) 擴大 limit cap 100 → 1000，讓全系統 670+ 筆訂單可一次載入供前端分頁 / 搜尋 / 狀態篩選
-    const recent = getRecentOrders(safeLimit);
-    sendJson(res, 200, { tenant: getTenantId(), count: recent.length, orders: recent });
+    const safeLimit = Math.min(Math.max(limit, 1), 1000);
+    let recent = [];
+    let source = 'csv'; // 標記來源供前端可選顯示
+    try {
+      const db = require('../src/storage/db');
+      const dbOrders = db.listOrders({ limit: safeLimit });
+      if (dbOrders && dbOrders.length > 0) {
+        // DB → 前端格式映射(customer_name → user_line_name)
+        recent = dbOrders.map((o) => ({
+          ...o,
+          user_line_name: o.customer_name || o.user_line_name || '',
+        }));
+        source = 'db';
+      } else {
+        // DB 空 → fallback CSV(向後相容舊 CSV-only 訂單)
+        recent = getRecentOrders(safeLimit);
+      }
+    } catch (dbErr) {
+      logger.warn('[/api/recent-orders] DB 讀取失敗,fallback CSV', { err: dbErr.message });
+      recent = getRecentOrders(safeLimit);
+    }
+    sendJson(res, 200, { tenant: getTenantId(), count: recent.length, orders: recent, source });
     return;
   }
 
@@ -729,43 +749,129 @@ const server = http.createServer(async (req, res) => {
 
 
   // Round 37.10 (Hubert 21:55)：POST /api/orders/:orderId/status — 變更訂單狀態
+  // Round 40 (Hubert 14:40) Step 3：改寫 DB(不再讀 CSV)
+  // 對應 prompt §3 按鈕動作：
+  //   - PAID：同時設 payment_status='PAID' + order_status='PROCESSING'
+  //   - SHIPPED：設 order_status='SHIPPED'(不需 tracking_number 走這個 endpoint)
+  //   - CANCELLED：設 order_status='CANCELLED'
+  //   - CONFIRMED：設 order_status='PROCESSING'(向後相容舊 API)
   const statusMatch = url.match(/^\/api\/orders\/([^/]+)\/status$/);
   if (statusMatch && method === 'POST') {
     try {
       const orderId = decodeURIComponent(statusMatch[1]);
       const body = await parseBody(req);
-      const validStatuses = ['PENDING', 'CONFIRMED', 'PAID', 'CANCELLED'];
+      const validStatuses = ['PENDING', 'PROCESSING', 'CONFIRMED', 'SHIPPED', 'CANCELLED'];
       if (!validStatuses.includes(body.status)) {
         sendJson(res, 400, { success: false, error: 'status 必須是 ' + validStatuses.join('/') });
         return;
       }
-      const csvPath = path.join(__dirname, '..', 'data', 'orders', 'chicken', body.date + '.csv');
-      if (!fs.existsSync(csvPath)) {
-        sendJson(res, 404, { success: false, error: '該日期無訂單 CSV: ' + body.date });
+      const db = require('../src/storage/db');
+      // PAID 同時設 payment_status + order_status(prompt §3)
+      const updates = { order_status: body.status };
+      if (body.status === 'PAID') {
+        updates.payment_status = 'PAID';
+        updates.order_status = 'PROCESSING'; // PAID 連動訂單狀態
+      }
+      const result = db.updateOrderStatus(orderId, updates);
+      if (result.changes === 0) {
+        sendJson(res, 404, { success: false, error: '找不到訂單或無更新: ' + orderId });
         return;
       }
-      const csv = fs.readFileSync(csvPath, 'utf8');
-      const lines = csv.split('\n');
-      const header = lines[0].split(',');
-      const idIdx = header.indexOf('order_id');
-      const statusIdx = header.indexOf('order_status');
-      let updated = false;
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',');
-        if (cols[idIdx] === orderId) {
-          cols[statusIdx] = body.status;
-          lines[i] = cols.join(',');
-          updated = true;
-          break;
-        }
-      }
-      if (updated) {
-        fs.writeFileSync(csvPath, lines.join('\n'), 'utf8');
-        sendJson(res, 200, { success: true, message: '訂單狀態已更新', order_id: orderId, status: body.status });
-      } else {
-        sendJson(res, 404, { success: false, error: '找不到訂單: ' + orderId });
-      }
+      // 背景觸發 Sheets sync(向後相容)
+      try {
+        const sheetsSync = require('../src/storage/sheetsSync');
+        sheetsSync.syncOrdersToSheets({ dryRun: false, forceSync: true }).catch((e) =>
+          logger.warn('[status] sheetsSync failed', { err: e.message }),
+        );
+      } catch (e) { /* sheetsSync 模組不存在時忽略 */ }
+      sendJson(res, 200, {
+        success: true,
+        message: '訂單狀態已更新',
+        order_id: orderId,
+        status: body.status,
+        changes: result.changes,
+      });
     } catch (e) {
+      logger.error('[/api/orders/:id/status] error:', e);
+      sendJson(res, 500, { success: false, error: e.message });
+    }
+    return;
+  }
+
+  // Round 40 (Hubert 14:40) Step 3：POST /api/orders/:orderId/payment-failed — 核帳失敗
+  // 對應 prompt §3 Payment Failed 按鈕：payment_status='FAILED' + LINE 推播(Step 4 補)
+  const paymentFailedMatch = url.match(/^\/api\/orders\/([^/]+)\/payment-failed$/);
+  if (paymentFailedMatch && method === 'POST') {
+    try {
+      const orderId = decodeURIComponent(paymentFailedMatch[1]);
+      const db = require('../src/storage/db');
+      const result = db.updateOrderStatus(orderId, {
+        payment_status: 'FAILED',
+        staff_notes: '核帳失敗：查無此款項，請客戶重新提供帳號後五碼或憑證',
+      });
+      if (result.changes === 0) {
+        sendJson(res, 404, { success: false, error: '找不到訂單: ' + orderId });
+        return;
+      }
+      // 背景觸發 Sheets sync
+      try {
+        const sheetsSync = require('../src/storage/sheetsSync');
+        sheetsSync.syncOrdersToSheets({ dryRun: false, forceSync: true }).catch((e) =>
+          logger.warn('[payment-failed] sheetsSync failed', { err: e.message }),
+        );
+      } catch (e) { /* ignore */ }
+      sendJson(res, 200, {
+        success: true,
+        message: '訂單已標記為核帳失敗',
+        order_id: orderId,
+        payment_status: 'FAILED',
+        changes: result.changes,
+      });
+    } catch (e) {
+      logger.error('[/api/orders/:id/payment-failed] error:', e);
+      sendJson(res, 500, { success: false, error: e.message });
+    }
+    return;
+  }
+
+  // Round 40 (Hubert 14:40) Step 3：POST /api/orders/:orderId/shipped — 出貨(含 tracking_number)
+  // 對應 prompt §3 Shipped 按鈕：order_status='SHIPPED' + tracking_number + LINE 推播(Step 4 補)
+  const shippedMatch = url.match(/^\/api\/orders\/([^/]+)\/shipped$/);
+  if (shippedMatch && method === 'POST') {
+    try {
+      const orderId = decodeURIComponent(shippedMatch[1]);
+      const body = await parseBody(req);
+      const trackingNumber = (body.tracking_number || '').toString().trim();
+      if (!trackingNumber) {
+        sendJson(res, 400, { success: false, error: 'tracking_number 必填' });
+        return;
+      }
+      const db = require('../src/storage/db');
+      const result = db.updateOrderStatus(orderId, {
+        order_status: 'SHIPPED',
+        tracking_number: trackingNumber,
+      });
+      if (result.changes === 0) {
+        sendJson(res, 404, { success: false, error: '找不到訂單: ' + orderId });
+        return;
+      }
+      // 背景觸發 Sheets sync
+      try {
+        const sheetsSync = require('../src/storage/sheetsSync');
+        sheetsSync.syncOrdersToSheets({ dryRun: false, forceSync: true }).catch((e) =>
+          logger.warn('[shipped] sheetsSync failed', { err: e.message }),
+        );
+      } catch (e) { /* ignore */ }
+      sendJson(res, 200, {
+        success: true,
+        message: '訂單已標記為已出貨',
+        order_id: orderId,
+        order_status: 'SHIPPED',
+        tracking_number: trackingNumber,
+        changes: result.changes,
+      });
+    } catch (e) {
+      logger.error('[/api/orders/:id/shipped] error:', e);
       sendJson(res, 500, { success: false, error: e.message });
     }
     return;
