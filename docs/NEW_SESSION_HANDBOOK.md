@@ -596,3 +596,146 @@ deliveryAreaKeywords.some((kw) => lower.includes(kw))
 
 _本檔由 Round 39（2026-08-06 21:35+）新增 §17_
 _下次 pre-existing 失敗或 cron 變更必同步更新 §17_
+
+---
+
+## §18 Round 40（2026-08-07）— SQLite Primary DB 整合(Steps 1-6+hotfix)
+
+**Hubert 14:40 同意 + 14:56 / 15:43 接續開發**。Round 40 是雞味客服史最大架構變更：從 CSV-only 雙寫升級為以 SQLite 為 Primary DB 的雙向架構(6 個 Steps + 1 個 hotfix)。
+
+### 18.0 Step 0:按鈕 bug 修補(部署 drift)
+
+**根因**:Round 37.19 token 注入 code 已 commit 到 L1,但 L2 dashboard-server 跑舊版(未 sync-mirror + 未重啟)→ 沒有 `window.__API_TOKEN__` → 按鈕 fetch X-API-Token 是 undefined → 401 被前端吞掉 → 「按了沒反應」。
+
+**修法**:`sync-mirror.sh from-legacy` → `pkill -9 dashboard-server` → 重啟 L2 dashboard-server → `curl /` 驗證 token 注入。
+
+**修前**:POST /api/orders/:id/status → 401 → 前端看起來「沒反應」
+**修後**:POST /api/orders/:id/status with X-API-Token → 正常路由
+
+### 18.1 Step 1:DB 基礎建設(commit 87dc969)
+
+**新增**:
+- `src/storage/db.js`(282 行):5 個標準 CRUD(initDb / openDb / createOrder / getOrderById / updateOrderStatus / listOrders)+ 32 欄位 schema + 4 indexes + lazy `ensureInitialized()` + 型別轉換
+- `tests/db.test.js`(349 行, 17 tests):initDb / createOrder / updateOrderStatus / listOrders / 4 個 integration workflow
+
+**Schema**:對齊 CSV 29 欄 + tracking_number 擴充。核心欄位(order_id PK / line_user_id / customer_name / payment_method / payment_info / payment_status / order_status / tracking_number / total_amount / created_at / updated_at) + 完整欄位 + 4 indexes。
+
+**驗證**:npm test 65/65 pass(原 64 + db.test.js)。
+
+### 18.2 Step 2:雙寫重構(commit 5408aeb)
+
+**修改**:
+- `src/order/csvWriter.js` writeOrder 新增 DB 寫入(DB 為主,CSV 備份)+ 失敗處理(MODULE_NOT_FOUND fallback / 其他錯誤 throw)
+- `src/storage/sheetsSync.js` collectAllOrders 改讀 DB(mapDbOrderToSheetFormat:customer_name → user_line_name)+ CSV fallback
+- `src/storage/db.js` 加型別轉換(boolean → 0/1,Date → ISO)+ ensureInitialized lazy init
+
+**為什麼需要 ensureInitialized**:tests 不傳 db 參數,直接 `db.createOrder(orderData)` → DB module 載入時不會 initDb → 「no such table: orders」錯誤。Lazy init 確保 production DB 首次寫入時自動建表。
+
+**修正的 bug**:測試時 `intent_confirmed: false`(boolean)→ better-sqlite3 不接受 boolean → 加型別轉換修。
+
+### 18.3 Step 3:Dashboard API + UI(commit 72712d9)
+
+**API 改動**(`scripts/dashboard-server.js`):
+- `GET /api/recent-orders`:讀 DB(db.listOrders)+ CSV fallback + `customer_name → user_line_name` 映射
+- `POST /api/orders/:id/status`:寫 DB(PAID 連動 payment_status='PAID' + order_status='PROCESSING')+ 背景觸發 sheetsSync + LINE push hook
+- `POST /api/orders/:id/payment-failed`(新):payment_status='FAILED' + staff_notes 註記 + LINE push hook
+- `POST /api/orders/:id/shipped`(新):order_status='SHIPPED' + tracking_number 必填 + LINE push hook
+
+**UI 改動**(`dashboard.html`):
+- 4 個按鈕:`✓ PAID` / `✕ FAILED` / `🚚 SHIPPED` / `✕ CANCEL`(加 `mark-payment-failed-btn` class)
+- SHIPPED 點擊跳 `prompt('請輸入物流單號')` → POST /shipped
+- X-API-Token header 從 `window.__API_TOKEN__` 自動帶
+
+### 18.4 Step 4:LINE Customer Push + 老闆 Email(commit 0106407)
+
+**新增**:
+- `src/handoff/linePush.js`(141 行):pushToCustomer / safePushToCustomer(透過 LINE Messaging API https://api.line.me/v2/bot/message/push)+ LINE_BOT_TOKEN 從 env 或 secrets 讀
+
+**修改**:
+- `src/order/csvWriter.js`:銀行轉帳(transfer) / 街口付款(jko)下單 → emailNotifier.sendEmail(setImmediate fire-and-forget)
+- `scripts/dashboard-server.js` 3 個 endpoint 都加 LINE push hook(PAID / SHIPPED+單號 / PAYMENT_FAILED / CANCELLED)
+
+**Email 內容**:`訂單編號 / 金額 / 付款方式 / 付款資訊 / Dashboard 連結` 寄給 `k.chang.8844@gmail.com`。
+
+**LINE 訊息**:
+- PAID:「訂單 {order_id} 已完成付款核對,目前為您備貨中!」
+- SHIPPED:「訂單 {order_id} 已出貨!冷鏈物流單號為:{tracking_number}。」
+- PAYMENT_FAILED:「訂單 {order_id} 查無此款項,請確認轉帳帳號後五碼或重新提供憑證。」
+- CANCELLED:「您的訂單 {order_id} 已成功取消。」
+
+### 18.5 Step 5:OpenClaw Tool(commit 43a3ba1)
+
+**新增**:
+- `src/tools/orderStatus.js`(71 行):`get_order_status(line_user_id, opts)` Tool
+  - 查詢 DB(不讀 CSV)+ 接受 opts.db 測試用 in-memory DB
+  - 回傳 { found, count, orders: [{ order_id, payment_status, order_status, tracking_number, delivery_date, total_amount, ... }] }
+- `tests/tools-orderStatus.test.js`(130 行, 6 tests):缺參數 / 非字串 / 查無用戶 / 查詢既有 / limit 生效 / SHIPPED 含 tracking
+
+**註冊方式**(待 Hubert 手動):
+- external-user agent 需在 `~/.openclaw/openclaw.json` 加 `tools.allow` 或 `tools.sandbox.tools.allow` 包含此 Tool
+- `bash scripts/sync-runtime.sh` 已推 L1 → L3(external-user runtime)
+
+### 18.6 Step 6:部署驗證 + Hotfix(commit ad30c7d)
+
+**部署流程**:
+1. `bash scripts/sync-mirror.sh from-legacy`(L1 → L2, 376KB sent)
+2. `bash scripts/sync-runtime.sh`(L1 → L3 KB+Tool, 12 個 .md)
+3. `pkill -9 -f dashboard-server` + `nohup node scripts/dashboard-server.js`(注意:SIGKILL 可能影響 exec shell,建議用 SIGTERM)
+4. `curl /healthz` 驗證 200
+5. `curl /` with X-API-Token 驗證 token 注入
+
+**Hotfix**:PAID status 漏列 validStatuses
+- 修前:POST /api/orders/:id/status {status:'PAID'} → 400 invalid status
+- 修後:validStatuses 加 'PAID',handler 內部 PAID → payment_status='PAID' + order_status='PROCESSING'
+
+### 18.7 新發現的 5 大架構鐵律
+
+#### 18.7.1 部署 drift = 按鈕沒反應
+- L1 commit ≠ L2 running(sync-mirror + restart 是必要步驟)
+- 健康檢查 `curl /healthz` 只驗證服務 up,**不驗證 token 注入**
+- **修法**:部署 SOP 必加 `curl /` with auth → grep __API_TOKEN__
+
+#### 18.7.2 lazy init 避免測試污染
+- `ensureInitialized()` 用 module-level flag,只對 production DB 生效
+- 測試傳 `:memory:` DB → 跳過 lazy init(測試自行管理 schema)
+- **教訓**:production DB 模組不要在 module load 時 initDb(會跟測試打架)
+
+#### 18.7.3 SQLite type coercion 不可省
+- better-sqlite3 只接受 number / string / bigint / buffer / null
+- JS boolean / Date / object 必須轉換
+- **修法**:createOrder 入口加型別轉換層(boolean → 0/1,Date → ISO,object → JSON.stringify)
+
+#### 18.7.4 測試隔離需要支援 external DB
+- `db.listOrders(opts, externalDb)` 第二參數讓測試傳 in-memory DB
+- Tool 模組(`get_order_status`)要向下相容:接受 `opts.db` 用測試 DB
+- **教訓**:production module 一開始就設計測試隔離機制,事後改成本高
+
+#### 18.7.5 dashboard 在 / 不是 /dashboard
+- 我測試時用 `curl /dashboard` → 404
+- 正確:`curl /`(dashboard-server line 542: `url === '/' || url.startsWith('/?')`)
+- **教訓**:health check 端點優先用 `/healthz`,前端用 `/`,不要亂猜
+
+### 18.8 改動統計(Round 40 全部)
+
+| Step | commit | files | +/- |
+|------|--------|-------|-----|
+| 1 | 87dc969 | 5 | +660 / -3 |
+| 2 | 5408aeb | 3 | +100 / -4 |
+| 3 | 72712d9 | 2 | +172 / -37 |
+| 4 | 0106407 | 3 | +216 / -0 |
+| 5 | 43a3ba1 | 2 | +201 / -0 |
+| 6 | ad30c7d | 1 | +1 / -1 |
+| docs | (pending) | 2 | +TBD |
+| **總計** | **6 commits + 1 docs** | **~16** | **+1350 / -45** |
+
+### 18.9 下次接手注意
+
+- **external-user agent** 需手動在 `openclaw.json` 註冊 `src/tools/orderStatus.js`(openclaw.json 格式有 comments,jq 解析失敗,需手動編輯)
+- **DB migrate script** 還沒寫(現有 CSV-only 訂單不會自動 import DB)— Round 41+ 可加 `scripts/migrate-csv-to-db.js`
+- **test fixture 清理**:npm test 會在 in-memory DB 建立測試訂單(不污染 production DB),但 handoff test 可能寫到 production DB(注意 cleanup)
+- **PAID 連動 payment_status + order_status**:未來 dashboard 若要拆開設兩個狀態,validStatuses 需重構
+
+---
+
+_本檔由 Round 40（2026-08-07 15:43+）新增 §18_
+_下次 SQLite / Dashboard / Tool 變更必同步更新 §18_
