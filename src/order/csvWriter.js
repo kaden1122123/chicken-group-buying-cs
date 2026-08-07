@@ -195,9 +195,11 @@ function writeOrder(orderData) {
   //   - DB 寫入失敗(其他原因,如 UNIQUE 衝突)→ throw,不寫 CSV(避免 orphan)
   //   - DB 寫入成功 + CSV 寫入失敗 → log warn(不 throw,DB 已有資料)
   // 設計動機：DB 是 source of truth(prompt §2),CSV 是財務備份 + Sheets 對帳源頭
+  let dbWriteSucceeded = false;
   try {
     const db = require('../storage/db');
     db.createOrder(orderData);
+    dbWriteSucceeded = true;
     logger.info('[csvWriter] DB 寫入成功', { order_id: orderData.order_id });
   } catch (dbErr) {
     if (dbErr && dbErr.code === 'MODULE_NOT_FOUND') {
@@ -209,6 +211,44 @@ function writeOrder(orderData) {
       });
       throw new Error(`[csvWriter] DB 寫入失敗:${dbErr && dbErr.message}`);
     }
+  }
+
+  // ===== Round 40 Step 4：老闆核帳提醒 email(銀行轉帳 / 街口付款)=====
+  // 銀行轉帳(transfer) / 街口支付(jko)需要 Hubert 手動核帳 → 自動寄信通知
+  // fire-and-forget:失敗不 throw,只 log warn(不影響主流程)
+  // 為什麼這裡 hook 而非 dashboard:這是「新訂單建立時」通知,不是「狀態變更」
+  if (dbWriteSucceeded && (orderData.payment_method === 'transfer' || orderData.payment_method === 'jko')) {
+    setImmediate(async () => {
+      try {
+        const emailNotifier = require('../handoff/emailNotifier');
+        const dashboardUrl = `https://dashboard.brt1122.com/?order=${encodeURIComponent(orderData.order_id)}`;
+        const body = [
+          '🔔 新訂單待核帳',
+          '',
+          `訂單編號：${orderData.order_id}`,
+          `金額：NT$ ${orderData.total_amount || 0}`,
+          `付款方式：${orderData.payment_method === 'transfer' ? '銀行轉帳' : '街口支付'}`,
+          `付款資訊：${orderData.payment_info || '(未填)'}`,
+          `客戶：${orderData.customer_name || orderData.user_line_name || '(未填)'}`,
+          `地址：${orderData.address || '(未填)'}`,
+          '',
+          `Dashboard：${dashboardUrl}`,
+          '',
+          '請儘速核帳。',
+        ].join('\n');
+        await emailNotifier.sendEmail({
+          to: 'k.chang.8844@gmail.com',
+          subject: `【雞味研究所】🔔 新訂單待核帳 - ${orderData.order_id}`,
+          body,
+        });
+        logger.info('[csvWriter] 老闆核帳 email 已寄', { order_id: orderData.order_id });
+      } catch (emailErr) {
+        logger.warn('[csvWriter] 老闆核帳 email 寄送失敗(已 catch,不影響主流程)', {
+          order_id: orderData.order_id,
+          err: emailErr.message,
+        });
+      }
+    });
   }
 
   // 序列化寫入：用 proper-lockfile 鎖 DATA_DIR（跨 process 也有效）

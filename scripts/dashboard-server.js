@@ -784,6 +784,23 @@ const server = http.createServer(async (req, res) => {
           logger.warn('[status] sheetsSync failed', { err: e.message }),
         );
       } catch (e) { /* sheetsSync 模組不存在時忽略 */ }
+
+      // Round 40 Step 4：LINE Customer Push(狀態變更通知)
+      try {
+        const order = db.getOrderById(orderId);
+        if (order && order.line_user_id) {
+          const linePush = require('../src/handoff/linePush');
+          let message = '';
+          if (body.status === 'PAID') {
+            message = `訂單 ${orderId} 已完成付款核對，目前為您備貨中！`;
+          } else if (body.status === 'CANCELLED') {
+            message = `您的訂單 ${orderId} 已成功取消。`;
+          }
+          if (message) {
+            linePush.safePushToCustomer(order.line_user_id, message).catch(() => {});
+          }
+        }
+      } catch (e) { /* linePush 失敗不影響主流程 */ }
       sendJson(res, 200, {
         success: true,
         message: '訂單狀態已更新',
@@ -819,6 +836,15 @@ const server = http.createServer(async (req, res) => {
         sheetsSync.syncOrdersToSheets({ dryRun: false, forceSync: true }).catch((e) =>
           logger.warn('[payment-failed] sheetsSync failed', { err: e.message }),
         );
+      } catch (e) { /* ignore */ }
+      // Round 40 Step 4：LINE Customer Push(核帳失敗通知)
+      try {
+        const order = db.getOrderById(orderId);
+        if (order && order.line_user_id) {
+          const linePush = require('../src/handoff/linePush');
+          const message = `訂單 ${orderId} 查無此款項，請確認轉帳帳號後五碼或重新提供憑證。`;
+          linePush.safePushToCustomer(order.line_user_id, message).catch(() => {});
+        }
       } catch (e) { /* ignore */ }
       sendJson(res, 200, {
         success: true,
@@ -861,6 +887,15 @@ const server = http.createServer(async (req, res) => {
         sheetsSync.syncOrdersToSheets({ dryRun: false, forceSync: true }).catch((e) =>
           logger.warn('[shipped] sheetsSync failed', { err: e.message }),
         );
+      } catch (e) { /* ignore */ }
+      // Round 40 Step 4：LINE Customer Push(出貨通知 + 物流單號)
+      try {
+        const order = db.getOrderById(orderId);
+        if (order && order.line_user_id) {
+          const linePush = require('../src/handoff/linePush');
+          const message = `訂單 ${orderId} 已出貨！冷鏈物流單號為：${trackingNumber}。`;
+          linePush.safePushToCustomer(order.line_user_id, message).catch(() => {});
+        }
       } catch (e) { /* ignore */ }
       sendJson(res, 200, {
         success: true,
