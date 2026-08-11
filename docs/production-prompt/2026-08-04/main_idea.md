@@ -113,9 +113,11 @@ LLM 必須主動告知客戶「下次可訂日 / 現可訂日 / 即將截止」�
 
 開團日**不寫死**在 prompt — 從 `config.yaml` 動態讀 `open_dates` 欄位（YYYY-MM-DD 陣列）。每次 LLM 啟動時重新讀，確保日期最新。
 
-客戶問「下次開團何時」→ 主動讀 config 回應；config 沒值 → 「目前公告時間依週日群組為主」。
+客戶問「下次開團何時」→ 主動讀 `config.open_dates` 回應；config 沒值 → 「目前無公告開團日，請稍候或聯繫客服」。
 
-**Round 37.25 (Hubert 19:06) 修整**：`buildOrderFormatReply` (in `src/states/idle.js`) 在客戶點「我要訂購」時，主動注入 `📅 本期開團日：M/D (週X)、...` 提示，**一律從 `dateRule.getUpcomingOpenDates({weeks:2})` 動態讀**，**絕不在程式碼/prompt 寫死 8/8、8/9 等字串**。
+**Round 41 (Hubert 2026-08-11) 修整**:開團日來源 = `config.open_dates`（Single Source of Truth），由 dashboard `POST /api/config` 維護。需要查開團日時一律動態讀 config，不依賴 LINE 群組公告。
+- `buildOrderFormatReply` (in `src/states/idle.js`) 在客戶點「我要訂購」時，主動注入 `📅 本期開團日：M/D (週X)、...` 提示，一律從 `dateRule.getUpcomingOpenDates({weeks:2})` 動態讀。
+- dashboard `POST /api/config` 可新增/編輯 `open_dates`（支援 YYYY-MM-DD 格式驗證）。
 
 ### 5.4 訂單確認流程（A 方案）
 

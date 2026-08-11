@@ -23,7 +23,7 @@
 
 | 檔案 | 用途 | 最後更新 |
 |------|------|----------|
-| **`docs/NEW_SESSION_HANDBOOK.md`** | 接手變更 SOP（架構 + 驗證 + 操作 + 陷阱 + 求助順序） | **Round 39**（21:35）|
+| **`docs/NEW_SESSION_HANDBOOK.md`** | 接手變更 SOP（架構 + 驗證 + 操作 + 陷阱 + 求助順序） | **Round 40**（15:43）|
 | **`docs/OWNER_MANUAL.md`** | Hubert 日常操作 SOP（菜單、後台審核、sync-mirror、緊急聯絡） | **Round 37.32**（20:15）|
 | **`docs/GMAIL_SHEETS_WORKFLOW.md`** | Gmail OAuth + Google Sheets 事件驅動同步架構 | Round 37.20（13:12） |
 | **`docs/INDEX.md`**（本檔） | 單一文件入口 + Round 歷史 + 快速連結 | **Round 37.32**（20:15） |
@@ -65,7 +65,33 @@
 | `docs/reports/NAMED_TUNNEL_MIGRATION.md` | Cloudflare Tunnel 遷移紀錄 |
 | `docs/reports/TEST_MAP.md` | 測試套件與覆蓋率地圖 |
 
-## 📜 Round 歷史紀錄（最近重大變更 · Round 37.23-39）
+## 📜 Round 歷史紀錄（最近重大變更 · Round 37.23-40）
+
+### Round 40（2026-08-07 14:40-15:58）— SQLite Primary DB 整合（Steps 1-6 + hotfix）
+- **Step 1 DB 基礎建設**：`src/storage/db.js`（282 行）+ `tests/db.test.js`（17 tests）+ better-sqlite3 v13.0.3
+- **Step 2 雙寫重構**：csvWriter 寫 DB+CSV、sheetsSync 讀 DB+CSV fallback、mapDbOrderToSheetFormat
+- **Step 3 Dashboard API + UI**：GET recent-orders 改讀 DB、4 個 POST endpoint（status/payment-failed/shipped）、4 個 UI 按鈕 + SHIPPED 跳輸入框
+- **Step 4 LINE Customer Push + Email**：`src/handoff/linePush.js`（141 行）、csvWriter 銀行轉帳/街口 Email hook、3 個 endpoint LINE push hook
+- **Step 5 OpenClaw Tool**：`src/tools/orderStatus.js` get_order_status(line_user_id)（71 行）+ 6 tests
+- **Step 6 部署驗證 + Hotfix**：sync-mirror + sync-runtime + 重啟 dashboard + PAID status hotfix（ad30c7d）
+- **commits**: 87dc969 / 5408aeb / 72712d9 / 0106407 / 43a3ba1 / ad30c7d
+- **鐵律**: 部署 drift / lazy init / type coercion / 測試隔離 / dashboard 路由
+
+### Round 39（2026-08-06 21:35+）— pre-existing 失敗 + lint + Cron 報告
+- `triggers.js:135` hardcode `'三峽'/'鶯歌'` → 改為 `getDeliveryRules().areas.allowed` 動態讀取
+- `npm run lint:fix` 自動修 7 個 no-multi-spaces + 2 個 no-useless-escape warning
+- Cron 報告 25 個 OpenClaw job 完整分類，寄至 `k.chang.8844@gmail.com`（messageId 19fd74eea1b5fb1a）
+- check-quality: 12 通過 / 2 警告 / 0 失敗
+- B & C 拆解（待 Hubert 審視）：menu 搜尋 + 老闆通知 / CSV-Sheet-Dashboard 對帳
+
+### Round 38（2026-08-06 20:51-21:11+）— sync 腳本整合(5→3)
+- `sync-runtime.sh` 新增（6218 bytes）— 合併 sync-canonical.sh + sync-kb.sh
+- `sync-canonical.sh` / `sync-kb.sh` → deprecated wrapper（向後相容 cron）
+- `check-quality.sh` Check 11/12 寫死 `2026-07-03` 修正（latest/ 自動偵測）
+- bin/check-drift: 0 Missing · npm test: 64/64 pass
+- Commit: `080c58a`
+
+## 📜 Round 歷史紀錄（最近重大變更 · Round 37.23-37.32）
 
 ### Round 39（2026-08-06 21:35+）— pre-existing 失敗 + lint + Cron 報告
 - `triggers.js:135` hardcode `'三峽'/'鶯歌'` → 改為 `getDeliveryRules().areas.allowed` 動態讀取
