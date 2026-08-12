@@ -739,3 +739,94 @@ _下次 pre-existing 失敗或 cron 變更必同步更新 §17_
 
 _本檔由 Round 40（2026-08-07 15:43+）新增 §18_
 _下次 SQLite / Dashboard / Tool 變更必同步更新 §18_
+---
+
+## §19 Round 43（2026-08-12 15:57+）— 架構重整 DB→dashboard + DB→CSV→Sheet
+
+**Hubert 2026-08-12 15:57 指示**：
+- DB → dashboard（已實作 Round 40 Step 3）
+- DB → CSV → Google Sheet（需重整）
+- 刪除現有 CSV（test data，欄位不全）
+- 從現在開始以 DB 為主開發
+
+### 19.1 架構改動
+
+**原架構（Round 40 Step 2 dual-write）**：
+- `writeOrder` → DB + CSV 平行寫入
+- `sheetsSync.collectAllOrders` 讀 DB（CSV fallback）
+- Dashboard 讀 DB
+
+**新架構（Round 43 嚴格鏈）**：
+- `writeOrder` → **DB only**（移除 CSV 直接寫入）
+- `_triggerSheetsSync` → `exportDbToCsv()` → `sheetsSync.syncOrdersToSheets()`（setImmediate 鏈）
+- `sheetsSync.collectAllOrders` 改回只讀 CSV（配合鏈順序）
+- Dashboard 讀 DB（不變）
+
+**完整鏈**：`writeOrderWithRetry()` → DB 寫入 → (async setImmediate) `exportDbToCsv()` 讀 DB 寫 CSV → (async) `sheetsSync.syncOrdersToSheets()` 讀 CSV 寫 Google Sheet
+
+### 19.2 關鍵檔案改動
+
+| 檔案 | 改動 |
+|------|------|
+| `src/order/csvWriter.js` | 移除 `writeOrder` CSV 直接寫入邏輯;新增 `exportDbToCsv(options)` 函式;修改 `_triggerSheetsSync` 為 export → sheetsSync 鏈;`module.exports` 加 `exportDbToCsv` |
+| `src/storage/sheetsSync.js` | 撤掉 `collectAllOrders` 的 DB 優先讀取邏輯;改回只讀 CSV |
+| `data/orders/chicken/*.csv` | 5 個 test data CSV 備份到 `.bak.pre-round43/` 後刪除（已加 `.gitignore`） |
+
+### 19.3 新增的 `exportDbToCsv` 函式
+
+**位置**：`src/order/csvWriter.js`
+
+**邏輯**：
+1. 讀 DB 全部訂單（`db.listOrders({ limit: 100000 })`）
+2. 按 `delivery_date` 分組
+3. 對每個日期：
+   - 將 DB 訂單 map 到 CSV 36 欄位格式（`customer_name` → `user_line_name` 映射）
+   - `chicken_items` / `side_items` / `extra_items` 若是 object 則 `JSON.stringify`
+   - 寫入 `data/orders/chicken/YYYY-MM-DD.csv`
+
+**呼叫時機**：
+- `writeOrderWithRetry` 內 `_triggerSheetsSync('writeOrder')` 觸發（每次新訂單）
+- 也可手動呼叫 `csvWriter.exportDbToCsv({ date: '2026-08-07' })` 重新 export 指定日期
+
+### 19.4 破壞性 bug 修復記錄
+
+**Bug**：Round 43 Python 替換時範圍抓太大,把 `writeOrder` 的 **DB write block 也誤刪了**(連同 CSV write section 一起被 `csv_writer.replace(old_csv_write_section, new_start)` 刪掉)。導致 `writeOrder` 只回傳 `order_id` 但沒真的寫 DB,**新訂單會全部丟失**。
+
+**發現**:`node -e "cw.writeOrder(testOrder); db.getOrderById(testOrder.order_id)"` → DB 查無資料。
+
+**修復**:用 Python 把 DB write block + 老闆核帳 email hook 補回 `writeOrder`(插入 Round 43 註解與 `return` 之間)。
+
+**驗證**:`ORD-R43-FIX-VERIFY-001` 寫入後 `db.getOrderById` 立刻找到。
+
+### 19.5 新發現的架構鐵律
+
+#### 19.5.1 refactor 範圍控制
+- Python `replace()` 範圍要精確,不能跨多個邏輯區塊
+- 教訓:refactor 一定要有測試驗證,不能只看 diff
+
+#### 19.5.2 `writeOrder` vs `writeOrderWithRetry`
+- `writeOrder`:純 sync DB 寫入(無 async chain)
+- `writeOrderWithRetry`:包 retry + `_triggerSheetsSync` 觸發鏈
+- **測試要用 `writeOrderWithRetry` 才會觸發 chain**(這次測試踩到的坑)
+
+#### 19.5.3 DB 是唯一 source of truth
+- CSV 是 auto-generated export,不是手動寫入目標
+- 修改順序:DB 先 → 觸發 export → CSV 自動 → sheetsSync 讀 CSV → sync Sheet
+- 若 CSV 損壞:`exportDbToCsv()` 從 DB 重新生成,無需從 CSV 還原
+
+### 19.6 改動統計
+
+| 類別 | 檔案 | 變更 |
+|------|------|------|
+| Code | `src/order/csvWriter.js` | +exportDbToCsv, -CSV direct write, +chain trigger |
+| Code | `src/storage/sheetsSync.js` | collectAllOrders 改讀 CSV only |
+| Data | `data/orders/chicken/*.csv` | 5 個 test data 備份後刪除 |
+| Config | `.gitignore` | 加 `.bak.*` 排除備份 |
+| Docs | `NEW_SESSION_HANDBOOK.md` §19 | 本節 |
+| Docs | `DICTIONARY.md` §一/六 | 架構 + Round 43 修改清單 |
+| Docs | `INDEX.md` | Round 43 history |
+
+---
+
+_本檔由 Round 43（2026-08-12 15:57+）新增 §19_
+_下次架構變更或 export 機制改動必同步更新 §19_

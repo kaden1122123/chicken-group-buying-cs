@@ -182,19 +182,20 @@ function writeOrder(orderData) {
     }
     logger.info('[csvWriter] Phase 2 Sheets sync 已啟用，將透過 _triggerSheetsSync 背景同步');
   }
-  ensureDataDir();
+  // ===== Round 43 (Hubert 2026-08-12) 架構重整 =====
+  // writeOrder 只寫 DB,不再直接寫 CSV。
+  // CSV 由 _triggerSheetsSync → exportDbToCsv() 自動 export(Round 43 新增)。
+  // 刪除 Round 40 Step 2 dual-write 邏輯。
+  // 流程:writeOrder → DB → (async) exportDbToCsv → (async) sheetsSync → Google Sheet
+  // CSV 為 auto-generated,不再是 manual write 目標。
 
-  const dateStr = orderData.delivery_date || formatDate(new Date());
-  const filename = FILENAME_PATTERN.replace('{date}', dateStr);
-  const csvPath = path.join(DATA_DIR, filename);
-  const isNewFile = !fs.existsSync(csvPath);
-
-  // ===== Round 40 (Hubert 14:40) Step 2：DB 雙寫(DB 為主,CSV 備份)=====
-  // 策略：DB 寫入為主資料源,CSV 為備份。失敗處理：
-  //   - DB module 未載入(MODULE_NOT_FOUND)→ log warn,走 CSV-only(向後相容舊部署)
-  //   - DB 寫入失敗(其他原因,如 UNIQUE 衝突)→ throw,不寫 CSV(避免 orphan)
-  //   - DB 寫入成功 + CSV 寫入失敗 → log warn(不 throw,DB 已有資料)
-  // 設計動機：DB 是 source of truth(prompt §2),CSV 是財務備份 + Sheets 對帳源頭
+  // ===== DB 寫入(DB 為 source of truth — Round 43 唯一寫入點)=====
+  // 策略:DB 寫入為主資料源,CSV 由 exportDbToCsv 自動 export。
+  // 失敗處理：
+  //   - DB module 未載入(MODULE_NOT_FOUND)→ log warn(向後相容舊部署)
+  //   - DB 寫入失敗(其他原因,如 UNIQUE 衝突)→ throw
+  //   - DB 寫入成功 → 後續 trigger export + sheetsSync
+  // 為什麼寫在這裡而非 dashboard:這是「新訂單建立時」,不是「狀態變更」
   let dbWriteSucceeded = false;
   try {
     const db = require('../storage/db');
@@ -203,9 +204,9 @@ function writeOrder(orderData) {
     logger.info('[csvWriter] DB 寫入成功', { order_id: orderData.order_id });
   } catch (dbErr) {
     if (dbErr && dbErr.code === 'MODULE_NOT_FOUND') {
-      logger.warn('[csvWriter] DB module 未載入(向後相容模式),僅寫 CSV', { err: dbErr.message });
+      logger.warn('[csvWriter] DB module 未載入(向後相容模式)', { err: dbErr.message });
     } else {
-      logger.error('[csvWriter] DB 寫入失敗,中斷 CSV 寫入', {
+      logger.error('[csvWriter] DB 寫入失敗,中斷流程', {
         order_id: orderData.order_id,
         err: dbErr && dbErr.message,
       });
@@ -213,10 +214,9 @@ function writeOrder(orderData) {
     }
   }
 
-  // ===== Round 40 Step 4：老闆核帳提醒 email(銀行轉帳 / 街口付款)=====
+  // ===== Round 40 Step 4:老闆核帳提醒 email(銀行轉帳 / 街口付款)=====
   // 銀行轉帳(transfer) / 街口支付(jko)需要 Hubert 手動核帳 → 自動寄信通知
   // fire-and-forget:失敗不 throw,只 log warn(不影響主流程)
-  // 為什麼這裡 hook 而非 dashboard:這是「新訂單建立時」通知,不是「狀態變更」
   if (dbWriteSucceeded && (orderData.payment_method === 'transfer' || orderData.payment_method === 'jko')) {
     setImmediate(async () => {
       try {
@@ -225,14 +225,14 @@ function writeOrder(orderData) {
         const body = [
           '🔔 新訂單待核帳',
           '',
-          `訂單編號：${orderData.order_id}`,
-          `金額：NT$ ${orderData.total_amount || 0}`,
-          `付款方式：${orderData.payment_method === 'transfer' ? '銀行轉帳' : '街口支付'}`,
-          `付款資訊：${orderData.payment_info || '(未填)'}`,
-          `客戶：${orderData.customer_name || orderData.user_line_name || '(未填)'}`,
-          `地址：${orderData.address || '(未填)'}`,
+          `訂單編號:${orderData.order_id}`,
+          `金額:NT$ ${orderData.total_amount || 0}`,
+          `付款方式:${orderData.payment_method === 'transfer' ? '銀行轉帳' : '街口支付'}`,
+          `付款資訊:${orderData.payment_info || '(未填)'}`,
+          `客戶:${orderData.customer_name || orderData.user_line_name || '(未填)'}`,
+          `地址:${orderData.address || '(未填)'}`,
           '',
-          `Dashboard：${dashboardUrl}`,
+          `Dashboard:${dashboardUrl}`,
           '',
           '請儘速核帳。',
         ].join('\n');
@@ -249,37 +249,6 @@ function writeOrder(orderData) {
         });
       }
     });
-  }
-
-  // 序列化寫入：用 proper-lockfile 鎖 DATA_DIR（跨 process 也有效）
-  let locked = false;
-  try {
-    acquireLockSync(DATA_DIR);
-    locked = true;
-
-    // 鎖內：消毒所有欄位
-    const row = CSV_HEADERS.map((header) => {
-      let value = orderData[header] || '';
-      // JSON 欄位序列化
-      if (['chicken_items', 'side_items', 'extra_items'].includes(header) && typeof value !== 'string') {
-        value = JSON.stringify(value);
-      }
-      return formatField(value);
-    });
-
-    const rowLine = row.join(',');
-    const lines = isNewFile ? [CSV_HEADER_LINE, rowLine] : [rowLine];
-
-    fs.appendFileSync(csvPath, lines.join('\n') + '\n', 'utf8');
-  } finally {
-    if (locked) {
-      try {
-        lockfile.unlockSync(DATA_DIR);
-      } catch (e) {
-        // unlock 失敗不應影響主流程（lockfile 已 stale 或已被外部清理）
-        logger.error('[csvWriter] unlockSync failed', { err: e.message });
-      }
-    }
   }
 
   return orderData.order_id || '';
@@ -463,10 +432,23 @@ function parseCSVLine(line) {
 // 用 setImmediate 避免 blocking CSV 寫入
 // 失敗只 log，不 throw（保證 CSV 寫入流程不被 Sheets 失敗中斷）
 function _triggerSheetsSync(reason) {
+  // Round 43 (Hubert 2026-08-12) 架構重整:DB → CSV → Sheet 鏈
+  // 1. 先 export DB → CSV(讀 DB 全部訂單,按 delivery_date 分組寫 CSV)
+  // 2. 再 sync CSV → Sheet(sheetsSync.collectAllOrders 改讀 CSV)
+  // 兩步皆 setImmediate 非同步,不阻塞 writeOrder 同步返回
   setImmediate(() => {
+    // Step 1: DB → CSV export
+    try {
+      exportDbToCsv();
+      logger.info('[csvWriter] DB → CSV export 完成 (reason: ' + reason + ')');
+    } catch (exportErr) {
+      logger.error('[csvWriter] DB → CSV export 失敗:', exportErr.message);
+      // export 失敗不擋 sheetsSync(可能 CSV 還有舊資料,仍可 sync)
+    }
+    // Step 2: CSV → Sheet sync
     const sheetsSync = getSheetsSync();
     if (!sheetsSync) return;
-    sheetsSync.syncOrdersToSheets({ dryRun: false, forceSync: true }) // Round 37.17：事件驅動，強制同步
+    sheetsSync.syncOrdersToSheets({ dryRun: false, forceSync: true })
       .then((result) => {
         logger.info('[csvWriter] Sheets 背景同步 (' + reason + ') 完成: ' + (result.rowsWritten || 0) + ' rows');
       })
@@ -476,10 +458,95 @@ function _triggerSheetsSync(reason) {
   });
 }
 
+
+/**
+ * Round 43 (Hubert 2026-08-12) 架構重整:DB → CSV 自動 export
+ * 從 DB 讀全部訂單,按 delivery_date 分組寫入 CSV
+ * - DB 為 source of truth,CSV 為 auto-generated export
+ * - 取代 Round 40 Step 2 的 writeOrder 直接寫 CSV 邏輯
+ * - 欄位映射:customer_name → user_line_name(對齊 Sheet 29 欄位)
+ * - chicken_items/side_items/extra_items:若為 object 則 JSON.stringify
+ * @param {Object} [options]
+ * @param {string} [options.date] - 指定日期 (YYYY-MM-DD),不指定則全部 export
+ * @returns {{success: boolean, exported: number, files: string[]}}
+ */
+function exportDbToCsv(options = {}) {
+  ensureDataDir();
+  const db = require('../storage/db');
+  const orders = db.listOrders({ limit: 100000 });
+  if (!orders || orders.length === 0) {
+    logger.info('[csvWriter] exportDbToCsv:DB 無資料,跳過');
+    return { success: true, exported: 0, files: [] };
+  }
+
+  // 按 delivery_date 分組
+  const byDate = {};
+  for (const order of orders) {
+    const date = order.delivery_date || 'unknown';
+    if (options.date && date !== options.date) continue;
+    if (!byDate[date]) byDate[date] = [];
+    byDate[date].push(order);
+  }
+
+  const exportedFiles = [];
+  let totalExported = 0;
+  for (const [date, dateOrders] of Object.entries(byDate)) {
+    const csvPath = path.join(DATA_DIR, FILENAME_PATTERN.replace('{date}', date));
+    const rows = dateOrders.map((order) => {
+      // DB → CSV 欄位映射
+      const csvRow = {
+        order_id: order.order_id || '',
+        created_at: order.created_at || '',
+        user_line_name: order.customer_name || '',
+        user_phone: order.user_phone || '',
+        address: order.address || '',
+        community: order.community || '',
+        delivery_date: order.delivery_date || '',
+        time_slot: order.time_slot || '',
+        chicken_items: typeof order.chicken_items === 'string' ? order.chicken_items : JSON.stringify(order.chicken_items || {}),
+        side_items: typeof order.side_items === 'string' ? order.side_items : JSON.stringify(order.side_items || {}),
+        extra_items: typeof order.extra_items === 'string' ? order.extra_items : JSON.stringify(order.extra_items || {}),
+        chicken_count: order.chicken_count || 0,
+        side_count: order.side_count || 0,
+        total_boxes: order.total_boxes || 0,
+        subtotal: order.subtotal || 0,
+        delivery_fee: order.delivery_fee || 0,
+        total_amount: order.total_amount || 0,
+        payment_method: order.payment_method || '',
+        payment_status: order.payment_status || 'UNPAID',
+        order_status: order.order_status || 'PENDING',
+        staff_notes: order.staff_notes || '',
+        customer_notes: order.customer_notes || '',
+        customer_tags: order.customer_tags || '',
+        handoff_type: order.handoff_type || '',
+        handoff_logged_at: order.handoff_logged_at || '',
+        handoff_resolved_at: order.handoff_resolved_at || '',
+        source: order.source || '',
+        intent_confirmed: order.intent_confirmed || '',
+        receipts_path: order.receipts_path || '',
+        likely_paid: order.likely_paid || '',
+        detected_amount: order.detected_amount || '',
+        detected_account_last5: order.detected_account_last5 || '',
+        vision_confidence: order.vision_confidence || '',
+        vision_source: order.vision_source || '',
+        analyzed_at: order.analyzed_at || '',
+      };
+      return CSV_HEADERS.map((h) => formatField(csvRow[h] != null ? csvRow[h] : '')).join(',');
+    });
+    const content = [CSV_HEADER_LINE, ...rows].join('\n') + '\n';
+    fs.writeFileSync(csvPath, content, 'utf8');
+    exportedFiles.push(csvPath);
+    totalExported += dateOrders.length;
+  }
+  logger.info(`[csvWriter] exportDbToCsv:${totalExported} 訂單 export 到 ${exportedFiles.length} 個 CSV 檔`);
+  return { success: true, exported: totalExported, files: exportedFiles };
+}
+
 module.exports = {
   writeOrder,
   writeOrderWithRetry,
   updateOrder,
+  exportDbToCsv,
   CSV_HEADERS,
   formatField,
   parseCSVLine,

@@ -193,30 +193,14 @@ function httpsPost(hostname, path, body, headers) {
  * 從 src/order/csvReader 取得所有訂單（lazy require 避免循環）
  */
 function collectAllOrders() {
+  // ===== Round 43 (Hubert 2026-08-12) 架構重整:改回只讀 CSV =====
+  // 配合「DB → CSV → Sheet」鏈:CSV 為 sheetsSync 的 source of truth
+  // (不是 DB 直接 sync。csvWriter._triggerSheetsSync 鏈:exportDbToCsv() → syncOrdersToSheets())
+  // 撤掉 Round 40 Step 2 的 DB 優先讀取邏輯
   const { getOrdersByDate } = require('../order/csvReader');
   const fs = require('fs');
   const tenant = getTenantId();
 
-  // ===== Round 40 (Hubert 14:40) Step 2：DB 為主,CSV 為 fallback =====
-  // 優先讀 DB(prompt §2「DB 為 source of truth」)
-  // - DB 有資料 → 從 DB 讀,順便做欄位映射(DB column → Sheet column)
-  // - DB 無資料 → fallback 到 CSV(向後相容舊 CSV-only 訂單)
-  // - DB module 未載入(MODULE_NOT_FOUND)→ fallback 到 CSV
-  try {
-    const db = require('../storage/db');
-    const dbOrders = db.listOrders({ limit: 100000 });
-    if (dbOrders && dbOrders.length > 0) {
-      logger.info('[sheetsSync] 從 DB 讀取訂單', { count: dbOrders.length });
-      return dbOrders.map(mapDbOrderToSheetFormat);
-    }
-    logger.info('[sheetsSync] DB 無資料,fallback 到 CSV');
-  } catch (dbErr) {
-    if (dbErr && dbErr.code !== 'MODULE_NOT_FOUND') {
-      logger.warn('[sheetsSync] DB 讀取失敗,fallback 到 CSV', { err: dbErr.message });
-    }
-  }
-
-  // CSV fallback(原有邏輯,保留 migration 期使用)
   const ordersDir = path.join(process.cwd(), 'data', 'orders', tenant);
   if (!fs.existsSync(ordersDir)) return [];
 
@@ -229,6 +213,7 @@ function collectAllOrders() {
       orders.push({ ...o, _file_date: date });
     }
   }
+  logger.info('[sheetsSync] 從 CSV 讀取訂單', { count: orders.length });
   return orders;
 }
 

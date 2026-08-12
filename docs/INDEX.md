@@ -23,7 +23,7 @@
 
 | 檔案 | 用途 | 最後更新 |
 |------|------|----------|
-| **`docs/NEW_SESSION_HANDBOOK.md`** | 接手變更 SOP（架構 + 驗證 + 操作 + 陷阱 + 求助順序） | **Round 40**（15:43）|
+| **`docs/NEW_SESSION_HANDBOOK.md`** | 接手變更 SOP（架構 + 驗證 + 操作 + 陷阱 + 求助順序） | **Round 43**（15:57）|
 | **`docs/OWNER_MANUAL.md`** | Hubert 日常操作 SOP（菜單、後台審核、sync-mirror、緊急聯絡） | **Round 37.32**（20:15）|
 | **`docs/GMAIL_SHEETS_WORKFLOW.md`** | Gmail OAuth + Google Sheets 事件驅動同步架構 | Round 37.20（13:12） |
 | **`docs/INDEX.md`**（本檔） | 單一文件入口 + Round 歷史 + 快速連結 | **Round 37.32**（20:15） |
@@ -64,6 +64,17 @@
 | `docs/reports/MULTI_TENANT_DESIGN.md` | 多租戶架構設計 |
 | `docs/reports/NAMED_TUNNEL_MIGRATION.md` | Cloudflare Tunnel 遷移紀錄 |
 | `docs/reports/TEST_MAP.md` | 測試套件與覆蓋率地圖 |
+
+## 📜 Round 歷史紀錄（最近重大變更 · Round 37.23-43）
+
+### Round 43（2026-08-12 15:57+）— 架構重整 DB→dashboard + DB→CSV→Sheet
+- **架構改動**:DB 為唯一 source of truth,writeOrder 只寫 DB;CSV 由 exportDbToCsv 自動 export;sheetsSync 改回讀 CSV
+- **csvWriter 改動**:移除 CSV 直接寫入 + 新增 `exportDbToCsv()` + 修改 `_triggerSheetsSync` 為 export → sheetsSync 鏈
+- **sheetsSync 改動**:撤掉 Round 40 Step 2 的 DB 優先讀取邏輯,collectAllOrders 改回只讀 CSV
+- **刪除現有 CSV**:5 個 test data CSV 備份到 `.bak.pre-round43/` 後刪除
+- **破壞性 bug 修復**:refactor 範圍抓太大,誤刪 writeOrder 的 DB write block,已恢復並驗證
+- **新架構鏈**:writeOrderWithRetry → DB → (async) exportDbToCsv → CSV → (async) sheetsSync → Sheet
+- **commit(待 push)**:Round 43 架構重整
 
 ## 📜 Round 歷史紀錄（最近重大變更 · Round 37.23-40）
 

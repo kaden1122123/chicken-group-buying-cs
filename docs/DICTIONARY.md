@@ -25,6 +25,8 @@
 
 ### 前端
 
+### 前端
+
 | shorthand | 絕對路徑 | 用途 |
 |-----------|----------|------|
 | `dashboard` | `L1/dashboard.html` | Dashboard 前端(訂單列表 + 圖表 + 按鈕) |
@@ -37,10 +39,10 @@
 | shorthand | 絕對路徑 | 用途 |
 |-----------|----------|------|
 | `db` | `L1/src/storage/db.js` | SQLite Primary DB layer(Round 40 Step 1 新建) |
-| `csvWriter` | `L1/src/order/csvWriter.js` | CSV 寫入 + DB 雙寫(Round 40 Step 2) |
+| `csvWriter` | `L1/src/order/csvWriter.js` | **Round 43 改**:writeOrder 只寫 DB;`exportDbToCsv()` 從 DB 自動 export CSV |
 | `csvReader` | `L1/src/order/csvReader.js` | CSV 讀取(向後相容) |
 | `orderFormatter` | `L1/src/order/orderFormatter.js` | 訂單格式化(Flex Message + CSV) |
-| `sheetsSync` | `L1/src/storage/sheetsSync.js` | Google Sheets 同步(讀 DB,CSV fallback) |
+| `sheetsSync` | `L1/src/storage/sheetsSync.js` | **Round 43 改**:collectAllOrders 改回只讀 CSV(配合「DB → CSV → Sheet」鏈) |
 | `linePush` | `L1/src/handoff/linePush.js` | LINE Customer Push(Round 40 Step 4) |
 | `emailNotifier` | `L1/src/handoff/emailNotifier.js` | Gmail OAuth 寄信 |
 | `notifier` | `L1/src/handoff/notifier.js` | 老闆通知(manager-only) |
@@ -71,6 +73,19 @@
 | `cleanup-test-orders` | `L1/scripts/cleanup-test-orders.js` | 保護 6/13 + 6/16,刪其他測試 CSV |
 
 ---
+
+## 三、Round 43 修改的檔案清單 (給 Hubert 檢查)
+
+| 檔案 | 絕對路徑 | 修改內容 |
+|------|----------|---------|
+| `csvWriter` | `L1/src/order/csvWriter.js` | 移除 CSV 直接寫入 + 新增 `exportDbToCsv()` + 修改 `_triggerSheetsSync` 為 export → sheetsSync 鏈 |
+| `sheetsSync` | `L1/src/storage/sheetsSync.js` | `collectAllOrders` 改回只讀 CSV(撤掉 Round 40 Step 2 DB 優先邏輯) |
+| `data/orders/chicken/*.csv` | `L1/data/orders/chicken/` | 5 個 test data CSV 備份到 `.bak.pre-round43/` 後刪除(已加 `.gitignore`) |
+| `.gitignore` | `L1/.gitignore` | 加 `data/orders/chicken/.bak.*` 排除備份 |
+| `NEW_SESSION_HANDBOOK` | `L1/docs/NEW_SESSION_HANDBOOK.md` | §19 Round 43 架構重整 |
+| `INDEX` | `L1/docs/INDEX.md` | Round 43 history 加入 |
+
+commit(待 push):Round 43 架構重整
 
 ## 三、知識庫 (Knowledge Base)
 

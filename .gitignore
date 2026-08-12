@@ -7,6 +7,10 @@ node_modules/
 *.log
 .DS_Store
 dashboard.tmp.html
+# Round 43 之前的 CSV 備份(測試用,已 commit 到 .bak.pre-round43/)
+data/orders/chicken/.bak.pre-round43/
+data/orders/chicken/.bak.*
+
 # CSV 訂單資料：預設排除，避免測試訂單污染 git
 # 但保留 2026-06-13.csv 跟 2026-06-16.csv（真實訂單，PHASE1 第一筆）
 data/orders/**/*.csv
