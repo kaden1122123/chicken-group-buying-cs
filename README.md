@@ -44,15 +44,15 @@ flowchart TD
     %% 訊息流
     User -->|發送訊息| CFW
     CFW -->|轉發合規事件| OCG
-    OCG -->|Webhook / API 呼叫| IndexHandler
+    OCG -->|"Webhook / API 呼叫"| IndexHandler
     CFW -->|訂單確認 API 呼叫| APIServer
 
     %% 核心邏輯處理
     IndexHandler --> RuleEngine
     IndexHandler -->|需要轉真人或異常| Notifier
-    IndexHandler -->|確認下單 (B方案)| AutoOrder
+    IndexHandler -->|"確認下單 (B方案)"| AutoOrder
 
-    AutoOrder -->|POST /api/orders| APIServer
+    AutoOrder -->|"POST /api/orders"| APIServer
     APIServer -->|寫入訂單| SQLiteDB
 
     %% 資料流 (Round 43 架構: DB -> CSV -> Google Sheet)
@@ -60,13 +60,13 @@ flowchart TD
     CSVExport -->|sheetsSync.syncOrdersToSheets| GoogleSheets
 
     %% 管理員後台
-    DashboardServer -->|讀取最近訂單 / 更新狀態| SQLiteDB
+    DashboardServer -->|"讀取最近訂單 / 更新狀態"| SQLiteDB
     DashboardServer -->|狀態變更推播| LinePush
     LinePush -->|訂單狀態更新訊息| User
 
     %% 雙通道通知
-    Notifier -->|緊急/轉真人通知| LinePush
-    Notifier -->|備援/防刷郵件| Gmail
+    Notifier -->|"緊急 / 轉真人通知"| LinePush
+    Notifier -->|"備援 / 防刷郵件"| Gmail
 ```
 
 ### 核心運作鏈路說明
