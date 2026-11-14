@@ -148,7 +148,7 @@
 ### ✅ Bonus D3-6：check-quality.sh 盲點（2026-07-01 修整）
 
 **問題**：原 Check 2/6 只查 5 個特定檔案，造成 src/index.js:151 / src/states/confirming.js:61 的 hardcode 漏網
-**修法**：改為 `grep -r` 掃描整個 src/，採用具體值檢查（23257030422 / Willy0221 / '三峽','鶯歌'）
+**修法**：改為 `grep -r` 掃描整個 src/，採用具體值檢查（<BANK_ACCOUNT> / <OWNER_LINE_ID> / '三峽','鶯歌'）
 **commit**：`a6de28cc fix(d3-6): 擴展 check-quality.sh hardcode 檢查為 grep -r 全 src/ 掃描`
 
 ---

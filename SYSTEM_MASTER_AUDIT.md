@@ -15,7 +15,7 @@
 | 服務 | 程式碼進入點 | 設定 / 憑證 | 用途 |
 |------|--------------|-------------|------|
 | **LINE Messaging API** | `src/utils/lineReply.js`、`src/utils/lineProfileCache.js`、`src/config.js:230-232` | env: `LINE_BOT_TOKEN`、`LINE_CHANNEL_SECRET` | 收發客戶訊息、profile 查詢 |
-| **LINE Notify（老闆）** | `src/handoff/notifier.js` | env: `NOTIFY_OWNER_LINE_USER_ID` (`Uf56650056d35626deb64165926a26182`) | 轉人工 / 大額訂單通知 Hubert |
+| **LINE Notify（老闆）** | `src/handoff/notifier.js` | env: `NOTIFY_OWNER_LINE_USER_ID` (`<OWNER_LINE_USER_ID>`) | 轉人工 / 大額訂單通知 Hubert |
 
 ### 1.2 Cloudflare 生態系
 
@@ -32,7 +32,7 @@
 | 服務 | 程式碼進入點 | 設定 / 憑證 | 用途 |
 |------|--------------|-------------|------|
 | **Google Sheets API** | `src/storage/sheetsSync.js`（獨立帳號 `clawbrt@gmail.com`） | secrets: `~/.config/chicken/secrets/sheets-credentials.json` | 訂單同步到 Sheets（P9） |
-| **Gmail API** | `src/handoff/emailNotifier.js` | secrets: `~/.config/chicken/secrets/gmail-credentials.json`、`gmail-token.json`、env: `GMAIL_NOTIFY_TO=k.chang.8844@gmail.com` | 轉人工通知、退款通知 |
+| **Gmail API** | `src/handoff/emailNotifier.js` | secrets: `~/.config/chicken/secrets/gmail-credentials.json`、`gmail-token.json`、env: `GMAIL_NOTIFY_TO=<ADMIN_EMAIL>` | 轉人工通知、退款通知 |
 | **GCP Service Account** | Gmail/Sheets 共用 | secrets: `~/.config/chicken/secrets/gcp-sa-key.json` | OAuth + Sheets API 認證 |
 | **GCP rotation SOP** | `docs/GCP_ROTATION_SOP.md`（249 行） | — | Service Account 金鑰輪替 SOP |
 

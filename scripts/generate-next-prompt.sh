@@ -172,7 +172,7 @@ sleep 2 && curl http://localhost:3000/healthz
 | Dashboard | \`https://dashboard.brt1122.com\` (admin / ChickenTest2026) |
 | Worker prod | \`https://external-user-line-security.kaden1122123.workers.dev\` |
 | Worker staging | \`https://external-user-line-security-staging.kaden1122123.workers.dev\` |
-| 老闆 LINE ID | \`Uf56650056d35626deb64165926a26182\` (chicken.yaml notify_owner.line_user_id) |
+| 老闆 LINE ID | \`<OWNER_LINE_USER_ID>\` (chicken.yaml notify_owner.line_user_id) |
 | Tailscale IP | \`100.114.197.9\` |
 
 ## ⚠️ 接手者必跳過清單（LEGACY 區塊）

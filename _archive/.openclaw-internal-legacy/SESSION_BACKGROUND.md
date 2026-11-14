@@ -22,7 +22,7 @@
 - 性質：LINE 官方帳號「雞味研究所」的 AI 客服系統
 - 技術堆疊：LINE Messaging API + Cloudflare Worker + OpenClaw agent + Node.js
 - 模型：minimax/MiniMax-M3（M2.7 備用）
-- 客戶 ID：U13921951a8873b3e84412a9c14a22c9a（@534zsteg）
+- 客戶 ID：<TEST_CUSTOMER_LINE_USER_ID>（@534zsteg）
 
 ## 重要：src/ 角色（2026-06-27 Session B B3 新增說明）
 - **`src/` 是「設計驗證 + 測試對象」，不是 production runtime**

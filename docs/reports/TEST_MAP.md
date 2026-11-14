@@ -106,7 +106,7 @@
 | `notifier.test.js` | LINE push + Email 雙通道 — LINE 失敗 fallback Email、Email 失敗 throw |
 | `buildEmailContent.test.js` | 信件內容排版 — handoff/autoOrder/system 3 種版型、v3 完整重要欄位 |
 
-**為什麼這 3 個特別**：Hubert 個人信箱 `k.chang.8844@gmail.com` 會每天收 1 封 digest + 多封 handoff 通知。如果寄錯、漏寄、重複寄，老闆就會漏接重要訂單。
+**為什麼這 3 個特別**：Hubert 個人信箱 `<ADMIN_EMAIL>` 會每天收 1 封 digest + 多封 handoff 通知。如果寄錯、漏寄、重複寄，老闆就會漏接重要訂單。
 
 ---
 

@@ -91,7 +91,7 @@
 ### Round 39（2026-08-06 21:35+）— pre-existing 失敗 + lint + Cron 報告
 - `triggers.js:135` hardcode `'三峽'/'鶯歌'` → 改為 `getDeliveryRules().areas.allowed` 動態讀取
 - `npm run lint:fix` 自動修 7 個 no-multi-spaces + 2 個 no-useless-escape warning
-- Cron 報告 25 個 OpenClaw job 完整分類，寄至 `k.chang.8844@gmail.com`（messageId 19fd74eea1b5fb1a）
+- Cron 報告 25 個 OpenClaw job 完整分類，寄至 `<ADMIN_EMAIL>`（messageId 19fd74eea1b5fb1a）
 - check-quality: 12 通過 / 2 警告 / 0 失敗
 - B & C 拆解（待 Hubert 審視）：menu 搜尋 + 老闆通知 / CSV-Sheet-Dashboard 對帳
 
@@ -107,7 +107,7 @@
 ### Round 39（2026-08-06 21:35+）— pre-existing 失敗 + lint + Cron 報告
 - `triggers.js:135` hardcode `'三峽'/'鶯歌'` → 改為 `getDeliveryRules().areas.allowed` 動態讀取
 - `npm run lint:fix` 自動修 7 個 no-multi-spaces + 2 個 no-useless-escape warning
-- Cron 報告 25 個 OpenClaw job 完整分類，寄至 `k.chang.8844@gmail.com`（messageId 19fd74eea1b5fb1a）
+- Cron 報告 25 個 OpenClaw job 完整分類，寄至 `<ADMIN_EMAIL>`（messageId 19fd74eea1b5fb1a）
 - check-quality: 12 通過 / 2 警告 / 0 失敗
 - B & C 拆解（待 Hubert 審視）：menu 搜尋 + 老闆通知 / CSV-Sheet-Dashboard 對帳
 
@@ -297,9 +297,9 @@
 - LINE 社群：`@620boqol`
 - Google Spreadsheet ID：`12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA`
 - Sheet 名稱：`工作表1`（簡體）
-- Bank：007 第一銀行 / `23257030422`
-- 主管 LINE ID（Hubert）：`Uf56650056d35626deb64165926a26182`
-- 客服 LINE ID：`Willy0221`
+- Bank：007 第一銀行 / `<BANK_ACCOUNT>`
+- 主管 LINE ID（Hubert）：`<OWNER_LINE_USER_ID>`
+- 客服 LINE ID：`<OWNER_LINE_ID>`
 
 ---
 

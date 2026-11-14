@@ -442,7 +442,7 @@
 ### 動作 2：通知 Hubert（push message，**不是** reply）
 
 - **使用 LINE Push Message**（不是 Reply）
-- **目標是 Hubert 的 LINE user_id**：`Uf56650056d35626deb64165926a26182`
+- **目標是 Hubert 的 LINE user_id**：`<OWNER_LINE_USER_ID>`
 - 通知內容：案件類型、客戶名稱、問題摘要、訂單 ID
 
 Hubert **會看到**，客戶**不會看到**。

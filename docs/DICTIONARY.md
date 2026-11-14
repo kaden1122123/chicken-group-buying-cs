@@ -134,16 +134,16 @@ commit(待 push):Round 43 架構重整
 | 服務 | ID / 路徑 |
 |------|----------|
 | LINE Channel | `@620boqol` |
-| LINE 主管 ID(Hubert) | `Uf56650056d35626deb64165926a26182` |
+| LINE 主管 ID(Hubert) | `<OWNER_LINE_USER_ID>` |
 | Google Spreadsheet ID | `12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA` |
 | Sheet 名稱 | `工作表1`(簡體,**不是** `工作表一`) |
-| Bank | 007 第一銀行 / `23257030422` |
+| Bank | 007 第一銀行 / `<BANK_ACCOUNT>` |
 | Dashboard 域名 | `https://dashboard.brt1122.com` |
 | Cloudflare Worker(prod) | `https://external-user-line-security.kaden1122123.workers.dev` |
 | Cloudflare Tunnel | `brt1122-System-09` |
 | OpenClaw Gateway | `https://openclaw.brt1122.com` |
 | brtclaw email(我) | `kaden1122123@gmail.com` |
-| Hubert email | `k.chang.8844@gmail.com` |
+| Hubert email | `<ADMIN_EMAIL>` |
 
 ---
 

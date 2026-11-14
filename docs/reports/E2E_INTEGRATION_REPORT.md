@@ -197,7 +197,7 @@ async function notifyHubert(message, options = {}) {
 
 ### 📧 Gmail 發送日誌（這次沒真的寄，但測試結果確認）
 
-`k.chang.8844@gmail.com` 信箱這次**沒收到 E2E test 信**（因為 sendEmail 在 `getGmailClient()` 拋 ENOENT 就 return 失敗）。
+`<ADMIN_EMAIL>` 信箱這次**沒收到 E2E test 信**（因為 sendEmail 在 `getGmailClient()` 拋 ENOENT 就 return 失敗）。
 
 ---
 

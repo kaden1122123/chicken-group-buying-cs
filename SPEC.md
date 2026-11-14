@@ -26,7 +26,7 @@ last_updated：2026-07-27（Round 27 確認仍適用，無改動）
 ```yaml
 security:
   allowed_line_users:
-    - "Uf56650056d35626deb64165926a26182"  # Hubert
+    - "<OWNER_LINE_USER_ID>"  # Hubert
   block_others: true
 ```
 

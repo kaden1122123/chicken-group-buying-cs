@@ -243,7 +243,7 @@ node -e "require('./src/storage/sheetsSync').syncOrdersToSheets({dryRun:false, f
 | 知識庫 | `knowledge/tenants/chicken/01_product.md` |
 | L3 Prompt | `docs/production-prompt/2026-08-04/{AGENTS,SOUL,main_idea}.md` |
 | Sheets 對應 | `spreadsheet_id: 12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA` |
-| 銀行帳號 | 007-23257030422（第一銀行） |
+| 銀行帳號 | 007-<BANK_ACCOUNT>（第一銀行） |
 
 ### 5.3 Secret 檔（不要動）
 | 用途 | 路徑 |

@@ -93,8 +93,8 @@ bash bin/cron-list
 | Worker prod URL | `https://external-user-line-security.kaden1122123.workers.dev` |
 | Worker staging URL | `https://external-user-line-security-staging.kaden1122123.workers.dev` |
 | Dashboard URL | `https://dashboard.brt1122.com` |
-| 老闆 LINE ID | `Uf56650056d35626deb64165926a26182` |
-| 客戶 ID | `U13921951a8873b3e84412a9c14a22c9a` |
+| 老闆 LINE ID | `<OWNER_LINE_USER_ID>` |
+| 客戶 ID | `<TEST_CUSTOMER_LINE_USER_ID>` |
 | GitHub 主倉庫 | `kaden1122123/chicken-group-buying-cs` |
 | GitHub Worker | `kaden1122123/external-user-line-security` |
 
@@ -115,7 +115,7 @@ bash bin/cron-list
 
 | 服務 | 正確 Live Test 指令 |
 |------|-------|
-| Gmail | `node -e "const e=require('./src/handoff/emailNotifier'); e.sendEmail({to:'k.chang.8844@gmail.com',subject:'Health Check',body:'live test'}).then(r=>console.log(r));"` |
+| Gmail | `node -e "const e=require('./src/handoff/emailNotifier'); e.sendEmail({to:'<ADMIN_EMAIL>',subject:'Health Check',body:'live test'}).then(r=>console.log(r));"` |
 | Sheets | `node -e "..."`  `sheets.spreadsheets.get(...)` + `values.get(...)` |
 | LINE Bot | 跑 Cloudflare Worker 內 `notifyHubert()` push + 抓 response code |
 

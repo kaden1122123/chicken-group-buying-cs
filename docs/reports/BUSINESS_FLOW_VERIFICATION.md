@@ -67,7 +67,7 @@ userMsg: 已轉帳 490 元，帳號後五碼 56789
 
 ## ✅ Task 2：轉真人 Gmail 通知實測 (Handoff Email Trigger)
 
-**測試目標**：模擬客戶「我想退款」高風險觸發詞，驗證 Gmail 寄送至 `k.chang.8844@gmail.com`
+**測試目標**：模擬客戶「我想退款」高風險觸發詞，驗證 Gmail 寄送至 `<ADMIN_EMAIL>`
 
 ### 2a. Token 還原（Round 37.9 自動從 .bak 還原）
 
@@ -83,7 +83,7 @@ $ ls -la /home/clawuser/.config/chicken/secrets/gmail-token.json
 $ node -e "
 const { sendEmail } = require('./src/handoff/emailNotifier');
 sendEmail({
-  to: 'k.chang.8844@gmail.com',
+  to: '<ADMIN_EMAIL>',
   subject: '【雞味研究所】🔔 轉真人通知 2026-08-05 - TEST',
   body: '...'
 }).then(r => console.log(JSON.stringify(r)));
@@ -92,7 +92,7 @@ sendEmail({
 
 **Gmail 寄送 Raw Log**：
 ```json
-{"timestamp":"2026-08-05T00:58:59.391Z","level":"info","msg":"[emailNotifier] 寄信成功","to":"k.chang.8844@gmail.com","subject":"【雞味研究所】🔔 轉真人通知 2026-08-05 - TEST","messageId":"19fcf6e49b2ea3f7"}
+{"timestamp":"2026-08-05T00:58:59.391Z","level":"info","msg":"[emailNotifier] 寄信成功","to":"<ADMIN_EMAIL>","subject":"【雞味研究所】🔔 轉真人通知 2026-08-05 - TEST","messageId":"19fcf6e49b2ea3f7"}
 
 === 寄送結果 ===
 {

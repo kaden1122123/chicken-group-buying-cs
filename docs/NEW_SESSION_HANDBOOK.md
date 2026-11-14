@@ -169,11 +169,11 @@ node -e "require('./src/storage/sheetsSync').syncOrdersToSheets({dryRun:false, f
 | LINE Channel | @620boqol |
 | Google Spreadsheet | `12sG_0b_sgZcR0mLNYq7J7AJVuOVqDUeBuP14qkHe6kA` |
 | Sheet 名稱 | `工作表1`（簡體，**不是** `工作表一`） |
-| Bank | 007 第一銀行 / `23257030422` |
+| Bank | 007 第一銀行 / `<BANK_ACCOUNT>` |
 | Dashboard 域名 | dashboard.brt1122.com |
 | Cloudflare Tunnel | brt1122-System-09 |
-| 主管 LINE ID | `Uf56650056d35626deb64165926a26182` (Hubert) |
-| 客服 LINE ID | `Willy0221` |
+| 主管 LINE ID | `<OWNER_LINE_USER_ID>` (Hubert) |
+| 客服 LINE ID | `<OWNER_LINE_ID>` |
 
 ---
 
@@ -521,7 +521,7 @@ _下次 sync / check-quality 變更必同步更新 §16_
 
 **Hubert 21:35 指示**：
 - 我的文件沒提到 cron jobs → brtclaw 自行瀏覽 + 加背景知識
-- 輸出 cron 用處報告寄到 `k.chang.8844@gmail.com`
+- 輸出 cron 用處報告寄到 `<ADMIN_EMAIL>`
 - A（2 個 pre-existing 失敗）可直接修
 - B & C（menu 搜尋 + 老闆通知 / CSV-Sheet-Dashboard 對帳）需拆解後審視
 - D（付款方式）延後
@@ -555,7 +555,7 @@ deliveryAreaKeywords.some((kw) => lower.includes(kw))
 
 ### 17.2 Cron Jobs 完整背景（25 個 OpenClaw cron）
 
-**已寄出**：messageId `19fd74eea1b5fb1a` 到 k.chang.8844@gmail.com，報告 `/tmp/cron-report.md`（6185 bytes）。
+**已寄出**：messageId `19fd74eea1b5fb1a` 到 <ADMIN_EMAIL>，報告 `/tmp/cron-report.md`（6185 bytes）。
 
 **6 大類**：
 
@@ -655,7 +655,7 @@ _下次 pre-existing 失敗或 cron 變更必同步更新 §17_
 - `src/order/csvWriter.js`:銀行轉帳(transfer) / 街口付款(jko)下單 → emailNotifier.sendEmail(setImmediate fire-and-forget)
 - `scripts/dashboard-server.js` 3 個 endpoint 都加 LINE push hook(PAID / SHIPPED+單號 / PAYMENT_FAILED / CANCELLED)
 
-**Email 內容**:`訂單編號 / 金額 / 付款方式 / 付款資訊 / Dashboard 連結` 寄給 `k.chang.8844@gmail.com`。
+**Email 內容**:`訂單編號 / 金額 / 付款方式 / 付款資訊 / Dashboard 連結` 寄給 `<ADMIN_EMAIL>`。
 
 **LINE 訊息**:
 - PAID:「訂單 {order_id} 已完成付款核對,目前為您備貨中!」

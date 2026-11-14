@@ -44,8 +44,8 @@ tail -3 /tmp/chicken-config-sync.log
 | Worker prod URL | `https://external-user-line-security.kaden1122123.workers.dev` |
 | Worker staging URL | `https://external-user-line-security-staging.kaden1122123.workers.dev` |
 | Dashboard URL | `https://dashboard.brt1122.com` |
-| 老闆 LINE ID | `Uf56650056d35626deb64165926a26182` |
-| 客戶 ID | `U13921951a8873b3e84412a9c14a22c9a` |
+| 老闆 LINE ID | `<OWNER_LINE_USER_ID>` |
+| 客戶 ID | `<TEST_CUSTOMER_LINE_USER_ID>` |
 
 ---
 

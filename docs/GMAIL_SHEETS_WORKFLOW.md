@@ -193,7 +193,7 @@ node -e "require('./src/storage/sheetsSync').syncOrdersToSheets({dryRun:false, f
 const { sendEmail } = require('./src/handoff/emailNotifier');
 
 sendEmail({
-  to: 'k.chang.8844@gmail.com',
+  to: '<ADMIN_EMAIL>',
   subject: '【雞味研究所】🔔 轉真人通知',
   body: '...',
 }).then(r => console.log(r.messageId));   // r.success === true

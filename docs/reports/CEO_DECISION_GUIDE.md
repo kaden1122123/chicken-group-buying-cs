@@ -85,8 +85,8 @@ brtclaw 問決策時，格式：
 1. 現金上限（1000 元）
 2. 滿額免運（350 元、運費 80 元）
 3. 配送範圍（三峽、鶯歌 fallback）
-4. 銀行帳號（007 / 23257030422）
-5. LINE Pay ID（Willy0221）
+4. 銀行帳號（007 / <BANK_ACCOUNT>）
+5. LINE Pay ID（<OWNER_LINE_ID>）
 
 之後你改 config 就會生效。
 

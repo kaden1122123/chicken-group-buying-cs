@@ -19,7 +19,7 @@
 **LINE Bot 必要資訊**（從 LINE Developer Console 取得）：
 - **Channel access token (long-lived)** — 172 chars JWT
 - **Channel secret** — 32 chars hex
-- **Hubert 個人 LINE User ID** — `Uf56650056d35626deb64165926a26182`
+- **Hubert 個人 LINE User ID** — `<OWNER_LINE_USER_ID>`
 - **Webhook URL** — `https://external-user-line-security.kaden1122123.workers.dev/webhook`
 
 ---

@@ -26,7 +26,7 @@
 |------|--------|
 | 看今天訂單 | 開 https://dashboard.brt1122.com（admin / ChickenTest2026） |
 | 標記已收款 | Dashboard 訂單 → 「✓ 已收款」按鈕 |
-| 客戶請求轉真人 | 收到 Email 通知（Gmail：k.chang.8844@gmail.com） |
+| 客戶請求轉真人 | 收到 Email 通知（Gmail：<ADMIN_EMAIL>） |
 | 解除轉真人 | Dashboard 訂單 → 「解除轉真人」按鈕 |
 | 上傳付款截圖 | Dashboard 訂單詳情 → 上傳圖片 |
 
@@ -43,10 +43,10 @@
 
 | 通知類型 | 收件人 | 觸發情境 |
 |----------|--------|----------|
-| 客戶轉真人 | k.chang.8844@gmail.com | 客戶問 ALERT 關鍵字（退款/投訴/地址確認等） |
-| B 方案自動建單成功 | k.chang.8844@gmail.com | 客戶確認訂單後自動寫入 CSV |
-| B 方案自動建單失敗 | k.chang.8844@gmail.com | API 錯誤，需手動建單 |
-| 系統通知 | k.chang.8844@gmail.com | background 任務異常 |
+| 客戶轉真人 | <ADMIN_EMAIL> | 客戶問 ALERT 關鍵字（退款/投訴/地址確認等） |
+| B 方案自動建單成功 | <ADMIN_EMAIL> | 客戶確認訂單後自動寫入 CSV |
+| B 方案自動建單失敗 | <ADMIN_EMAIL> | API 錯誤，需手動建單 |
+| 系統通知 | <ADMIN_EMAIL> | background 任務異常 |
 
 **Email 5 秒節流**：連續 Email 通知最少間隔 5 秒，避免被 Gmail 標記為 spam。
 
@@ -292,7 +292,7 @@ ls data/orders/chicken/$(date '+%Y-%m-%d').csv
 | Worker staging | https://external-user-line-security-staging.kaden1122123.workers.dev |
 | LINE 官方帳號 | 雞味研究所 |
 | Google Sheets | （Dashboard 內可達） |
-| Gmail | k.chang.8844@gmail.com |
+| Gmail | <ADMIN_EMAIL> |
 
 ---
 
