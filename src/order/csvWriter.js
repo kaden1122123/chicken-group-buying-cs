@@ -6,7 +6,7 @@ const fs = require('fs');
 const lockfile = require('proper-lockfile');
 const sanitize = require('../utils/sanitizer');
 const { formatDate } = require('../utils/timeUtils');
-const { isFeatureEnabled } = require('../config');
+const { isFeatureEnabled, getEmailConfig } = require('../config');
 
 // Round 37.17：事件驅動 Sheets 同步（lazy require 避免循環依賴）
 let _sheetsSyncModule = null;
@@ -236,8 +236,13 @@ function writeOrder(orderData) {
           '',
           '請儘速核帳。',
         ].join('\n');
+        const to = (getEmailConfig() || {}).digest_to;
+        if (!to) {
+          logger.warn('[csvWriter] email.digest_to 未設定,跳過核帳 email', { order_id: orderData.order_id });
+          return;
+        }
         await emailNotifier.sendEmail({
-          to: 'k.chang.8844@gmail.com',
+          to,
           subject: `【雞味研究所】🔔 新訂單待核帳 - ${orderData.order_id}`,
           body,
         });

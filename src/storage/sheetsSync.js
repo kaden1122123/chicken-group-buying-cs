@@ -218,24 +218,6 @@ function collectAllOrders() {
 }
 
 /**
- * Round 40 Step 2：DB 欄位映射到 Sheet 欄位(對齊 Sheet 29 欄位 header)
- * DB schema(prompt §3)：line_user_id, customer_name, user_phone...
- * Sheet header(現有)：user_line_name, user_phone...
- * 映射規則：
- *   - customer_name → user_line_name( Sheet 期望「LINE 名稱」)
- *   - line_user_id → 不寫入 Sheet(Sheet 沒有此欄位,留空)
- *   - 其他欄位名一致,直接通過
- */
-function mapDbOrderToSheetFormat(dbOrder) {
-  return {
-    ...dbOrder,
-    user_line_name: dbOrder.customer_name || dbOrder.user_line_name || '',
-    // 保留 DB 原欄位供未來 Sheet 擴充用
-    line_user_id: dbOrder.line_user_id || '',
-  };
-}
-
-/**
  * 把 orders 陣列轉成 Sheets values 格式（二維陣列）
  */
 function ordersToSheetValues(orders, liveHeader) {
