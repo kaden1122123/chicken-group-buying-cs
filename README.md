@@ -8,76 +8,73 @@
 
 ## 系統架構與工作流程
 
-系統架構分為外部閘道層（Cloudflare Worker 與 OpenClaw Gateway）、核心服務層（API Server、Dashboard Server 與狀態機規則模組）、持久化儲存層（SQLite、CSV 與 Google Sheets），以及雙向通知管道（LINE Push API 與 Gmail API）。
+系統由兩部分組成。對客戶說話的是 OpenClaw 上的 LLM agent，行為由 prompt（`docs/production-prompt/latest/`）與知識庫（`knowledge/tenants/chicken/`）決定。本倉庫在 production 實際執行的是兩個 HTTP 服務，`scripts/api-server.js`（:3001）與 `scripts/dashboard-server.js`（:3000），以及它們引用的 `src/rules/`、`src/order/`、`src/storage/`、`src/handoff/` 模組。
+
+`src/index.js` 與 `src/states/` 的有限狀態機只由測試呼叫，用途是把 prompt 的對話流程寫成可 unit test 的規格（見 [ADR-0001](docs/adr/0001-src-not-production-runtime.md)）。
 
 ```mermaid
-flowchart TD
-    subgraph Client ["客戶端"]
-        User["LINE 使用者"]
+flowchart LR
+    User["LINE 使用者"]
+    Owner["管理員"]
+
+    subgraph External ["外部服務（不在本倉庫）"]
+        CFW["Cloudflare Worker<br/>LINE webhook 入口"]
+        Agent["OpenClaw LLM agent<br/>prompt + knowledge/*.md"]
+        Tunnel["Cloudflare Tunnel"]
     end
 
-    subgraph Gateway ["外部閘道層 (外部服務)"]
-        CFW["Cloudflare Worker<br/>(速率限制 / 關鍵字過濾)"]
-        OCG["OpenClaw Gateway<br/>(LLM 對話 / 意圖驅動)"]
+    subgraph Prod ["本倉庫 production 程式"]
+        API["api-server :3001<br/>scripts/api-server.js"]
+        Rules["規則驗證<br/>src/rules/"]
+        Writer["建單<br/>csvWriter.writeOrder"]
+        Dash["dashboard-server :3000<br/>scripts/dashboard-server.js"]
     end
 
-    subgraph CoreServices ["核心服務層 (本專案)"]
-        APIServer["API Server (:3001)<br/>scripts/api-server.js"]
-        DashboardServer["Dashboard Server (:3000)<br/>scripts/dashboard-server.js"]
-        IndexHandler["訊息分派與狀態機<br/>src/index.js & src/states/"]
-        RuleEngine["業務規則引擎<br/>src/rules/ (地址/菜單/時間/金額)"]
-        AutoOrder["自動建單模組<br/>src/handoff/autoOrder.js"]
+    subgraph Storage ["儲存（DB 為唯一事實來源）"]
+        DB[("SQLite<br/>data/db/chicken.db")]
+        CSV["CSV 匯出<br/>data/orders/chicken/{date}.csv"]
+        Sheets["Google Sheets"]
     end
 
-    subgraph StorageLayer ["儲存與同步層"]
-        SQLiteDB[("SQLite 資料庫<br/>data/db/chicken.db")]
-        CSVExport["CSV 檔案匯出<br/>data/orders/chicken/{date}.csv"]
-        GoogleSheets["Google Sheets<br/>(Service Account 同步)"]
+    subgraph Notify ["通知"]
+        Push["LINE Push<br/>src/handoff/linePush.js"]
+        Mail["Gmail<br/>src/handoff/emailNotifier.js"]
     end
 
-    subgraph Notification ["通知與推播層"]
-        LinePush["客戶 LINE 推播<br/>src/handoff/linePush.js"]
-        Notifier["管理員通知 (Hubert)<br/>src/handoff/notifier.js"]
-        Gmail["Gmail API<br/>src/handoff/emailNotifier.js"]
+    subgraph TestOnly ["僅測試使用（設計驗證）"]
+        FSM["src/index.js<br/>src/states/ 狀態機"]
     end
 
-    %% 訊息流
-    User -->|發送訊息| CFW
-    CFW -->|轉發合規事件| OCG
-    OCG -->|"Webhook / API 呼叫"| IndexHandler
-    CFW -->|訂單確認 API 呼叫| APIServer
+    User --> CFW --> Agent
+    Agent -->|"回覆"| User
+    Agent -->|"客戶確認後 POST /api/orders"| API
+    API --> Rules
+    API --> Writer --> DB
+    Writer -.->|"轉帳 / 街口：核帳提醒"| Mail
+    DB -.->|"背景 exportDbToCsv"| CSV
+    CSV -.->|"背景 syncOrdersToSheets"| Sheets
 
-    %% 核心邏輯處理
-    IndexHandler --> RuleEngine
-    IndexHandler -->|需要轉真人或異常| Notifier
-    IndexHandler -->|"確認下單 (B方案)"| AutoOrder
-
-    AutoOrder -->|"POST /api/orders"| APIServer
-    APIServer -->|寫入訂單| SQLiteDB
-
-    %% 資料流 (Round 43 架構: DB -> CSV -> Google Sheet)
-    SQLiteDB -->|exportDbToCsv| CSVExport
-    CSVExport -->|sheetsSync.syncOrdersToSheets| GoogleSheets
-
-    %% 管理員後台
-    DashboardServer -->|"讀取最近訂單 / 更新狀態"| SQLiteDB
-    DashboardServer -->|狀態變更推播| LinePush
-    LinePush -->|訂單狀態更新訊息| User
-
-    %% 雙通道通知
-    Notifier -->|"緊急 / 轉真人通知"| LinePush
-    Notifier -->|"備援 / 防刷郵件"| Gmail
+    Owner --> Tunnel --> Dash
+    Dash -->|"讀訂單 / 改狀態"| DB
+    Dash -->|"PAID / 取消通知"| Push --> User
 ```
+
+實線是同步呼叫，虛線是 `setImmediate` 背景觸發。
 
 ### 核心運作鏈路說明
 
-1. **進線與狀態流轉**：LINE Webhook 經過 Cloudflare Worker 進行第一線清洗後，進入 `src/index.js`。系統經白名單過濾後，交由 `src/states/stateMachine.js` 驅動對話狀態（`IDLE` $\rightarrow$ `AWAITING_INFO` $\rightarrow$ `CONFIRMING` $\rightarrow$ `AWAITING_PAYMENT` $\rightarrow$ `COMPLETED`）。
-2. **規則校驗**：在 `AWAITING_INFO` 與 `CONFIRMING` 階段，由 `src/rules/` 針對電話、外送地址（三鶯生活圈判定）、菜單品項（支援模糊關鍵字澄清）、開團配送日與截止時限進行驗證。
-3. **訂單寫入鏈（Round 43 架構）**：
-   - 訂單經確認後，由 `src/storage/db.js` 作為唯一事實來源（Single Source of Truth）直接寫入 SQLite 主資料庫 (`data/db/chicken.db`)。
-   - 寫入完成後觸發 `_triggerSheetsSync`，非同步呼叫 `src/order/csvWriter.js` 的 `exportDbToCsv()`，依配送日期自動產生或更新對應的 `data/orders/chicken/{date}.csv`。
-   - CSV 產出後立即呼叫 `src/storage/sheetsSync.js`，以 GCP 服務帳號簽發的 JWT Bearer Token 向 Google Sheets API 發送請求，動態對齊表頭後覆寫/追加至試算表。
-4. **雙通道管理員通知**：遇到客訴、退款、地址需確認或訂單金額大於 3,000 元時，系統觸發 `src/handoff/transferRules.js`，將訂單標記為 `pending_handoff`，並經由 `src/handoff/notifier.js` 同步發送 LINE 推播及呼叫 Gmail API 寄送結構化 HTML/純文字信件至管理員信箱。
+1. **對話**：LINE 訊息經 Cloudflare Worker 送進 OpenClaw agent。agent 依 `SOUL.md`、`AGENTS.md`、`main_idea.md` 行事，商品、價格、配送、付款等事實按情境讀取 `knowledge/tenants/chicken/01~12_*.md`。
+2. **建單（B 方案）**：客戶二次確認後，agent 呼叫 api-server 的 `POST /api/orders`（見 `config/tenants/chicken.yaml` 的 B 方案段落）。api-server 先用 `src/rules/` 驗證開團日、時段、菜單、電話與三鶯配送範圍，再呼叫 `writeOrderWithRetry`。
+3. **寫入鏈（Round 43 架構）**：`writeOrder` 寫入 SQLite（`src/storage/db.js`），成功後在背景執行 `exportDbToCsv()` 依配送日重新產生 CSV，再由 `src/storage/sheetsSync.js` 以 service account JWT 推送到 Google Sheets。付款方式為轉帳或街口時，另寄核帳提醒信。
+4. **轉真人**：production 由 LLM agent 依 `knowledge/tenants/chicken/07_transfer_rules.md` 的 14 種情境判斷並通知管理員。`src/handoff/transferRules.js` 與 `notifier.js` 是同一套規則的程式化版本，只在測試中執行。
+5. **管理後台**：管理員經 Cloudflare Tunnel 開啟 dashboard。dashboard 從 DB 讀訂單，狀態改為 PAID 或 CANCELLED 時寫回 DB，並以 LINE Push 通知客戶。
+
+### 已知限制
+
+- **兩條更新路徑**：dashboard 的 `POST /api/orders/:id/status` 寫 DB，但 api-server 的 `PATCH /api/orders/:id`、收據分析，以及 dashboard 另外三個更新 endpoint 呼叫 `csvWriter.updateOrder`，只改 CSV。`exportDbToCsv` 會從 DB 整份覆寫 CSV，所以只寫進 CSV 的更新會在下一次匯出時遺失。
+- **Sheets 可能落後**：dashboard 改狀態後直接觸發 `syncOrdersToSheets`，沒有先匯出 CSV，Sheets 要等下一次匯出才會更新。
+- **讀取來源不一致**：api-server 的 `GET /api/orders` 讀 CSV，dashboard 讀 DB。
+- **prompt 與 src/ 可能漂移**：`src/` 是 prompt 邏輯的測試版本，修改其中一邊時必須同步另一邊。
 
 ---
 
